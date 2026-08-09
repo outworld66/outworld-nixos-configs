@@ -1,0 +1,131 @@
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "oh-my-openagent@latest",
+    "@plannotator/opencode@latest"
+  ],
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "cue *": "allow",
+      "git status *": "allow",
+      "git log *": "allow",
+      "git diff *": "allow",
+      "git branch *": "allow",
+      "git add *": "allow",
+      "grep *": "allow",
+      "find *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "rg *": "allow",
+      "ls *": "allow",
+      "cat *": "allow",
+      "cargo test *": "ask",
+      "cargo build *": "ask",
+      "npm test *": "ask",
+      "npm run *": "ask",
+      "rtk ls *": "allow",
+      "rtk tree *": "allow",
+      "rtk cat *": "allow",
+      "rtk read *": "allow",
+      "rtk go *": "allow",
+      "rtk init *": "allow",
+      "rtk wc *": "allow",
+      "rtk rg *": "allow",
+      "rtk make golangci-lint": "allow",
+      "rtk make lint": "allow",
+      "rtk go test *": "allow",
+      "rtk go build *": "allow",
+      "rtk make acc-tests": "allow",
+      "rtk git status *": "allow",
+      "rtk git diff *": "allow",
+      "rtk git log *": "allow",
+      "rtk git add *": "allow",
+      "rtk git commit *": "allow",
+      "rtk git push *": "allow",
+      "git commit *": "deny",
+      "git push *": "deny",
+      "git pull *": "deny",
+      "rm *": "deny",
+      "sudo *": "deny",
+      "chmod *": "deny",
+      "curl *": "ask",
+      "wget *": "ask"
+    },
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.p12": "deny",
+      "*.key": "deny",
+      "*.pem": "deny",
+      "~/.ssh/*": "deny",
+      "~/.aws/*": "deny",
+      "~/.kube/*": "deny",
+      "~/.docker/*": "deny",
+      "*/secrets/*": "deny",
+      "*/credentials/*": "deny"
+    },
+    "glob": {
+      "*": "allow"
+    },
+    "grep": {
+      "*": "allow"
+    },
+    "task": {
+      "*": "ask",
+      "explore": "allow",
+      "quick": "allow"
+    },
+    "skill": {
+      "*": "ask"
+    },
+    "external_directory": {
+      "~/projects/*": "allow",
+      "~/.config/*": "ask",
+      "~/.local/*": "ask",
+      "/tmp/*": "ask"
+    },
+    "doom_loop": "ask"
+  },
+  "mcp": {
+    "flux-schema-catalog": {
+      "type": "remote",
+      "url": "https://schemas.fluxoperator.dev/mcp",
+      "enabled": true
+    },
+    "siderolabs-docs": {
+      "type": "remote",
+      "url": "https://docs.siderolabs.com/mcp",
+      "enabled": true
+    },
+    "context7": {
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp", "--api-key", "{file:~/.secrets/context7-api-key}"],
+      "enabled": true
+    },
+    "drawio": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "npx",
+        "@drawio/mcp"
+      ]
+    },
+    "langchain-llms-txt": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "uvx",
+        "--from",
+        "mcpdoc",
+        "mcpdoc",
+        "--urls",
+        "LangGraph:https://langchain-ai.github.io/langgraph/llms.txt LangChain:https://python.langchain.com/llms.txt SiderolabsTalos:https://docs.siderolabs.com/llms.txt",
+        "--transport",
+        "stdio"
+      ]
+    }
+  }
+}

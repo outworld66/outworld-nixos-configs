@@ -1,0 +1,151 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "shift shift": "file_finder::Toggle"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      // "j k": "vim::NormalBefore"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-'": "terminal_panel::Toggle"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "alt-tab": "tab_switcher::Toggle"
+    }
+  },
+  {
+    "context": "RunModal",
+    "bindings": {
+      "alt-tab": "pane::ActivateNextItem"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-'": "terminal_panel::ToggleFocus"
+    }
+  },
+  {
+    "context": "Pane",
+    "bindings": {
+      "ctrl-m": "project_search::ToggleFocus"
+    }
+  },
+  {
+    "context": "ProjectSearchBar",
+    "bindings": {
+      "ctrl-m": "search::FocusSearch"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-m": "pane::DeploySearch"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-'": "terminal_panel::Toggle",
+      "ctrl-m": "buffer_search::Deploy",
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-j": "workspace::ActivatePaneDown"
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-:": [
+        "editor::ToggleComments",
+        {
+          "advance_downwards": false
+        }
+      ]
+    }
+  },
+  // Empty pane, set of keybindings that are available when there is no active editor
+  {
+    "context": "EmptyPane || SharedScreen",
+    "bindings": {
+      // Open file finder
+      "space space": "file_finder::Toggle",
+      // Open recent project
+      "space f p": "projects::OpenRecent"
+    }
+  },
+  // File panel (netrw)
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "a": "project_panel::NewFile",
+      "A": "project_panel::NewDirectory",
+      "r": "project_panel::Rename",
+      "d": "project_panel::Delete",
+      "x": "project_panel::Cut",
+      "c": "project_panel::Copy",
+      "p": "project_panel::Paste",
+      // Close project panel as project file panel on the right
+      "q": "workspace::ToggleRightDock",
+      "space e": "workspace::ToggleRightDock",
+      // Navigate between panel
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-j": "workspace::ActivatePaneDown"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-alt-right": "pane::SplitAndMoveRight"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-alt-left": "pane::SplitAndMoveLeft"
+    }
+  },
+  {
+    "unbind": {
+      "ctrl-p": "menu::SelectPrevious"
+    }
+  },
+  {
+    "context": "Editor && (showing_code_actions || showing_completions)",
+    "unbind": {
+      "ctrl-p": "editor::ContextMenuPrevious"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-p": "file_finder::Toggle"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-f": "search::FocusSearch"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-enter": "pane::SplitVertical"
+    }
+  }
+]

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+zero_commit=0000000000000000000000000000000000000000
+
+echo "Running local CI..."
+nix develop --command task ci
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  if [[ "$local_sha" == "$zero_commit" ]]; then
+    continue
+  fi
+
+  if [[ "$remote_sha" == "$zero_commit" ]]; then
+    empty_tree="$(git hash-object -t tree /dev/null)"
+    git diff --check "$empty_tree" "$local_sha"
+  else
+    git diff --check "$remote_sha" "$local_sha"
+  fi
+done
+
+echo "Local CI passed."

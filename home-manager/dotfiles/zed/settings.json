@@ -1,0 +1,401 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "base_keymap": "VSCode",
+  "multi_cursor_modifier": "cmd_or_ctrl",
+  "sticky_scroll": {
+    "enabled": false
+  },
+  "mouse_wheel_zoom": true,
+  "hover_popover_delay": 300,
+  "cursor_blink": true,
+  "file_types": {
+    "latex": [
+      "*.sty",
+      "*.cls"
+    ]
+  },
+  "auto_indent_on_paste": false,
+  // Keep Tree-sitter syntax highlighting as the base and overlay richer LSP
+  // semantic tokens when a language server provides them.
+  "semantic_tokens": "combined",
+  "lsp_document_colors": "none",
+  "ensure_final_newline_on_save": true,
+  "soft_wrap": "editor_width",
+  "tab_size": 2,
+  "agent_servers": {
+    "codex-acp": {
+      "type": "registry"
+    }
+  },
+  "prettier": {
+    "allowed": false
+  },
+  "completions": {
+    "lsp_insert_mode": "replace"
+  },
+  "status_bar": {
+    "experimental.show": true,
+    "line_endings_button": true
+  },
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "cli_default_open_behavior": "existing_window",
+  "outline_panel": {
+    "dock": "left",
+  },
+  "collaboration_panel": {
+    "dock": "left",
+  },
+  "use_smartcase_search": true,
+  "minimum_contrast_for_highlights": 10.0,
+  "preferred_line_length": 100,
+  "gutter": {
+    "folds": false,
+    "min_line_number_digits": 0,
+    "line_numbers": true,
+  },
+  "redact_private_values": false,
+  "git": {
+    "inline_blame": {
+      "show_commit_summary": true,
+    },
+  },
+  "edit_predictions": {
+    "provider": "codestral",
+    "mode": "subtle",
+  },
+  "agent": {
+    "dock": "right",
+    "play_sound_when_agent_done": "always",
+    "default_profile": "ask",
+    "default_model": {
+      "provider": "mistral",
+      "model": "codestral-latest",
+    },
+    "model_parameters": [],
+  },
+  "auto_install_extensions": {
+    "cue": true,
+    "docker-compose": true,
+    "dockerfile": true,
+    "html": true,
+    "just": true,
+    "jsonnet": true,
+    "nix": true,
+    "rlsp-yaml": true,
+    "toml": true,
+  },
+  "lsp": {
+    "cue": {
+      // The CUE extension invokes `cue lsp`; use the native Nix package from
+      // PATH instead of downloading a generic Linux binary.
+      "binary": {
+        "path": "cue",
+        "arguments": [
+          "lsp",
+        ],
+      },
+    },
+    "json-language-server": {
+      // Use the Nix-packaged server instead of Zed's mutable npm download.
+      "binary": {
+        "path": "vscode-json-language-server",
+        "arguments": [
+          "--stdio",
+        ],
+      },
+    },
+    "nixd": {
+      "binary": {
+        "path": "nixd",
+      },
+      "initialization_options": {
+        "formatting": {
+          "command": [
+            "nixfmt",
+          ],
+        },
+      },
+    },
+    "jsonnet-language-server": {
+      "binary": {
+        "path": "jsonnet-language-server",
+      },
+    },
+    "rlsp-yaml": {
+      "binary": {
+        "path": "rlsp-yaml",
+      },
+      "initialization_options": {
+        "schemaStore": true,
+      },
+    },
+    "package-version-server": {
+      // Zed downloads a generic dynamically linked ELF which cannot run on
+      // NixOS. Prefer the native package from nixpkgs.
+      "binary": {
+        "path": "package-version-server",
+      },
+    },
+    "ruff": {
+      "binary": {
+        "path": "ruff",
+        "arguments": [
+          "server",
+        ],
+      },
+    },
+  },
+  "lsp_highlight_debounce": 0,
+  "diagnostics": {
+    "inline": {
+      "enabled": true
+    },
+    "lsp_pull_diagnostics": {
+      "debounce_ms": 0,
+    },
+  },
+  "hard_tabs": false,
+  "vim_mode": false,
+  "project_panel": {
+    "auto_fold_dirs": false,
+    "diagnostic_badges": true,
+    "git_status_indicator": true,
+    "bold_folder_labels": false,
+    "dock": "left",
+    "hide_hidden": false,
+    "hide_root": true,
+    "indent_size": 16,
+    "entry_spacing": "standard",
+  },
+  "indent_guides": {
+    "coloring": "indent_aware",
+  },
+  "file_finder": {
+    "modal_max_width": "medium",
+  },
+  "when_closing_with_no_tabs": "keep_window_open",
+  "scrollbar": {
+    "diagnostics": "warning",
+    "git_diff": false,
+    "show": "auto",
+  },
+  "inlay_hints": {
+    "enabled": true,
+  },
+  "git_panel": {
+    "file_icons": true,
+    "tree_view": true,
+    "collapse_untracked_diff": true,
+    "sort_by_path": true,
+    "dock": "right",
+  },
+  "tab_bar": {
+    "show": true,
+    "show_nav_history_buttons": false,
+  },
+  "preview_tabs": {
+    "enable_preview_from_file_finder": true,
+    "enable_keep_preview_on_code_navigation": true,
+  },
+  "title_bar": {
+    "show_menus": false,
+  },
+  "calls": {
+    "mute_on_join": true,
+  },
+  "terminal": {
+    "font_family": "JetBrainsMono Nerd Font",
+    "show_count_badge": true,
+    "toolbar": {
+      "breadcrumbs": false
+    },
+    "copy_on_select": true,
+    "shell": {
+      "program": "fish",
+    },
+    "detect_venv": {
+      "on": {
+        "directories": [
+          ".env",
+          "env",
+          ".venv",
+          "venv"
+        ],
+        "activate_script": "fish",
+      },
+    },
+  },
+  "use_system_window_tabs": false,
+  "tabs": {
+    "show_diagnostics": "errors",
+    "close_position": "right",
+    "show_close_button": "hidden",
+    "file_icons": true,
+    "git_status": true,
+  },
+  "search": {
+    "include_ignored": false,
+    "whole_word": false,
+    "case_sensitive": true,
+    "center_on_match": true,
+  },
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000,
+    },
+  },
+  "toolbar": {
+    "quick_actions": false,
+    "selections_menu": true,
+    "code_actions": true,
+    "breadcrumbs": false,
+  },
+  "minimap": {
+    "thumb_border": "none",
+    "max_width_columns": 70,
+    "thumb": "hover",
+    "show": "never",
+  },
+  // File scan exclusions, hide on the file explorer and search
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+    "**/.classpath",
+    "**/.settings",
+    // above is default from Zed
+    // "**/out",
+    // "**/dist",
+    // "**/.husky",
+    // "**/.turbo",
+    // "**/.vscode-test",
+    // "**/.vscode",
+    // "**/.next",
+    // "**/.storybook",
+    // "**/.tap",
+    // "**/.nyc_output",
+    // "**/report",
+    "**/node_modules"
+  ],
+  "relative_line_numbers": "enabled",
+  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "telemetry": {
+    "enable": false,
+    "diagnostics": true,
+    "metrics": false,
+  },
+  "icon_theme": {
+    "mode": "dark",
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Latte"
+  },
+  "ui_font_size": 15.0,
+  "buffer_font_size": 15,
+  "theme": {
+    "mode": "dark",
+    "light": "Catppuccin Macchiato",
+    "dark": "DankShell Dark"
+  },
+  // Keep the monochrome DankShell UI, but use a more colorful palette for
+  // rendered Markdown (links, callouts, rules and fenced code blocks).
+  "markdown_preview_theme": "One Dark",
+  "languages": {
+    "Nix": {
+      // nixd does not provide useful semantic coloring here. Use the Nix
+      // extension's Tree-sitter grammar and highlights.scm directly.
+      "semantic_tokens": "off",
+      "language_servers": [
+        "nixd",
+        "!nil",
+      ],
+      "formatter": "language_server",
+      "format_on_save": "on",
+    },
+    "YAML": {
+      "language_servers": [
+        "rlsp-yaml",
+        "!yaml-language-server",
+      ],
+    },
+    "Markdown": {
+      // Wrap text according to the previously defined preferred line length.
+      "auto_indent_on_paste": false,
+      "semantic_tokens": "combined",
+      "ensure_final_newline_on_save": true,
+      "hard_tabs": false,
+      "tab_size": 2,
+      "colorize_brackets": true,
+      "soft_wrap": "editor_width",
+      // do not remove any trailing whitespace since line breaks in
+      // lists (without adding a new punctuation) rely on whitespaces.
+      "remove_trailing_whitespace_on_save": true,
+    },
+    "LaTeX": {
+      // Same as in Markdown
+      "auto_indent_on_paste": false,
+      "semantic_tokens": "combined",
+      "ensure_final_newline_on_save": true,
+      "hard_tabs": false,
+      "tab_size": 2,
+      "soft_wrap": "editor_width",
+      // "soft_wrap": "editor_width"
+      // Just a matter of linking. I like more compact fluent text-
+      "preferred_line_length": 110,
+    },
+    "Python": {
+      "auto_indent_on_paste": false,
+      "semantic_tokens": "combined",
+      "soft_wrap": "editor_width",
+      "hard_tabs": false,
+      "tab_size": 2,
+      "remove_trailing_whitespace_on_save": true,
+      "use_auto_surround": true,
+      "use_autoclose": true,
+      "show_completions_on_input": true,
+      "language_servers": [
+        "pyright",
+        "ruff"
+      ], // if I don't explicitly enable only one, I will see 2 tooltips (pyright and pylsp)
+      "extend_comment_on_newline": false,
+      "ensure_final_newline_on_save": true,
+      "enable_language_server": true,
+    },
+    "Lua": {
+      "auto_indent_on_paste": false,
+      "semantic_tokens": "combined",
+      "ensure_final_newline_on_save": true,
+      "soft_wrap": "editor_width",
+      "hard_tabs": false,
+      "tab_size": 2,
+      "inlay_hints": {
+        "enabled": true,
+        "show_type_hints": true,
+        "show_parameter_hints": true,
+        "show_other_hints": true
+      },
+      "format_on_save": "on",
+      "formatter": "language_server"
+    },
+    "C++": {
+      "auto_indent_on_paste": false,
+      "semantic_tokens": "combined",
+      "ensure_final_newline_on_save": true,
+      "soft_wrap": "editor_width",
+      "hard_tabs": false,
+      "tab_size": 2,
+      "format_on_save": "on",
+    }
+  },
+}

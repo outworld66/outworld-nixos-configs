@@ -1,0 +1,61 @@
+version: "3"
+
+vars:
+  PRIVATE_FLAKE_DIR: '{{.PRIVATE_FLAKE | default "../outworld-nixos-private"}}'
+  PACKAGES_FLAKE_DIR: '{{.PACKAGES_FLAKE | default "../outworld-nixos-packages"}}'
+
+tasks:
+  fmt:
+    desc: Format and autofix repository sources
+    cmds:
+      - |
+        if test -f "{{.PACKAGES_FLAKE_DIR}}/flake.nix"; then
+          nix fmt --no-write-lock-file --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}"
+        else
+          nix fmt
+        fi
+
+  ci:
+    desc: Run all local CI checks
+    deps:
+      - fmt
+    cmds:
+      - |
+        if test -f "{{.PACKAGES_FLAKE_DIR}}/flake.nix"; then
+          nix run --no-write-lock-file --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}" .#check -- \
+            --no-write-lock-file --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}"
+        else
+          nix run .#check
+        fi
+
+  build:
+    desc: Check and build the current host, with private settings when available
+    deps:
+      - fmt
+    cmds:
+      - |
+        set -- --no-write-lock-file
+        if test -f "{{.PACKAGES_FLAKE_DIR}}/flake.nix"; then
+          set -- "$@" --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}"
+        fi
+        if test -f "{{.PRIVATE_FLAKE_DIR}}/flake.nix"; then
+          set -- "$@" --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
+        fi
+        nix flake check --no-build --print-build-logs "$@"
+        nh os build . "$@"
+
+  switch:
+    desc: Check and activate the current host, with private settings when available
+    deps:
+      - fmt
+    cmds:
+      - |
+        set -- --no-write-lock-file
+        if test -f "{{.PACKAGES_FLAKE_DIR}}/flake.nix"; then
+          set -- "$@" --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}"
+        fi
+        if test -f "{{.PRIVATE_FLAKE_DIR}}/flake.nix"; then
+          set -- "$@" --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
+        fi
+        nix flake check --no-build --print-build-logs "$@"
+        nh os switch . "$@"

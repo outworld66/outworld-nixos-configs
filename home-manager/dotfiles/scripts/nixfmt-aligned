@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+
+import argparse
+import pathlib
+import subprocess
+import sys
+
+
+def comment_column(line: str) -> int | None:
+    in_string = False
+    escaped = False
+
+    for index, char in enumerate(line):
+        if escaped:
+            escaped = False
+        elif char == "\\" and in_string:
+            escaped = True
+        elif char == '"':
+            in_string = not in_string
+        elif char == "#" and not in_string and index > 0 and line[index - 1].isspace():
+            return index
+
+    return None
+
+
+def align_comments(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    candidates: list[tuple[int, int, str, str]] = []
+
+    for line_number, line in enumerate(lines):
+        content = line.rstrip("\r\n")
+        column = comment_column(content)
+        if column is None:
+            continue
+
+        code = content[:column].rstrip()
+        if not code:
+            continue
+
+        indent = code[: len(code) - len(code.lstrip())]
+        comment = content[column:]
+        candidates.append((line_number, len(code), indent, comment))
+
+    start = 0
+    while start < len(candidates):
+        end = start + 1
+        while end < len(candidates) and candidates[end][2] == candidates[start][2]:
+            previous_line = candidates[end - 1][0]
+            current_line = candidates[end][0]
+            between = [line.strip() for line in lines[previous_line + 1 : current_line]]
+            if any(not line or line.startswith("#") for line in between):
+                break
+            end += 1
+
+        group = candidates[start:end]
+        target = max(code_width for _, code_width, _, _ in group)
+        for line_number, code_width, _, comment in group:
+            ending = "\n" if lines[line_number].endswith("\n") else ""
+            code = lines[line_number].rstrip("\r\n")[:code_width]
+            lines[line_number] = f"{code}{' ' * (target - code_width + 1)}{comment}{ending}"
+
+        start = end
+
+    return "".join(lines)
+
+
+def format_text(text: str, filename: str) -> str:
+    result = subprocess.run(
+        ["nixfmt", "--filename", filename, "-"],
+        input=text,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode:
+        sys.stderr.write(result.stderr)
+        raise SystemExit(result.returncode)
+    return align_comments(result.stdout)
+
+
+def require_nix_file(filename: str) -> None:
+    if pathlib.Path(filename).suffix != ".nix":
+        raise SystemExit(f"nixfmt-aligned: refusing to format non-Nix file: {filename}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stdin-filepath")
+    parser.add_argument("files", nargs="*")
+    args = parser.parse_args()
+
+    if args.stdin_filepath:
+        if args.files:
+            parser.error("files cannot be combined with --stdin-filepath")
+        require_nix_file(args.stdin_filepath)
+        sys.stdout.write(format_text(sys.stdin.read(), args.stdin_filepath))
+        return
+
+    if not args.files:
+        parser.error("provide at least one .nix file or --stdin-filepath")
+
+    for filename in args.files:
+        require_nix_file(filename)
+        path = pathlib.Path(filename)
+        path.write_text(format_text(path.read_text(), filename))
+
+
+if __name__ == "__main__":
+    main()

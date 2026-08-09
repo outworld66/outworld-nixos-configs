@@ -1,0 +1,111 @@
+[
+    {
+        "command": "workbench.action.terminal.toggleTerminal",
+        "key": "ctrl+[Quote]"
+    },
+    {
+        "command": "editor.action.fontZoomOut",
+        "key": "ctrl+numpad_subtract"
+    },
+    {
+        "command": "editor.action.fontZoomIn",
+        "key": "ctrl+numpad_add"
+    },
+    {
+        "command": "editor.action.commentLine",
+        "key": "ctrl+[Period]",
+        "when": "editorTextFocus && !editorReadonly"
+    },
+    {
+        "command": "editor.action.blockComment",
+        "key": "ctrl+shift+[Period]",
+        "when": "editorTextFocus && !editorReadonly"
+    },
+    {
+        "key": "ctrl",
+        "command": "editor.action.peekDeclaration"
+    },
+    {
+        "key": "ctrl",
+        "command": "editor.action.revealDeclaration"
+    },
+    {
+        "key": "ctrl+m",
+        "command": "periscope.search"
+    },
+    {
+        "key": "ctrl+o",
+        "command": "fzf-picker.findFiles"
+    },
+    {
+        "key": "ctrl+shift+j",
+        "command": "-fzf-picker.findFiles"
+    },
+    {
+        "key": "alt+left",
+        "command": "workbench.action.navigateLeft"
+    },
+    {
+        "key": "alt+right",
+        "command": "workbench.action.navigateRight"
+    },
+    {
+        "key": "alt+tab",
+        "command": "workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup",
+        "when": "!activeEditorGroupEmpty"
+    },
+    {
+        "key": "ctrl+tab",
+        "command": "-workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup",
+        "when": "!activeEditorGroupEmpty"
+    },
+    {
+        "key": "alt+tab",
+        "command": "workbench.action.quickOpenNavigateNextInEditorPicker",
+        "when": "inEditorsPicker && inQuickOpen"
+    },
+    {
+        "key": "ctrl+tab",
+        "command": "-workbench.action.quickOpenNavigateNextInEditorPicker",
+        "when": "inEditorsPicker && inQuickOpen"
+    },
+    {
+        "key": "ctrl+v",
+        "command": "workbench.action.terminal.paste",
+        "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+    },
+    {
+        "key": "ctrl+shift+v",
+        "command": "-workbench.action.terminal.paste",
+        "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+    },
+    {
+        "key": "shift+insert",
+        "command": "-editor.action.clipboardPasteAction"
+    },
+    {
+        "key": "ctrl+enter",
+        "command": "latex-workshop.build",
+        "when": "editorLangId =~ /latex/"
+    },
+    {
+        "key": "c",
+        "command": "-notebook.cell.copy",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputInputFocused"
+    },
+    {
+        "key": "ctrl+c",
+        "command": "-chat.inlineResourceAnchor.copyResource",
+        "when": "chatAttachmentResource"
+    },
+    {
+        "key": "ctrl+down",
+        "command": "workbench.action.terminal.focusNext",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+up",
+        "command": "workbench.action.terminal.focusPrevious",
+        "when": "terminalFocus"
+    }
+]

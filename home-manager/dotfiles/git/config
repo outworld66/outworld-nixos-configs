@@ -1,0 +1,73 @@
+[web]
+    browser = brave
+
+[credential]
+    credentialStore = "secretservice"
+    helper = "@gitCredentialManager@"
+
+[credential "https://github.com"]
+    authority = GitHub
+    username = "@gitUsername@"
+
+[user]
+    email = "@gitMail@"
+    name = "@gitUsername@"
+
+[include]
+    path = ~/.config/git/work-config
+
+[init]
+    defaultBranch = "main"
+
+[pull]
+    rebase = true
+
+[help]
+    autocorrect = prompt
+
+[commit]
+    verbose = true
+
+[rerere]
+    enabled = true
+    autoupdate = true
+
+[core]
+    excludesfile = /home/@user@/.gitignore
+
+[rebase]
+    autoSquash = true
+    autoStash = true
+    updateRefs = true
+
+[column]
+    ui = auto
+
+[branch]
+    sort = -committerdate
+
+[tag]
+    sort = version:refname
+
+[diff]
+    algorithm = histogram
+    colorMoved = plain
+    mnemonicPrefix = true
+    renames = true
+
+[push]
+    default = simple
+    autoSetupRemote = true
+    followTags = true
+
+[fetch]
+    prune = true
+    pruneTags = true
+    all = true
+
+[core]
+    # fsmonitor = true
+    # untrackedCache = true
+[merge]
+    # (just 'diff3' if git version < 2.3)
+    conflictstyle = zdiff3

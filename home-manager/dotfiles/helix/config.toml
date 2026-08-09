@@ -1,0 +1,49 @@
+theme = "base16_default_dark"
+
+[editor]
+shell = ["fish", "-c"]
+line-number = "relative"
+cursorline = true
+color-modes = true
+idle-timeout = 0
+bufferline = "multiple"
+popup-border = "popup"
+end-of-line-diagnostics = "hint"
+trim-trailing-whitespace = true
+trim-final-newlines = true
+completion-replace = true
+completion-timeout = 5
+completion-trigger-len = 1
+
+[editor.auto-save]
+focus-lost = true
+after-delay.enable = true
+after-delay.timeout = 100
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.indent-guides]
+render = true
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "read-only-indicator", "file-modification-indicator", "separator", "total-line-numbers", "separator", "spacer", "version-control"]
+right = ["register", "spacer", "diagnostics", "separator", "selections", "separator", "position", "position-percentage", "spacer", "separator", "file-encoding", "file-line-ending", "separator", "file-type"]
+separator = "│"
+
+[editor.lsp]
+display-messages = true
+display-inlay-hints = true
+
+[editor.inline-diagnostics]
+cursor-line = "warning"
+
+[editor.soft-wrap]
+enable = true
+
+[keys.normal]
+backspace = { w = ":w", q = ":q!" }
+C-s = ":w"
+C-q = ":q"

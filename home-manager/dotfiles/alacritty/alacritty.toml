@@ -1,0 +1,44 @@
+# https://alacritty.org/config-alacritty.html
+
+[general]
+live_config_reload = true
+
+[mouse]
+hide_when_typing = true
+
+[selection]
+save_to_clipboard = true
+
+[cursor]
+blink_interval = 500
+
+[cursor.style]
+shape = "Underline"
+blinking = "On"
+
+[env]
+TERM = "xterm-256color"
+SHELL = "fish"
+
+[terminal]
+shell = "fish"
+osc52 = "CopyPaste"
+
+[font]
+size = 14.0
+
+[font.bold]
+family = "JetBrainsMono Nerd Font"
+style = "Heavy"
+
+[font.bold_italic]
+family = "JetBrainsMono Nerd Font"
+style = "Heavy Italic"
+
+[font.italic]
+family = "JetBrainsMono Nerd Font"
+style = "Medium Italic"
+
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+style = "Medium"

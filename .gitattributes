@@ -1,0 +1,3 @@
+# Unified diff context lines intentionally start with a space followed by the
+# source indentation; do not flag that patch syntax as an indentation error.
+*.patch whitespace=-space-before-tab

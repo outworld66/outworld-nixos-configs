@@ -1,0 +1,12 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignored local build and agent runtime state"
+paths = [
+  '''^\.git/''',
+  '''^\.direnv/''',
+  '''^\.omo/''',
+  '''^\.omx/''',
+  '''^result(?:-.*)?(?:/|$)''',
+]

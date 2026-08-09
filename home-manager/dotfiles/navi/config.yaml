@@ -1,0 +1,14 @@
+# https://github.com/denisidoro/navi/blob/master/tests/config.yaml
+# https://github.com/denisidoro/navi/blob/master/docs/configuration/README.md
+
+finder:
+  command: fzf
+
+shell:
+  finder_command: fish
+  command: fish
+
+cheats:
+  paths:
+    - ~/.config/navi/cheats/
+    - ~/.local/share/navi/cheats/

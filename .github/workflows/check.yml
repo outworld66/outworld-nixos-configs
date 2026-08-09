@@ -1,0 +1,23 @@
+name: check
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  flake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: cachix/install-nix-action@v31
+      - name: Check for secrets
+        uses: gitleaks/gitleaks-action@v2
+      - name: Evaluate flake outputs
+        run: nix flake check --no-build --print-build-logs
+      - name: Check whitespace
+        run: git diff --check $(git hash-object -t tree /dev/null) HEAD
