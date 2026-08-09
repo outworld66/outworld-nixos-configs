@@ -102,6 +102,7 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": [
+          "outworld-packages",
           "nixpkgs"
         ]
       },
@@ -175,7 +176,7 @@
     },
     "flake-utils": {
       "inputs": {
-        "systems": "systems"
+        "systems": "systems_2"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -217,7 +218,7 @@
         "bun2nix": "bun2nix",
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",
-        "systems": "systems_2",
+        "systems": "systems",
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
@@ -361,6 +362,27 @@
         "type": "github"
       }
     },
+    "outworld-packages": {
+      "inputs": {
+        "ferrite": "ferrite",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786286397,
+        "narHash": "sha256-2rdtU9Aqjf4JK1lYpKE9d66BKtDGNBrcq/UQro1m/DE=",
+        "owner": "outworld66",
+        "repo": "outworld-nixos-packages",
+        "rev": "581dacbc43a38b8b47f667a164ac81c9e645e613",
+        "type": "github"
+      },
+      "original": {
+        "owner": "outworld66",
+        "repo": "outworld-nixos-packages",
+        "type": "github"
+      }
+    },
     "private": {
       "locked": {
         "path": "./defaults/private",
@@ -376,12 +398,12 @@
       "inputs": {
         "dgop": "dgop",
         "dms": "dms",
-        "ferrite": "ferrite",
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",
         "niri": "niri",
         "nirinit": "nirinit",
         "nixpkgs": "nixpkgs_2",
+        "outworld-packages": "outworld-packages",
         "private": "private",
         "treefmt-nix": "treefmt-nix_2",
         "vicinae-extensions": "vicinae-extensions"
