@@ -5,6 +5,11 @@ vars:
   PACKAGES_FLAKE_DIR: '{{.PACKAGES_FLAKE | default "../outworld-nixos-packages"}}'
 
 tasks:
+  update-lock:
+    desc: Update flake.lock; pass input names after -- for a targeted update
+    cmds:
+      - nix flake update {{.CLI_ARGS}}
+
   fmt:
     desc: Format and autofix repository sources
     cmds:
