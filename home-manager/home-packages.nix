@@ -47,6 +47,7 @@
     docker # Docker container client and tools
     podman # Daemonless container engine
     podman-tui # Terminal interface for Podman
+    bubblewrap
 
     # Kubernetes, OpenStack, and infrastructure
     k9s # Terminal interface for Kubernetes clusters

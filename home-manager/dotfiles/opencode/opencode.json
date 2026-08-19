@@ -27,6 +27,7 @@
       "cargo build *": "ask",
       "npm test *": "ask",
       "npm run *": "ask",
+      "rtk find *": "allow",
       "rtk grep *": "allow",
       "rtk head *": "allow",
       "rtk ls *": "allow",

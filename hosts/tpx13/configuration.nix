@@ -7,7 +7,7 @@
 
 {
   imports = [
-    ./llm-numtide-packages.nix
+    ./ai-packages.nix
   ];
 
   networking.hostName = hostname;
