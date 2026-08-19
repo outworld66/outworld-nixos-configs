@@ -65,6 +65,7 @@
     nmap # Network scanner and service discovery tool
     openssl # TLS, certificates, and cryptographic utilities
     yq-go # YAML, JSON, and XML query and transformation tool
+    ipcalc # Internet protocol calculator
 
     # Terminal and general CLI utilities
     atuin # Searchable shell history backed by SQLite
@@ -129,6 +130,7 @@
     tauon # Desktop music player and library manager
 
     # Communication
+    discord
     legcord # Lightweight Discord client
     thunderbird # Email, calendar, and contacts client
     vencord # Discord client modification and plugin platform

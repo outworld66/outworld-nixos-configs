@@ -17,9 +17,9 @@
       # @vicinae.packageName Разработка
       # @vicinae.description Открыть NixOS конфигурацию в Neovim
 
-      ${pkgs.alacritty}/bin/alacritty \
+      ${pkgs.zed-editor}/bin/zeditor \
         --working-directory "${configDirectory}" \
-        -e ${pkgs.neovim}/bin/nvim . >/dev/null 2>&1 &
+        -e . >/dev/null 2>&1 &
     '';
   };
 

@@ -593,7 +593,10 @@
       "enabled": true,
       "position": 0,
       "screenPreferences": [
-        "all"
+        {
+          "name": "eDP-1",
+          "model": "0x4094"
+        }
       ],
       "showOnLastDisplay": true,
       "leftWidgets": [

@@ -22,6 +22,13 @@ let
             transform "normal"
             position x=0 y=0
         }
+
+        output "Lenovo Group Limited LEN T24h-20 V308A2D4" {
+            mode "2560x1440"
+            scale 1
+            transform "normal"
+            position x=440 y=0
+        }
       ''
     else
       ''

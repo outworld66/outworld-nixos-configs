@@ -1,5 +1,6 @@
 { allowedUnfreePackages, lib, ... }:
 {
+  nixpkgs.config.allowUnfree = true;
   documentation.doc.enable = false;
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) allowedUnfreePackages;
   nix.settings = {

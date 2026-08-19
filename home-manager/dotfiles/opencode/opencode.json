@@ -8,6 +8,8 @@
   "permission": {
     "bash": {
       "*": "ask",
+      "sort *": "allow",
+      "uniq *": "allow",
       "cue *": "allow",
       "git status *": "allow",
       "git log *": "allow",
@@ -25,6 +27,8 @@
       "cargo build *": "ask",
       "npm test *": "ask",
       "npm run *": "ask",
+      "rtk grep *": "allow",
+      "rtk head *": "allow",
       "rtk ls *": "allow",
       "rtk tree *": "allow",
       "rtk cat *": "allow",

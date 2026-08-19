@@ -86,7 +86,7 @@
         group = privateSystemUser.group or (privateConfig.group or "users");
         gitUsername = privateDefaultGitUser.name or (privateConfig.gitUsername or user);
         gitMail = privateDefaultGitUser.email or (privateConfig.gitMail or "${user}@example.invalid");
-        configDirectory = privateConfig.configDirectory or "/home/${user}/outworld-nixos-configs";
+        configDirectory = privateConfig.configDirectory or "/home/${user}/nix";
         activationFlake = privateConfig.activationFlake or configDirectory;
       };
 
@@ -140,7 +140,7 @@
           group ? "users",
           gitUsername ? user,
           gitMail ? "${user}@example.invalid",
-          configDirectory ? "/home/${user}/outworld-nixos-configs",
+          configDirectory ? "/home/${user}/nix",
           activationFlake ? configDirectory,
           extraModules ? [ ],
           extraHomeModules ? [ ],

@@ -3,5 +3,7 @@
     # essential
     vim
     git
+    pciutils
+    inetutils
   ];
 }

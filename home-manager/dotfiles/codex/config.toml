@@ -12,7 +12,7 @@ url = "https://developers.openai.com/mcp"
 notifications = false
 
 [tui.model_availability_nux]
-"gpt-5.6-sol" = 1
+"gpt-5.6-sol" = 3
 
 [features]
 child_agents_md = true
@@ -40,6 +40,9 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/home/outworld/nix/outworld-nixos-configs"]
+trust_level = "trusted"
+
+[projects."/home/outworld/tmp"]
 trust_level = "trusted"
 
 [notice]
