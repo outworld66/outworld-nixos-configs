@@ -11,5 +11,6 @@
     ./lazygit.nix
     ./zathura.nix
     ./vicinae.nix
+    ./opencode-bwrap.nix
   ];
 }
