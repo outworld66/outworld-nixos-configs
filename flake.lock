@@ -76,6 +76,22 @@
         "url": "https://github.com/AvengeMedia/DankMaterialShell.git"
       }
     },
+    "drawio-skill": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785925110,
+        "narHash": "sha256-Eed1eYcRnX9XA8YStewBftEMNm9F2hPjluSkZSEs1DM=",
+        "owner": "Agents365-ai",
+        "repo": "drawio-skill",
+        "rev": "2ee141e0ff183ce76dc405370aeb142c6961aa45",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Agents365-ai",
+        "repo": "drawio-skill",
+        "type": "github"
+      }
+    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -398,6 +414,7 @@
       "inputs": {
         "dgop": "dgop",
         "dms": "dms",
+        "drawio-skill": "drawio-skill",
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",
         "niri": "niri",

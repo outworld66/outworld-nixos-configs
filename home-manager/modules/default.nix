@@ -12,5 +12,6 @@
     ./zathura.nix
     ./vicinae.nix
     ./opencode-bwrap.nix
+    ./opencode-config.nix
   ];
 }

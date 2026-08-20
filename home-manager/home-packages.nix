@@ -56,6 +56,7 @@
     kubectl-cnpg # CloudNativePG plugin for kubectl
     kubelogin-oidc # OIDC authentication plugin for kubectl
     openstackclient-full # Command-line client for OpenStack services
+    s3cmd
 
     # Data formats, networking, and security tools
     bruno # Graphical API client and request collection manager

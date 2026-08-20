@@ -68,8 +68,6 @@ let
     "VSCodium/User/keybindings.json"
     "starship.toml"
     "mimeapps.list"
-    "opencode/oh-my-openagent.json"
-    "opencode/opencode.json"
   ];
 in
 {

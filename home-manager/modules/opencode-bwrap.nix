@@ -4,91 +4,12 @@
 }:
 
 let
-  # ── Sandbox config ──────────────────────────────────────────────────────
-  # Relaxed permissions for the sandboxed opencode.  The sandbox itself
-  # constrains filesystem access; inside it we can safely auto-approve
-  # tools that would normally require confirmation.
-
-  sandboxConfig = pkgs.writeTextDir "opencode/opencode.json" (
-    builtins.toJSON {
-      "$schema" = "https://opencode.ai/config.json";
-      plugin = [
-        "oh-my-openagent@latest"
-        "@plannotator/opencode@latest"
-      ];
-      permission = {
-        bash = {
-          "*" = "allow";
-          "rm *" = "deny";
-          "sudo *" = "deny";
-          "chmod *" = "deny";
-        };
-        read = {
-          "*" = "allow";
-          "*.env" = "deny";
-          "*.env.*" = "deny";
-          "*.p12" = "deny";
-          "*.key" = "deny";
-          "*.pem" = "deny";
-          "~/.ssh/*" = "deny";
-          "~/.aws/*" = "deny";
-          "~/.kube/*" = "deny";
-          "~/.docker/*" = "deny";
-          "*/secrets/*" = "deny";
-          "*/credentials/*" = "deny";
-        };
-        glob = {
-          "*" = "allow";
-        };
-        grep = {
-          "*" = "allow";
-        };
-        task = {
-          "*" = "allow";
-        };
-        skill = {
-          "*" = "allow";
-        };
-        external_directory = {
-          "*" = "allow";
-        };
-        doom_loop = "allow";
-      };
-      mcp = {
-        flux-schema-catalog = {
-          type = "remote";
-          url = "https://schemas.fluxoperator.dev/mcp";
-          enabled = true;
-        };
-        siderolabs-docs = {
-          type = "remote";
-          url = "https://docs.siderolabs.com/mcp";
-          enabled = true;
-        };
-        context7 = {
-          type = "local";
-          command = [
-            "npx"
-            "-y"
-            "@upstash/context7-mcp"
-            "--api-key"
-            "{file:~/.secrets/context7-api-key}"
-          ];
-          enabled = true;
-        };
-        drawio = {
-          type = "local";
-          enabled = true;
-          command = [
-            "npx"
-            "@drawio/mcp"
-          ];
-        };
-      };
-    }
-  );
-
-  sandboxConfigPath = "${sandboxConfig}/opencode";
+  # ── Sandbox wrapper ────────────────────────────────────────────────────
+  # Bubblewrap sandbox for opencode.  The sandbox config (opencode.json,
+  # oh-my-openagent.json) lives in ~/.config/opencode-sandbox/ and is
+  # populated declaratively by home-manager — NOT generated at runtime.
+  # This module only provides the bwrap launcher and directory setup;
+  # the actual config files are written by the private overlay.
 
   opencodeSandbox = pkgs.writeShellApplication {
     name = "opencode-sandbox";
@@ -107,20 +28,9 @@ let
       OP_DATA="$HOME/.local/share/opencode"
       OP_CACHE="$HOME/.cache/opencode"
       OP_STATE="$HOME/.local/state/opencode"
-
-      # Sandbox-specific config dir — separate from the normal
-      # ~/.config/opencode so that the relaxed permissions don't leak
-      # into the unsandboxed session.
       OP_SANDBOX_CONFIG="$HOME/.config/opencode-sandbox"
 
       mkdir -p "$OP_DATA" "$OP_CACHE" "$OP_STATE" "$OP_SANDBOX_CONFIG"
-
-      # Populate the sandbox config dir if the generated file is newer.
-      # Uses cp --update=none to avoid overwriting user modifications
-      # (e.g. plugin state) that may have been written inside the sandbox.
-      cp --update=none --no-dereference \
-          "${sandboxConfigPath}/opencode.json" \
-          "$OP_SANDBOX_CONFIG/opencode.json" 2>/dev/null || true
 
       # ── Workspace (current directory) ────────────────────────────────
       WORKSPACE="$(pwd)"
@@ -136,6 +46,13 @@ let
 
       # GitHub CLI (gh) auth
       [[ -d "$HOME/.config/gh" ]] && RO_BINDS+=(--ro-bind-try "$HOME/.config/gh"  "$HOME/.config/gh")
+
+      # OpenCode skills (read-only, managed by home-manager)
+      [[ -d "$HOME/.config/opencode/skills" ]] && RO_BINDS+=(--ro-bind-try "$HOME/.config/opencode/skills" "$HOME/.config/opencode/skills")
+
+      # OpenCode custom commands and plugins (out-of-store symlinks)
+      [[ -d "$HOME/.config/opencode/command" ]] && RO_BINDS+=(--ro-bind-try "$HOME/.config/opencode/command" "$HOME/.config/opencode/command")
+      [[ -d "$HOME/.config/opencode/plugins" ]] && RO_BINDS+=(--ro-bind-try "$HOME/.config/opencode/plugins" "$HOME/.config/opencode/plugins")
 
       # ── NixOS-specific paths ─────────────────────────────────────────
       # Every executable lives in /nix/store; bind it read-only so that
@@ -157,7 +74,7 @@ let
 
       # ── Launch sandbox ──────────────────────────────────────────────
       # The sandbox config dir is mounted as ~/.config/opencode so
-      # opencode picks up the relaxed permissions.  XDG_CONFIG_HOME
+      # opencode picks up the sandbox-specific permissions.  XDG_CONFIG_HOME
       # stays at the default ~/.config so other apps (gh, git, etc.)
       # still find their own configs under ~/.config/gh and friends.
       # Data, cache and state dirs are shared with the normal session.
