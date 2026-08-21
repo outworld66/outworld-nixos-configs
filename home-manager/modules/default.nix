@@ -1,5 +1,6 @@
 {
   imports = [
+    ./gh.nix
     ./dotfiles.nix
     ./codex.nix
     ./niri.nix

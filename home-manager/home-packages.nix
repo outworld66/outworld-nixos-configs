@@ -37,9 +37,11 @@
     uv # Fast Python package and virtual-environment manager
 
     # Source control and code navigation
+    acli # Atlassian CLI for Jira, Confluence, and Bitbucket Cloud
     fd # Fast alternative to find
     fzf # Interactive fuzzy finder
     git-graph # Terminal interface for browsing Git history
+    glab # GitLab CLI
     ripgrep # Fast recursive text search
 
     # Containers and virtualization

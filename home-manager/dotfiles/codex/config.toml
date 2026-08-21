@@ -33,6 +33,30 @@ timeout = 10
 trusted_hash = "sha256:1c717dd855090b15ab7794de4ca51e52da9323762cfa1d3db6a6673d1640347a"
 enabled = true
 
+[hooks.state."/home/outworld/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:2b433879113890e1a6bec18f70a7bddd431e35a505b53734686d8ce71e1654b8"
+
+[hooks.state."/home/outworld/.codex/hooks.json:permission_request:0:0"]
+trusted_hash = "sha256:d9998207362f084c799928af5734d79f14e2450e67c25c3b3f23ccd06d17fc48"
+
+[hooks.state."/home/outworld/.codex/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:dc5939b58bb291019da451a6a131e1cf85a8884d886bb043b57a8f634bfe393c"
+
+[hooks.state."/home/outworld/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:e46368dcc4ff4dce72037ea473ac42f8f43147ee98abb72c4cb836416e3ccfa1"
+
+[hooks.state."/home/outworld/.codex/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:bf2d730fa16e656a242e1f08a65bbc935cc044dc24174b1e7abbec30ffc6c31f"
+
+[hooks.state."/home/outworld/.codex/hooks.json:subagent_start:0:0"]
+trusted_hash = "sha256:7030aed3d13d29fbde7883763d90a59c354eba93f2f4606a5223270516e4fe14"
+
+[hooks.state."/home/outworld/.codex/hooks.json:subagent_stop:0:0"]
+trusted_hash = "sha256:95062551469a81a8cecc71800b8c6d312cf3b362418643e080d172d7d89207a2"
+
+[hooks.state."/home/outworld/.codex/hooks.json:stop:0:0"]
+trusted_hash = "sha256:a2acf158d755418ae55f2f78b3239f20912cb3b2f66a2fee54a227642c3a6c20"
+
 [projects."/home/outworld/nix"]
 trust_level = "trusted"
 
