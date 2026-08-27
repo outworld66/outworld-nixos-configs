@@ -134,6 +134,9 @@ The public defaults are intended for safe evaluation, not installation: inspect
 the selected hardware module and identity before activation. Never run Disko
 without confirming that its target device is correct.
 
+For a destructive installation from a NixOS live ISO, see
+[the installer script guide](docs/install-nixos.md).
+
 ## State versions and lock updates
 
 `system.stateVersion` and `home.stateVersion` describe compatibility with the

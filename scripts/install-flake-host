@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# Install a host from this flake onto disks prepared by Disko.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: install-flake-host --hostname HOSTNAME [options]
+
+Prepare and install a NixOS host from a local flake checkout.
+
+Options:
+  -H, --hostname HOSTNAME   Flake host to install (required).
+  -f, --flake PATH         Local flake checkout (default: repository root).
+  -d, --disko PATH         Disko configuration (default: hosts/HOSTNAME/disko.nix).
+  -m, --mounted            Skip Disko and hardware generation; use mounted /mnt.
+  -h, --help               Show this help.
+
+Without --mounted, the script destroys, formats and mounts every disk declared
+in the Disko configuration, then generates hosts/HOSTNAME/hardware-
+configuration.nix without filesystem definitions. It always installs
+PATH#HOSTNAME into /mnt.
+EOF
+}
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+flake_dir=$(cd -- "$script_dir/.." && pwd)
+hostname=""
+disko_config=""
+mounted=false
+
+while (($#)); do
+  case "$1" in
+    -H | --hostname)
+      hostname=${2:?"$1 requires a hostname"}
+      shift 2
+      ;;
+    -f | --flake)
+      flake_dir=$(cd -- "${2:?"$1 requires a path"}" && pwd)
+      shift 2
+      ;;
+    -d | --disko)
+      disko_config=${2:?"$1 requires a path"}
+      shift 2
+      ;;
+    -m | --mounted)
+      mounted=true
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Unknown argument: %s\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ ! $hostname =~ ^[a-z][a-z0-9-]*$ ]]; then
+  printf 'A hostname containing lowercase letters, digits and hyphens is required.\n' >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ ! -f "$flake_dir/flake.nix" ]]; then
+  printf 'Not a flake checkout: %s\n' "$flake_dir" >&2
+  exit 2
+fi
+
+host_config="$flake_dir/hosts/$hostname/configuration.nix"
+hardware_config="$flake_dir/hosts/$hostname/hardware-configuration.nix"
+host_disko_config="$flake_dir/hosts/$hostname/disko.nix"
+
+if [[ ! -f $host_config ]]; then
+  printf 'Host configuration does not exist: %s\n' "$host_config" >&2
+  exit 2
+fi
+
+if [[ $mounted == true ]]; then
+  if [[ -n $disko_config ]]; then
+    printf '%s\n' '--disko cannot be used with --mounted.' >&2
+    exit 2
+  fi
+  if ! mountpoint -q /mnt; then
+    printf '/mnt is not a mount point. Run Disko first or omit --mounted.\n' >&2
+    exit 1
+  fi
+  printf 'Using mounted target: /mnt\n'
+else
+  if [[ -z $disko_config ]]; then
+    disko_config="$host_disko_config"
+  elif [[ $disko_config != /* ]]; then
+    disko_config="$PWD/$disko_config"
+  fi
+
+  if [[ ! -f $disko_config ]]; then
+    printf 'Disko configuration does not exist: %s\n' "$disko_config" >&2
+    exit 2
+  fi
+
+  printf 'Disko configuration: %s\n' "$disko_config"
+  printf 'Host Disko config:    %s\n' "$host_disko_config"
+  printf 'Target flake:        %s#%s\n' "$flake_dir" "$hostname"
+  printf 'Hardware output:     %s\n\n' "$hardware_config"
+  printf 'WARNING: Disko will destroy and format every device declared above.\n'
+  read -r -p "Type '$hostname' to continue: " confirmation
+  if [[ $confirmation != "$hostname" ]]; then
+    printf 'Cancelled.\n'
+    exit 0
+  fi
+
+  if [[ $disko_config != "$host_disko_config" ]]; then
+    install -Dm644 "$disko_config" "$host_disko_config"
+    disko_config=$host_disko_config
+  fi
+
+  if grep -Eq 'keyFile[[:space:]]*=[[:space:]]*"/tmp/secret\.key"' "$disko_config"; then
+    read -r -s -p 'LUKS password: ' luks_password
+    printf '\n'
+    read -r -s -p 'Repeat LUKS password: ' luks_password_repeat
+    printf '\n'
+    if [[ -z $luks_password || $luks_password != "$luks_password_repeat" ]]; then
+      printf 'LUKS passwords are empty or do not match.\n' >&2
+      exit 1
+    fi
+
+    secret_key=/tmp/secret.key
+    cleanup_secret_key() {
+      sudo rm -f -- "$secret_key"
+    }
+    trap cleanup_secret_key EXIT
+    sudo install -m 0600 /dev/null "$secret_key"
+    printf '%s' "$luks_password" | sudo tee "$secret_key" >/dev/null
+    unset luks_password luks_password_repeat
+  fi
+
+  sudo nix --extra-experimental-features 'nix-command flakes' run \
+    github:nix-community/disko/latest -- \
+    --mode destroy,format,mount "$disko_config"
+
+  if [[ -n ${secret_key:-} ]]; then
+    cleanup_secret_key
+    trap - EXIT
+  fi
+
+  sudo nixos-generate-config --no-filesystems --root /mnt
+
+  generated_hardware=/mnt/etc/nixos/hardware-configuration.nix
+  if [[ ! -f $generated_hardware ]]; then
+    printf 'nixos-generate-config did not create %s\n' "$generated_hardware" >&2
+    exit 1
+  fi
+
+  install -Dm644 "$generated_hardware" "$hardware_config"
+fi
+
+sudo nix --extra-experimental-features 'nix-command flakes' eval --store /mnt \
+  "$flake_dir#nixosConfigurations.$hostname.config.system.build.toplevel.drvPath" \
+  >/dev/null || {
+  printf 'The flake does not evaluate for host %q.\n' "$hostname" >&2
+  exit 1
+}
+
+sudo nixos-install --flake "$flake_dir#$hostname" --root /mnt
+
+printf '\nInstalled %s. Reboot when ready.\n' "$hostname"
