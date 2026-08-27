@@ -82,6 +82,7 @@
     silicon # Renders source code as styled images
     tree # Displays directory contents as a tree
     unzip # Extracts ZIP archives
+    p7zip # Archive utility
     w3m # Text-mode web browser
     wget # Downloads files over HTTP, HTTPS, and FTP
     zip # Creates and modifies ZIP archives
@@ -103,6 +104,10 @@
 
     # Documents, notes, and productivity
     anki # Spaced-repetition flashcard application
+    pinta # Drawing app
+    drawing # Drawing app
+    gimp # Drawing app
+    krita # Drawing app
     doxx # Lightweight viewer for DOCX documents
     foliate # E-book reader
     libreoffice-qt # Office suite with Qt integration
