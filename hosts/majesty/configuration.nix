@@ -1,6 +1,16 @@
-{ stateVersion, hostname, ... }:
+{
+  inputs,
+  stateVersion,
+  hostname,
+  ...
+}:
 
 {
+  imports = [
+    inputs.disko.nixosModules.disko
+    ./disko.nix
+  ];
+
   networking.hostName = hostname;
   system.stateVersion = stateVersion;
 

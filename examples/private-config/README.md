@@ -1,8 +1,8 @@
 # Private configuration template
 
 Copy this directory next to the public checkout, rename it, replace the example
-identity and hardware configuration, then initialize it as a private Git
-repository. Do not publish this repository.
+identity, then initialize it as a private Git repository. Do not publish this
+repository.
 
 Additional organization inputs and machine-specific modules belong here. Export
 them through `hostConfigurations.<hostname>` and `specialArgs`; the public flake

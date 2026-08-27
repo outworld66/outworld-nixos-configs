@@ -2,12 +2,12 @@
 
 This public repository defines two `x86_64-linux` NixOS systems. Home Manager
 is integrated as a NixOS module. The bundled empty `private` input uses the
-safe default user `nixos`; an optional private library can override identity,
-hardware and extra modules.
+safe default user `nixos`; an optional private library can override identity
+and add extra modules.
 
 - `tpx13` is a workstation profile with additional llm-agents packages.
-- `majesty` is the second host profile. Machine-specific Disko layouts live in
-  the private companion repository.
+- `majesty` is the second host profile. Machine-specific Disko layouts and
+  hardware configuration live with their public host profiles.
 
 ## Repository map
 
@@ -86,8 +86,8 @@ arguments.
 - Treat files under `home-manager/dotfiles/` carefully: they are linked
   out-of-store and may contain application-managed state. Avoid unrelated bulk
   rewrites.
-- Keep identities, generated hardware configuration, device IDs and private
-  organization inputs in the optional companion private library.
+- Keep identities and private organization inputs in the optional companion
+  private library.
 - Preserve host differences and state versions. Do not copy settings between
   `tpx13` and `majesty` without checking whether they are hardware-specific.
 

@@ -54,8 +54,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # The bundled implementation exports empty settings. Override this input
-    # with a private companion flake to add identity, hardware and local
+    # with a private companion flake to add identity and local
     # modules without making that repository a prerequisite.
     private = {
       url = "path:./defaults/private";
@@ -101,13 +106,13 @@
           hostname = "tpx13";
           stateVersion = "26.05";
           hostModule = ./hosts/tpx13/configuration.nix;
-          hardwareModule = ./hosts/evaluation-hardware.nix;
+          hardwareModule = ./hosts/tpx13/hardware-configuration.nix;
         }
         {
           hostname = "majesty";
           stateVersion = "25.11";
           hostModule = ./hosts/majesty/configuration.nix;
-          hardwareModule = ./hosts/evaluation-hardware.nix;
+          hardwareModule = ./hosts/majesty/hardware-configuration.nix;
         }
       ];
 
@@ -228,9 +233,6 @@
       # Generate tpx13 and majesty from the declarative host list.
       nixosConfigurations = nixpkgs.lib.foldl' (
         configs: host:
-        let
-          privateHost = privateHosts.${host.hostname} or { };
-        in
         configs
         // {
           "${host.hostname}" = makeSystem {
@@ -247,10 +249,11 @@
               configDirectory
               activationFlake
               ;
-            hardwareModule = privateHost.hardwareModule or host.hardwareModule;
-            extraModules = privateHost.extraModules or [ ];
-            extraHomeModules = privateHost.extraHomeModules or [ ];
-            extraSpecialArgs = privateSpecialArgs // (privateHost.extraSpecialArgs or { });
+            inherit (host) hardwareModule;
+            extraModules = (privateHosts.${host.hostname} or { }).extraModules or [ ];
+            extraHomeModules = (privateHosts.${host.hostname} or { }).extraHomeModules or [ ];
+            extraSpecialArgs =
+              privateSpecialArgs // ((privateHosts.${host.hostname} or { }).extraSpecialArgs or { });
           };
         }
       ) { } hosts;

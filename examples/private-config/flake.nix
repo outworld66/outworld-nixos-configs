@@ -12,7 +12,6 @@
 
       # Use a hostname exported by the public repository.
       hostConfigurations.tpx13 = {
-        hardwareModule = ./hosts/example/hardware-configuration.nix;
         extraModules = [ ];
         extraHomeModules = [ ];
       };
