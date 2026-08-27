@@ -16,7 +16,10 @@ The script:
    generated hardware configuration into `hosts/<hostname>/`; Disko remains
    the sole source of filesystem and LUKS definitions;
 6. evaluates the resulting host configuration with `--store /mnt`;
-7. invokes `nixos-install --flake <checkout>#<hostname> --root /mnt`.
+7. invokes `nixos-install --flake <checkout>#<hostname> --root /mnt` without
+   setting a root password;
+8. finds the regular user created by the NixOS configuration and prompts twice
+   for its password.
 
 Both the explicit evaluation and `nixos-install` use the target local store.
 That places the Nix store at `/mnt/nix/store` and Nix's SQLite metadata at
@@ -28,6 +31,14 @@ script prompts twice for a non-empty LUKS password without echoing it. It writes
 the exact bytes entered (no newline) to `/tmp/secret.key` with mode `0600`, uses
 it for Disko, then deletes the file. The password is not passed as a command
 argument or recorded in the script output.
+
+After installation, the script finds the first regular account (UID 1000–59999,
+excluding `nobody`) in the target's `/etc/passwd`. In the public configuration
+this is `nixos`; an optional private identity override may choose another name.
+It asks twice for a non-empty password, then supplies it to `chpasswd` through
+standard input. Newlines are not accepted by `read`; a colon is also rejected
+because `chpasswd` uses it as a field separator. The script does not configure
+a root password.
 
 ## Prerequisites
 
@@ -90,7 +101,8 @@ If Disko was run manually and its target remains mounted at `/mnt`, use
 This mode uses the generated hardware configuration already present in the
 cloned repository and installs it with the equivalent of
 `nixos-install --flake ./#majesty --root /mnt`. It never creates or reads
-`/tmp/secret.key`. Do not combine this option with `--disko`.
+`/tmp/secret.key`, but still prompts for the configured regular user's
+password after installation. Do not combine this option with `--disko`.
 
 ## Existing tooling
 

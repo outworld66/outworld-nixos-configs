@@ -163,6 +163,25 @@ sudo nix --extra-experimental-features 'nix-command flakes' eval --store /mnt \
   exit 1
 }
 
-sudo nixos-install --flake "$flake_dir#$hostname" --root /mnt
+sudo nixos-install --flake "$flake_dir#$hostname" --root /mnt --no-root-password
+
+system_user=$(awk -F: '$1 != "nobody" && $3 >= 1000 && $3 < 60000 { print $1; exit }' /mnt/etc/passwd)
+if [[ -z $system_user ]]; then
+  printf 'No regular non-root user was created by the NixOS configuration.\n' >&2
+  exit 1
+fi
+
+printf 'Set password for %s.\n' "$system_user"
+read -r -s -p 'User password: ' user_password
+printf '\n'
+read -r -s -p 'Repeat user password: ' user_password_repeat
+printf '\n'
+if [[ -z $user_password || $user_password != "$user_password_repeat" || $user_password == *:* ]]; then
+  printf 'Passwords are empty, contain a colon, or do not match.\n' >&2
+  exit 1
+fi
+
+printf '%s:%s\n' "$system_user" "$user_password" | sudo nixos-enter --root /mnt -c chpasswd
+unset user_password user_password_repeat
 
 printf '\nInstalled %s. Reboot when ready.\n' "$hostname"

@@ -1,14 +1,4 @@
 {
-  systemUser = {
-    name = "your-user";
-    group = "users";
-  };
-
-  gitUsers.default = {
-    name = "Your Name";
-    email = "you@example.invalid";
-  };
-
   configDirectory = "/home/your-user/nix/outworld-nixos-configs";
   activationFlake = "/home/your-user/nix/outworld-nixos-configs";
 

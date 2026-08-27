@@ -86,8 +86,8 @@ arguments.
 - Treat files under `home-manager/dotfiles/` carefully: they are linked
   out-of-store and may contain application-managed state. Avoid unrelated bulk
   rewrites.
-- Keep identities and private organization inputs in the optional companion
-  private library.
+- Keep organization-specific identities and private inputs in the optional
+  companion private library.
 - Preserve host differences and state versions. Do not copy settings between
   `tpx13` and `majesty` without checking whether they are hardware-specific.
 

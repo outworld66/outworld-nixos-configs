@@ -89,13 +89,11 @@
       privateConfig = inputs.private.config or { };
       privateHosts = inputs.private.hostConfigurations or { };
       privateSpecialArgs = inputs.private.specialArgs or { };
-      privateSystemUser = privateConfig.systemUser or { };
-      privateDefaultGitUser = (privateConfig.gitUsers or { }).default or { };
       identity = rec {
-        user = privateSystemUser.name or (privateConfig.user or "nixos");
-        group = privateSystemUser.group or (privateConfig.group or "users");
-        gitUsername = privateDefaultGitUser.name or (privateConfig.gitUsername or user);
-        gitMail = privateDefaultGitUser.email or (privateConfig.gitMail or "${user}@example.invalid");
+        user = "outworld";
+        group = "users";
+        gitUsername = "outworld66";
+        gitMail = "acidcarpet@gmail.com";
         configDirectory = privateConfig.configDirectory or "/home/${user}/nix";
         activationFlake = privateConfig.activationFlake or configDirectory;
       };
