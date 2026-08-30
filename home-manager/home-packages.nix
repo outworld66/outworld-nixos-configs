@@ -104,6 +104,7 @@
 
     # Documents, notes, and productivity
     anki # Spaced-repetition flashcard application
+    deluge # Torrent tracker
     pinta # Drawing app
     drawing # Drawing app
     gimp # Drawing app
@@ -139,7 +140,7 @@
     tauon # Desktop music player and library manager
 
     # Communication
-    discord
+    #discord
     legcord # Lightweight Discord client
     thunderbird # Email, calendar, and contacts client
     vencord # Discord client modification and plugin platform
