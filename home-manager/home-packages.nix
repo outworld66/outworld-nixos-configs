@@ -83,6 +83,8 @@
     tree # Displays directory contents as a tree
     unzip # Extracts ZIP archives
     p7zip # Archive utility
+    woeusb-ng # Windows bootable drive creation tool
+    rar # Archive utility
     w3m # Text-mode web browser
     wget # Downloads files over HTTP, HTTPS, and FTP
     zip # Creates and modifies ZIP archives
