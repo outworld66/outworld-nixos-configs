@@ -152,6 +152,7 @@ let
     plugin = [
       "oh-my-openagent@latest"
       "@plannotator/opencode@latest"
+      "@dietrichgebert/ponytail@latest"
     ];
     permission = defaultPermissions;
     mcp = {

@@ -7,6 +7,8 @@
       opencode
       codex
       oh-my-codex
+      pi
+      zcode
       rtk
 
       # Workflow & Project Management
@@ -20,5 +22,6 @@
     ++ [
       # ADE from outworld-packages overlay
       pkgs.orca
+      pkgs.pane
     ];
 }

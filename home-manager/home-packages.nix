@@ -38,6 +38,8 @@
 
     # Source control and code navigation
     acli # Atlassian CLI for Jira, Confluence, and Bitbucket Cloud
+    confluence-cli # Confluence CLI for self-hosted Data Center instances (pchuri/confluence-cli)
+    jira-cli-go # Jira CLI for Cloud and Data Center instances (ankitpokhrel/jira-cli)
     fd # Fast alternative to find
     fzf # Interactive fuzzy finder
     git-graph # Terminal interface for browsing Git history

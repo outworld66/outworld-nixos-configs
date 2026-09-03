@@ -14,5 +14,6 @@
     ./vicinae.nix
     ./opencode-bwrap.nix
     ./opencode-config.nix
+    ./pi-config.nix
   ];
 }

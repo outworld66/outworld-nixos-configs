@@ -69,5 +69,11 @@ trust_level = "trusted"
 [projects."/home/outworld/tmp"]
 trust_level = "trusted"
 
+[projects."/home/outworld/.pane"]
+trust_level = "trusted"
+
+[projects."/home/outworld/.config/orca/rate-limit-pty-cwd"]
+trust_level = "trusted"
+
 [notice]
 hide_rate_limit_model_nudge = true
