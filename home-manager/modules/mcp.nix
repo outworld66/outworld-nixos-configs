@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -35,13 +36,12 @@ let
       command = "npx";
       args = [ "@drawio/mcp" ];
     };
-    mcp-mermaid = {
-      command = "npx";
-      args = [
-        "-y"
-        "mcp-mermaid"
-      ];
-    };
+    # Packaged in outworld-nixos-packages: upstream's postinstall
+    # downloads a browser and apt-installs deps as root, which cannot
+    # run on NixOS. The package pins npm playwright to the nixpkgs
+    # version and points PLAYWRIGHT_BROWSERS_PATH at the nixpkgs
+    # browser build instead.
+    mcp-mermaid.command = lib.getExe pkgs.mcp-mermaid;
   };
 
   # pi / pi-mcp-adapter (~/.config/mcp/mcp.json) format.
