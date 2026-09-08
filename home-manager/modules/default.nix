@@ -13,6 +13,7 @@
     ./zathura.nix
     ./vicinae.nix
     ./opencode-bwrap.nix
+    ./mcp.nix
     ./opencode-config.nix
     ./pi-config.nix
   ];

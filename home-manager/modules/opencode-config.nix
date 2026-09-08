@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   pkgs,
   lib,
@@ -155,37 +156,9 @@ let
       "@dietrichgebert/ponytail@latest"
     ];
     permission = defaultPermissions;
-    mcp = {
-      flux-schema-catalog = {
-        type = "remote";
-        url = "https://schemas.fluxoperator.dev/mcp";
-        enabled = true;
-      };
-      siderolabs-docs = {
-        type = "remote";
-        url = "https://docs.siderolabs.com/mcp";
-        enabled = true;
-      };
-      context7 = {
-        type = "local";
-        command = [
-          "npx"
-          "-y"
-          "@upstash/context7-mcp"
-          "--api-key"
-          "{file:~/.secrets/context7-api-key}"
-        ];
-        enabled = true;
-      };
-      drawio = {
-        type = "local";
-        command = [
-          "npx"
-          "@drawio/mcp"
-        ];
-        enabled = true;
-      };
-    };
+    # MCP servers come from the shared registry module (mcp.nix): one
+    # canonical entry per server, mapped here into the opencode format.
+    mcp = config.mcp.opencode;
   };
 
   baseOpenagentConfig = {
@@ -229,7 +202,7 @@ in
   config = {
     home.file = {
       ".config/opencode/opencode.json".source = lib.mkDefault (
-        json.generate "opencode-base.json" baseOpencodeConfig
+        json.generate "opencode-base.json" config.opencode.baseConfig
       );
       ".config/opencode/oh-my-openagent.json".source = lib.mkDefault (
         json.generate "oh-my-openagent-base.json" baseOpenagentConfig

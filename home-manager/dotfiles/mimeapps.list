@@ -154,5 +154,6 @@ x-scheme-handler/net.thunderbird=userapp-Thunderbird-YT9NS3.desktop
 x-scheme-handler/bruno=bruno.desktop
 x-scheme-handler/tonsite=org.telegram.desktop.desktop
 x-scheme-handler/webcal=google-chrome.desktop
+x-scheme-handler/zcode=zcode.desktop
 
 [Removed Associations]

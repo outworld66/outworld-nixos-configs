@@ -32,20 +32,11 @@ let
     ];
   };
 
+  # MCP servers come from the shared registry module (mcp.nix): one
+  # canonical entry per server, mapped here into the mcp.json format.
+
   basePiMcpConfig = {
-    mcpServers = {
-      flux-schema-catalog.url = "https://schemas.fluxoperator.dev/mcp";
-      siderolabs-docs.url = "https://docs.siderolabs.com/mcp";
-      context7 = {
-        url = "https://mcp.context7.com/mcp";
-        auth = "bearer";
-        bearerToken = "!cat ~/.secrets/context7-api-key";
-      };
-      drawio = {
-        command = "npx";
-        args = [ "@drawio/mcp" ];
-      };
-    };
+    mcpServers = config.mcp.pi;
   };
 in
 {
