@@ -36,6 +36,21 @@ let
       command = "npx";
       args = [ "@drawio/mcp" ];
     };
+    # kubectl-mcp-server (rohitg00, CNCF Landscape): the 1.24.0 PyPI
+    # wheel is broken (entrypoint passes a removed kwarg), so we run
+    # upstream git HEAD through uvx. fastmcp is pinned to 3.2.3:
+    # kubectl-mcp-server is not compatible with fastmcp 4.x / mcp 2.x
+    # yet. Reads kubeconfig from the user environment at runtime.
+    kubectl-mcp-server = {
+      command = "uvx";
+      args = [
+        "--from"
+        "git+https://github.com/rohitg00/kubectl-mcp-server"
+        "--with"
+        "fastmcp==3.2.3"
+        "kubectl-mcp"
+      ];
+    };
     # Packaged in outworld-nixos-packages: upstream's postinstall
     # downloads a browser and apt-installs deps as root, which cannot
     # run on NixOS. The package pins npm playwright to the nixpkgs

@@ -106,48 +106,6 @@ let
     doom_loop = "ask";
   };
 
-  # Relaxed permissions for the sandboxed session.
-  # The bwrap sandbox constrains filesystem access; inside it we can
-  # safely auto-approve tools that would normally require confirmation.
-  defaultSandboxPermissions = {
-    bash = {
-      "*" = "allow";
-      "rm *" = "deny";
-      "sudo *" = "deny";
-      "chmod *" = "deny";
-    };
-    read = {
-      "*" = "allow";
-      "*.env" = "deny";
-      "*.env.*" = "deny";
-      "*.p12" = "deny";
-      "*.key" = "deny";
-      "*.pem" = "deny";
-      "~/.ssh/*" = "deny";
-      "~/.aws/*" = "deny";
-      "~/.kube/*" = "deny";
-      "~/.docker/*" = "deny";
-      "*/secrets/*" = "deny";
-      "*/credentials/*" = "deny";
-    };
-    glob = {
-      "*" = "allow";
-    };
-    grep = {
-      "*" = "allow";
-    };
-    task = {
-      "*" = "allow";
-    };
-    skill = {
-      "*" = "allow";
-    };
-    external_directory = {
-      "*" = "allow";
-    };
-    doom_loop = "allow";
-  };
-
   baseOpencodeConfig = {
     "$schema" = "https://opencode.ai/config.json";
     plugin = [
@@ -185,12 +143,6 @@ in
       type = lib.types.attrs;
       default = baseOpenagentConfig;
       description = "Base oh-my-openagent.json configuration attrset.";
-    };
-
-    sandboxPermissions = lib.mkOption {
-      type = lib.types.attrs;
-      default = defaultSandboxPermissions;
-      description = "Permissions for the sandboxed opencode session.";
     };
   };
 
