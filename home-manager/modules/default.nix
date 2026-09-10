@@ -6,7 +6,7 @@
     ./niri.nix
     ./themes.nix
     #./hyprproxlock.nix # rssi signal doesn't work as i want
-    ./dank-material-shell.nix
+    ./inir.nix
     ./alacritty.nix
     ./chromium.nix
     ./lazygit.nix

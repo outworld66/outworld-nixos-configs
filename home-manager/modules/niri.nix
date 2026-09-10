@@ -1,6 +1,5 @@
 {
   hostname,
-  inputs,
   pkgs,
   ...
 }:
@@ -48,14 +47,10 @@ let
       '';
 in
 {
-  imports = [ inputs.niri.homeModules.niri ];
-
   home.packages = with pkgs; [
     xwayland-satellite
   ];
 
-  # Output geometry is host-specific and should not be overwritten by DMS.
+  # Output geometry is host-specific and should not be overwritten by the shell.
   xdg.configFile."niri-host/outputs.kdl".text = outputConfig;
-
-  programs.niri = { };
 }

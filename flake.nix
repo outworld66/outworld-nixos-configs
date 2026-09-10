@@ -25,13 +25,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dms = {
-      url = "git+https://github.com/AvengeMedia/DankMaterialShell.git?ref=stable&shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    dgop = {
-      url = "github:AvengeMedia/dgop";
+    inir = {
+      url = "github:snowarch/inir";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

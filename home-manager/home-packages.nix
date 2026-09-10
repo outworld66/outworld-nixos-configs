@@ -1,6 +1,13 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
+    # Low-latency iNiR IPC helper for compositor keybinds. Bypasses the
+    # featureful but slow `inir` wrapper (~400 ms) with one `qs ipc call`
+    # (~70 ms); resolves the live symlink so it survives rebuilds.
+    (writeShellScriptBin "ii" ''
+      exec qs -p "$(readlink -f "$HOME/.config/quickshell/inir")" ipc call "$@"
+    '')
+
     # Editors and IDEs
     (vscode-with-extensions.override {
       vscode = vscodium;
@@ -95,6 +102,15 @@
 
     # Wayland and desktop integration
     bemoji # Emoji picker for the desktop
+    cliphist # Clipboard history manager for the iNiR clipboard overlay
+    glib # Provides gsettings for the iNiR Qt/GTK theme sync
+    grim # Wayland screenshots; used by the iNiR region selector
+    imagemagick # Crops region-selector screenshots (magick)
+    kdePackages.plasma-integration # Qt platform theme plugin (QT_QPA_PLATFORMTHEME=kde)
+    libnotify # notify-send; used by iNiR pipelines for success and error messages
+    quickshell # Provides the qs CLI used by the ii IPC wrapper below
+    slurp # Wayland region selection for iNiR color picker and screenshots
+    swayidle # Idle manager driven by the iNiR Idle service (lock, suspend)
     showmethekey # Displays pressed keys on screen
     ueberzugpp # Renders images inside supported terminals
     wl-clipboard # Wayland clipboard command-line tools

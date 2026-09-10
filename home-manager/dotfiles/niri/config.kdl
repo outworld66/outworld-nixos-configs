@@ -22,7 +22,7 @@ include "~/.config/niri-host/outputs.kdl"
 layout {
     focus-ring {
         width 4
-        active-color "#7fc8ff"
+        active-color "#ffffff"
         inactive-color "#505050"
     }
     border {
@@ -40,8 +40,18 @@ layout {
     gaps 16
     struts
     center-focused-column "never"
+    // Transparent so the iNiR wallpaper backdrop shows through.
+    background-color "transparent"
 }
-environment
+environment {
+    // These values are also read by the iNiR launcher: its session-boot
+    // path (set -euo pipefail) aborts when none of the five variables it
+    // imports from this section is set, which kills inir.service at boot.
+    XDG_MENU_PREFIX "plasma-"
+    QT_QPA_PLATFORM "wayland"
+    QT_QPA_PLATFORMTHEME "kde"
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+}
 cursor
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 hotkey-overlay { skip-at-startup; }
@@ -125,24 +135,26 @@ binds {
     Mod+Escape { toggle-keyboard-shortcuts-inhibit; }
     Mod+O { toggle-overview; }
 
-    // DankMaterialShell
-    Mod+Space { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
-    Mod+N { spawn "dms" "ipc" "call" "notifications" "toggle"; }
-    Mod+Comma { spawn "dms" "ipc" "call" "settings" "toggle"; }
-    Mod+P { spawn "dms" "ipc" "call" "notepad" "toggle"; }
-    Mod+L { spawn "dms" "ipc" "call" "lock" "lock"; }
-    Mod+Alt+L { spawn-sh "dms ipc call lock lock && sleep 1 && systemctl suspend"; }
-    Mod+X { spawn "dms" "ipc" "call" "powermenu" "toggle"; }
-    Mod+M { spawn "dms" "ipc" "call" "processlist" "toggle"; }
-    Mod+Alt+N { spawn "dms" "ipc" "call" "night" "toggle"; }
+    // iNiR shell. Binds use the `ii` helper: one direct `qs ipc call`
+    // (~70 ms) instead of the full `inir` wrapper (~400 ms).
+    Mod+Space { spawn "ii" "overview" "toggle"; }
+    Mod+N { spawn "ii" "sidebarRight" "toggle"; }
+    Mod+Comma { spawn "ii" "settings" "open"; }
+    Mod+L { spawn "ii" "lock" "activate"; }
+    Mod+Alt+L allow-when-locked=true { spawn-sh "inir lock prepareSleep && systemctl suspend"; }
+    Mod+X { spawn "ii" "session" "toggle"; }
+    Mod+M { spawn "ii" "taskview" "toggle"; }
+    Mod+Shift+S { spawn "ii" "region" "screenshot"; }
+    Mod+Shift+X { spawn "ii" "region" "ocr"; }
+    Mod+Shift+A { spawn "ii" "region" "search"; }
 
     // Audio & Brightness
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "dms" "ipc" "call" "audio" "increment" "3"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "dms" "ipc" "call" "audio" "decrement" "3"; }
-    XF86AudioMute allow-when-locked=true { spawn "dms" "ipc" "call" "audio" "mute"; }
-    XF86AudioMicMute allow-when-locked=true { spawn "dms" "ipc" "call" "audio" "micmute"; }
-    XF86MonBrightnessUp allow-when-locked=true { spawn "dms" "ipc" "call" "brightness" "increment" "5" ""; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "dms" "ipc" "call" "brightness" "decrement" "5" ""; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "ii" "audio" "volumeUp"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "ii" "audio" "volumeDown"; }
+    XF86AudioMute allow-when-locked=true { spawn "ii" "audio" "mute"; }
+    XF86AudioMicMute allow-when-locked=true { spawn "ii" "audio" "micMute"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "ii" "brightness" "increment"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "ii" "brightness" "decrement"; }
 }
 
 window-rule {
@@ -158,11 +170,16 @@ debug {
   honor-xdg-activation-with-invalid-serial
 }
 
-// DMS-managed compositor settings. These files are generated and updated by DMS.
-include "dms/alttab.kdl"
-include "dms/binds.kdl"
-include "dms/colors.kdl"
-include "dms/cursor.kdl"
-include "dms/layout.kdl"
-include "dms/windowrules.kdl"
-include "dms/wpblur.kdl"
+// Clipboard history for the iNiR clipboard overlay.
+spawn-at-startup "bash" "-c" "wl-paste --no-newline --type text --watch ~/.config/quickshell/inir/scripts/clipboard-store.py &"
+spawn-at-startup "bash" "-c" "wl-paste --type image --watch ~/.config/quickshell/inir/scripts/clipboard-image-store.sh &"
+
+// iNiR wallpaper backdrops render as layer-shell surfaces behind windows.
+layer-rule {
+    match namespace="quickshell:iiBackdrop"
+    place-within-backdrop true
+}
+layer-rule {
+    match namespace="quickshell:wBackdrop"
+    place-within-backdrop true
+}

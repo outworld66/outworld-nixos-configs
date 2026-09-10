@@ -33,26 +33,6 @@
         "type": "github"
       }
     },
-    "dgop": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1788104821,
-        "narHash": "sha256-2/eQ4WXhkchvt52vYSYA6OIbhIZ2sW/tbmdUb7/rQSQ=",
-        "owner": "AvengeMedia",
-        "repo": "dgop",
-        "rev": "857b8a0f42e4855104cfc3f403e3c1149b7bedde",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AvengeMedia",
-        "repo": "dgop",
-        "type": "github"
-      }
-    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -71,29 +51,6 @@
         "owner": "nix-community",
         "repo": "disko",
         "type": "github"
-      }
-    },
-    "dms": {
-      "inputs": {
-        "flake-compat": "flake-compat",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1785111455,
-        "narHash": "sha256-aTNuC9NDBnYAeEtFsleeUwmGX3AZlKOutbl+LQRPkmQ=",
-        "ref": "stable",
-        "rev": "069ddab041c738236a8910e4c39b65d9628d3018",
-        "shallow": true,
-        "type": "git",
-        "url": "https://github.com/AvengeMedia/DankMaterialShell.git"
-      },
-      "original": {
-        "ref": "stable",
-        "shallow": true,
-        "type": "git",
-        "url": "https://github.com/AvengeMedia/DankMaterialShell.git"
       }
     },
     "drawio-skill": {
@@ -173,22 +130,6 @@
         "type": "github"
       }
     },
-    "flake-compat_2": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1767039857,
-        "narHash": "sha256-vNpUSpF5Nuw8xvDLj2KCwwksIbjua2LZCqhV1LNRDns=",
-        "owner": "NixOS",
-        "repo": "flake-compat",
-        "rev": "5edf11c44bc78a0d334f6334cdaf7d60d732daab",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "flake-compat",
-        "type": "github"
-      }
-    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -246,6 +187,26 @@
         "owner": "nix-community",
         "ref": "release-26.05",
         "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "inir": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788670537,
+        "narHash": "sha256-fpGAEpPqeuz493DusYZlq5FSumJqaWcHjoznqgnZV04=",
+        "owner": "snowarch",
+        "repo": "inir",
+        "rev": "dcba34ee124acb5a191c88b2e1952006fa5afb2f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "snowarch",
+        "repo": "inir",
         "type": "github"
       }
     },
@@ -432,11 +393,10 @@
     },
     "root": {
       "inputs": {
-        "dgop": "dgop",
         "disko": "disko",
-        "dms": "dms",
         "drawio-skill": "drawio-skill",
         "home-manager": "home-manager",
+        "inir": "inir",
         "llm-agents": "llm-agents",
         "niri": "niri",
         "nirinit": "nirinit",
@@ -577,7 +537,7 @@
     },
     "vicinae-extensions": {
       "inputs": {
-        "flake-compat": "flake-compat_2",
+        "flake-compat": "flake-compat",
         "nixpkgs": [
           "nixpkgs"
         ],

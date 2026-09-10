@@ -4,6 +4,23 @@
   pkgs,
   ...
 }:
+let
+  # The Synaptics Prometheus reader occasionally wedges even with fprintd
+  # kept alive; a USB re-initialization is what a reboot does. Expose the
+  # reset as a command (`fingerprint-reset`) and run it automatically after
+  # every resume, where the failure is most often observed.
+  fingerprintReset = pkgs.writeShellScriptBin "fingerprint-reset" ''
+    for dev in /sys/bus/usb/devices/*/idVendor; do
+        dir="$(dirname "$dev")"
+        if [ "$(cat "$dev")" = "06cb" ] && [ "$(cat "$dir/idProduct")" = "00bd" ]; then
+            echo 0 > "$dir/authorized"
+            sleep 1
+            echo 1 > "$dir/authorized"
+        fi
+    done
+    systemctl try-restart fprintd.service
+  '';
+in
 {
   services.dbus = {
     enable = true;
@@ -30,7 +47,32 @@
     "${config.services.fprintd.package}/libexec/fprintd --no-timeout"
   ];
 
+  environment.systemPackages = [ fingerprintReset ];
+
+  systemd.services.fingerprint-reset-on-resume = {
+    description = "Re-initialize the fingerprint reader after resume";
+    after = [ "suspend.target" ];
+    wantedBy = [ "suspend.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${fingerprintReset}/bin/fingerprint-reset";
+    };
+  };
+
   systemd.user.services = {
+    # DMS shipped its own polkit agent; iNiR does not, so run one for the
+    # graphical session.
+    polkit-kde-agent = {
+      description = "Polkit authentication agent";
+      wantedBy = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1";
+        Restart = "on-failure";
+      };
+    };
+
     network-manager-applet = {
       description = "NetworkManager secret agent";
       wantedBy = [ "graphical-session.target" ];
@@ -58,11 +100,6 @@
       fprintAuth = true;
     };
     greetd-password.enableGnomeKeyring = true;
-    # The DMS lock screen runs its own fprint PAM conversation alongside the
-    # password conversation. Its NixOS fallback is the login service; keeping
-    # pam_fprintd in that stack makes DMS treat fingerprint auth as inline and
-    # suppress the parallel fingerprint prompt.
-    login.fprintAuth = false;
     sudo.fprintAuth = true;
   };
 }

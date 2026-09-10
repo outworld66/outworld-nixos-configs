@@ -1,5 +1,5 @@
 {
-  user,
+  pkgs,
   ...
 }:
 {
@@ -16,9 +16,22 @@
   # create a new authenticated session on another VT.
   services.displayManager.autoLogin.enable = false;
 
-  services.displayManager.dms-greeter = {
+  # ReGreet greeter: greetd + cage, sessions (incl. niri) are picked up from
+  # the display-manager session registry. Keeps the greetd PAM stack, so
+  # fingerprint unlock at the greeter continues to work. Newer nixpkgs
+  # renames this option to services.displayManager.regreet.
+  programs.regreet = {
     enable = true;
-    compositor.name = "niri";
-    configHome = "/home/${user}";
+    settings.GTK.application_prefer_dark_theme = true;
+    theme = {
+      package = pkgs.adw-gtk3;
+      name = "adw-gtk3-dark";
+    };
   };
+
+  # The iNiR keyboard-layout indicator resolves layout names to codes via
+  # /usr/share/X11/xkb/rules/base.lst, which does not exist on NixOS.
+  systemd.tmpfiles.rules = [
+    "L+ /usr/share/X11/xkb/rules/base.lst - - - - ${pkgs.xkeyboardconfig}/share/X11/xkb/rules/base.lst"
+  ];
 }

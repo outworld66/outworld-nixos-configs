@@ -1,178 +1,5 @@
 {
-  // =====================================
-  // 🖋️ Editor Appearance & Typography
-  // =====================================
-  "editor.semanticHighlighting.enabled": true,
-  "editor.cursorBlinking": "smooth",
-  "editor.cursorSmoothCaretAnimation": "on",
-  "editor.smoothScrolling": true,
-  "editor.minimap.enabled": false,
-  "editor.fontSize": 15,
-  "editor.fontFamily": "JetBrainsMono Nerd Font",
-  "editor.fontLigatures": true,
-  "editor.lineNumbers": "relative",
-  "editor.showFoldingControls": "never",
-  "editor.overviewRulerBorder": false,
-  "editor.wrappingIndent": "indent",
-  "editor.quickSuggestions": {
-    "other": "off",
-    "strings": true,
-    "comments": "on",
-  },
-  "editor.padding.top": 10,
-  "editor.tabSize": 2,
-  "editor.insertSpaces": true,
-  "editor.detectIndentation": false,
-  "editor.hideCursorInOverviewRuler": true,
-  "scm.diffDecorations": "all",
-  "window.nativeFullScreen": true,
-  // =====================================
-  // 🖱️ Editor Interaction & Behavior
-  // =====================================
-  "editor.gotoLocation.multipleReferences": "goto",
-  "editor.gotoLocation.multipleDefinitions": "goto",
-  "editor.gotoLocation.multipleDeclarations": "goto",
-  "editor.gotoLocation.multipleImplementations": "goto",
-  "editor.gotoLocation.multipleTypeDefinitions": "goto",
-  "editor.mouseWheelZoom": true,
-  "editor.multiCursorModifier": "ctrlCmd",
-  "editor.scrollbar.horizontalScrollbarSize": 10,
-  "editor.scrollbar.verticalScrollbarSize": 10,
-  "editor.formatOnPaste": false,
-  "editor.suggest.preview": true,
-  "editor.tabCompletion": "on",
-  "editor.snippetSuggestions": "top",
-  "editor.hover.delay": 1500,
-  "editor.hover.enabled": "on",
-  "diffEditor.renderSideBySide": false,
-  "editor.emptySelectionClipboard": false,
-  "editor.copyWithSyntaxHighlighting": false,
-  "diffEditor.ignoreTrimWhitespace": false,
-  "diffEditor.wordWrap": "on",
-  "editor.stickyScroll.enabled": false,
-  // "editor.wordWrap": "wordWrapColumn",
-  // =====================================
-  // 🎨 Themes, Icons & UI Layout
-  // =====================================
-  "workbench.colorTheme": "Catppuccin Mocha",
-  "workbench.iconTheme": "material-icon-theme",
-  "material-icon-theme.hidesExplorerArrows": true,
-  "workbench.editor.labelFormat": "short",
-  "workbench.editor.showTabs": "multiple",
-  "workbench.sideBar.location": "left",
-  "workbench.statusBar.visible": true,
-  "workbench.activityBar.location": "bottom",
-  "workbench.startupEditor": "none",
-  "workbench.editor.enablePreviewFromQuickOpen": true,
-  "workbench.editor.enablePreviewFromCodeNavigation": true,
-  "workbench.editor.revealIfOpen": true,
-  "workbench.tips.enabled": false,
-  "workbench.tree.enableStickyScroll": false,
-  "workbench.tree.renderIndentGuides": "none",
-  "workbench.tree.indent": 10,
-  "window.titleBarStyle": "custom",
-  "window.menuStyle": "custom",
-  "window.zoomLevel": -0.1,
-  "apc.electron": {
-    "titleBarStyle": "hiddenInset"
-  },
-  // =====================================
-  // 🔐 Security & Trust Settings
-  // =====================================
-  "security.workspace.trust.untrustedFiles": "open",
-  "security.workspace.trust.startupPrompt": "never",
-  "security.workspace.trust.enabled": false,
-  // =====================================
-  // 🧩 Extensions & Language Tools
-  // =====================================
-  "emmet.triggerExpansionOnTab": true,
-  "emmet.includeLanguages": {
-    "blade": "html",
-    "vue-html": "html",
-    "vue": "html",
-    "react": "html",
-    "javascript": "html"
-  },
-  "extensions.ignoreRecommendations": true,
-  "extensions.autoUpdate": false,
-  "todo-tree.highlights.enabled": false,
-  "todo-tree.filtering.ignoreGitSubmodules": true,
-  "svelte.enable-ts-plugin": true,
   "C_Cpp.intelliSenseEngine": "disabled",
-  "ruff.nativeServer": true,
-  // "continue.telemetryEnabled": false,
-  // "continue.pauseTabAutocompleteOnBattery": true,
-  "nixEnvSelector.useFlakes": true,
-  "nixEnvSelector.suggestion": false,
-  "gitlens.terminal.overrideGitEditor": false,
-  // LATEX
-  "latex-workshop.formatting.latex": "tex-fmt",
-  "latex-workshop.bibtex-format.sort.enabled": true,
-  "latex-workshop.latex.autoClean.run": "onSucceeded",
-  "latex-workshop.latex.autoBuild.cleanAndRetry.enabled": false,
-  "latex-workshop.latex.outDir": "%DIR%/out_dir",
-  "latex-workshop.latex.clean.subfolder.enabled": true,
-  "latex-workshop.view.pdf.viewer": "tab",
-  "latex-workshop.view.pdf.internal.synctex.keybinding": "double-click",
-  "latex-workshop.intellisense.update.aggressive.enabled": true,
-  "direnv.restart.automatic": true,
-  // VHDL
-  "vhdl-by-hgb.vhdl-formatter.case.keyword": "UpperCase",
-  "vhdl-by-hgb.vhdl-formatter.case.typename": "UpperCase",
-  "vhdl-by-hgb.vhdl-formatter.indentation": "  ",
-  "vhdl-by-hgb.vhdl-formatter.insertFinalNewline": true,
-  "vhdl-by-hgb.vhdl-formatter.align.procedure": true,
-  "vhdl-by-hgb.vhdl-formatter.align.port": true,
-  "vhdl-by-hgb.vhdl-formatter.align.generic": true,
-  "vhdl-by-hgb.vhdl-formatter.align.function": true,
-  "vhdl-by-hgb.vhdl-formatter.align.all": true,
-  "vhdl-by-hgb.vhdl-formatter.align.comments": true,
-  // MARKDOWN
-  "markdown.extension.showActionButtons": true,
-  "markdown.extension.toc.levels": "2..6",
-  "markdown.extension.toc.omittedFromToc": {
-    "README.md": [
-      "## Table of contents"
-    ]
-  },
-  // FZF PICKER
-  // Setup fzf-picker extension
-  "fzf-picker.customTasks": [
-    // Choose folder to open on new window
-    {
-      "name": "zoxide",
-      "command": "cursor $(zoxide query --interactive)"
-    }
-  ],
-  // Allow top open a file with line number
-  "fzf-picker.general.openCommand": "codium -g",
-  "fzf-picker.cache.directory": "/home/user/.cache/fzf-picker",
-  // =====================================
-  // 🧪 Python, Go, Language Servers
-  // =====================================
-  "python.languageServer": "Jedi",
-  "python.terminal.activateEnvInCurrentTerminal": true,
-  "python.venvPath": "${workspaceFolder}/.venv",
-  "gopls": {
-    "ui.semanticTokens": true
-  },
-  // =====================================
-  // 📝 Per-language editor settings
-  // =====================================
-  "[python]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.codeActionsOnSave": {
-      "source.fixAll.ruff": "always",
-      "source.organizeImports.ruff": "always",
-      "source.fixAll.markdownlint": "always",
-      "source.fixAll": "always"
-    }
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features",
-    "editor.formatOnSave": true
-  },
   "[c]": {
     "editor.defaultFormatter": "xaver.clang-format",
     "editor.formatOnSave": true
@@ -185,19 +12,15 @@
     "editor.defaultFormatter": "stylelint.vscode-stylelint",
     "editor.formatOnSave": true
   },
+  "[dockercompose]": {
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[github-actions-workflow]": {
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
   "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[tailwindcss]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
@@ -205,21 +28,23 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
-  "[yaml]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml",
-    "editor.autoIndent": "advanced"
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "[yml]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml",
-    "editor.autoIndent": "advanced"
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
   },
-  "[dockercompose]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml",
-    "editor.autoIndent": "advanced"
+  "[latex]": {
+    "editor.defaultFormatter": "James-Yu.latex-workshop",
+    "editor.formatOnPaste": false,
+    "editor.suggestSelection": "recentlyUsedByPrefix"
   },
-  "[github-actions-workflow]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml",
-    "editor.autoIndent": "advanced"
+  "[markdown]": {
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4
   },
   "[nix]": {
     "editor.defaultFormatter": "jnoortheen.nix-ide",
@@ -227,162 +52,281 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": false
   },
-  "[markdown]": {
-    "editor.tabSize": 4,
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.defaultFormatter": "yzhang.markdown-all-in-one"
-  },
-  "[latex]": {
-    "editor.formatOnPaste": false,
-    "editor.suggestSelection": "recentlyUsedByPrefix",
-    "editor.defaultFormatter": "James-Yu.latex-workshop"
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
   },
   "[postcss]": {
     "editor.defaultFormatter": "stylelint.vscode-stylelint"
   },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "always",
+      "source.fixAll.markdownlint": "always",
+      "source.fixAll.ruff": "always",
+      "source.organizeImports.ruff": "always"
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  },
+  "[tailwindcss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
   },
   "[vhdl]": {
     "editor.defaultFormatter": "p2l2.vhdl-by-hgb"
   },
-  // =====================================
-  // 📁 File Management & Associations
-  // =====================================
-  "files.autoSave": "afterDelay",
-  "files.autoSaveWorkspaceFilesOnly": true,
-  "files.autoSaveWhenNoErrors": true,
-  "files.autoSaveDelay": 1000,
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true,
-  "files.associations": {
-    "*.sty": "latex",
-    "*.cls": "latex"
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
   },
-  "files.exclude": {
-    "**/*.4ct": true,
-    "**/*.4tc": true,
-    "**/*.fdb_latexmk": true,
-    "**/*.idv": true,
-    "**/*.lg": true,
-    "**/*.lof": true,
-    "**/*.synctex.gz": true,
-    "**/*.synctex(busy)": true,
-    "**/*.tmp": true,
-    "**/*.xref": true,
-    "**/*.fls": true,
-    "**/*.loc": true,
-    "**/*.run.xml": true,
-    "**/*.soc": true,
-    "**/*.snm": true,
-    "**/*.blg": true,
-    "**/*-SAVE-ERROR": true
+  "[yaml]": {
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
   },
-  // =====================================
-  // 🔍 Search & Quick Open
-  // =====================================
-  "search.quickOpen.includeSymbols": true,
-  "search.useIgnoreFiles": false,
-  "search.exclude": {
-    // Hide everything in /vendor, except the "laravel" and "livewire" folder.
-    "**/vendor/{[^l],?[^ai]}*": true,
-    // Hide everything in /public, except "index.php"
-    "**/public/{[^i],?[^n]}*": true,
-    "**/node_modules": true,
-    "**/dist": true,
-    "**/_ide_helper.php": true,
-    "**/composer.lock": true,
-    "**/package-lock.json": true,
-    "**/.venv/": true,
-    "**/venv/": true,
-    "**/.cache/": true,
-    "**/.direnv/": true,
-    "**/.git/": true,
-    "storage": true,
-    ".phpunit.result.cache": true
+  "[yml]": {
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
   },
-  // =====================================
-  // 📂 Explorer & Folder Behavior
-  // =====================================
+  "apc.electron": {
+    "titleBarStyle": "hiddenInset"
+  },
+  "autoOpenPreviewPanel.languages": "markdown",
+  "autoOpenPreviewPanel.openPreviewToSide": true,
+  "debug.terminal.clearBeforeReusing": true,
+  "debugpy.showPythonInlineValues": true,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "diffEditor.renderSideBySide": false,
+  "diffEditor.wordWrap": "on",
+  "direnv.restart.automatic": true,
+  "editor.copyWithSyntaxHighlighting": false,
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.detectIndentation": false,
+  "editor.emptySelectionClipboard": false,
+  "editor.fontFamily": "JetBrainsMono Nerd Font",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 15,
+  "editor.formatOnPaste": false,
+  "editor.gotoLocation.multipleDeclarations": "goto",
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.gotoLocation.multipleImplementations": "goto",
+  "editor.gotoLocation.multipleReferences": "goto",
+  "editor.gotoLocation.multipleTypeDefinitions": "goto",
+  "editor.hideCursorInOverviewRuler": true,
+  "editor.hover.delay": 1500,
+  "editor.hover.enabled": "on",
+  "editor.insertSpaces": true,
+  "editor.lineNumbers": "relative",
+  "editor.minimap.enabled": false,
+  "editor.mouseWheelZoom": true,
+  "editor.multiCursorModifier": "ctrlCmd",
+  "editor.overviewRulerBorder": false,
+  "editor.padding.top": 10,
+  "editor.quickSuggestions": {
+    "comments": "on",
+    "other": "off",
+    "strings": true
+  },
+  "editor.scrollbar.horizontalScrollbarSize": 10,
+  "editor.scrollbar.verticalScrollbarSize": 10,
+  "editor.semanticHighlighting.enabled": true,
+  "editor.showFoldingControls": "never",
+  "editor.smoothScrolling": true,
+  "editor.snippetSuggestions": "top",
+  "editor.stickyScroll.enabled": false,
+  "editor.suggest.preview": true,
+  "editor.tabCompletion": "on",
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+  "editor.wrappingIndent": "indent",
+  "emmet.includeLanguages": {
+    "blade": "html",
+    "javascript": "html",
+    "react": "html",
+    "vue": "html",
+    "vue-html": "html"
+  },
+  "emmet.triggerExpansionOnTab": true,
+  "explorer.compactFolders": false,
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false,
   "explorer.confirmPasteNative": false,
-  "explorer.compactFolders": false,
   "explorer.fileNesting.patterns": {
-    "*.ts": "${capture}.js",
+    "*.db": "${capture}.${extname}-*",
+    "*.db3": "${capture}.${extname}-*",
     "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
     "*.jsx": "${capture}.js",
-    "*.tsx": "${capture}.ts",
-    "tsconfig.json": "tsconfig.*.json",
-    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock",
-    "flake.nix": "flake.lock",
-    "Cargo.toml": "Cargo.lock",
-    "*.sqlite": "${capture}.${extname}-*",
-    "*.db": "${capture}.${extname}-*",
-    "*.sqlite3": "${capture}.${extname}-*",
-    "*.db3": "${capture}.${extname}-*",
+    "*.s3db": "${capture}.${extname}-*",
     "*.sdb": "${capture}.${extname}-*",
-    "*.s3db": "${capture}.${extname}-*"
+    "*.sqlite": "${capture}.${extname}-*",
+    "*.sqlite3": "${capture}.${extname}-*",
+    "*.ts": "${capture}.js",
+    "*.tsx": "${capture}.ts",
+    "Cargo.toml": "Cargo.lock",
+    "flake.nix": "flake.lock",
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock",
+    "tsconfig.json": "tsconfig.*.json"
   },
-  // =====================================
-  // 🖥️ Terminal
-  // =====================================
-  "terminal.integrated.hideOnStartup": "always",
-  "terminal.integrated.gpuAcceleration": "on",
-  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
-  "terminal.integrated.fontLigatures.enabled": true,
-  "terminal.integrated.enablePersistentSessions": false,
-  "terminal.integrated.persistentSessionReviveProcess": "never",
-  "terminal.integrated.confirmOnKill": "never",
-  "terminal.integrated.shellIntegration.history": 1000,
-  "terminal.integrated.suggest.cdPath": "relative",
-  "terminal.integrated.mouseWheelZoom": true,
-  "terminal.integrated.tabs.showActions": "always",
-  "terminal.integrated.tabs.showActiveTerminal": "always",
-  "terminal.integrated.tabs.enabled": true,
-  // =====================================
-  // 🔄 Workflows / Sync / Update
-  // =====================================
-  "update.mode": "manual",
-  "syncing.separateKeybindings": false,
-  // =====================================
-  // 🛠️ Debugging
-  // =====================================
-  "debugpy.showPythonInlineValues": true,
-  "debug.terminal.clearBeforeReusing": true,
-  // =====================================
-  // 🧬 Markdown / Linting Config
-  // =====================================
+  "extensions.autoUpdate": false,
+  "extensions.ignoreRecommendations": true,
+  "files.associations": {
+    "*.cls": "latex",
+    "*.sty": "latex"
+  },
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "files.autoSaveWhenNoErrors": true,
+  "files.autoSaveWorkspaceFilesOnly": true,
+  "files.exclude": {
+    "**/*-SAVE-ERROR": true,
+    "**/*.4ct": true,
+    "**/*.4tc": true,
+    "**/*.blg": true,
+    "**/*.fdb_latexmk": true,
+    "**/*.fls": true,
+    "**/*.idv": true,
+    "**/*.lg": true,
+    "**/*.loc": true,
+    "**/*.lof": true,
+    "**/*.run.xml": true,
+    "**/*.snm": true,
+    "**/*.soc": true,
+    "**/*.synctex(busy)": true,
+    "**/*.synctex.gz": true,
+    "**/*.tmp": true,
+    "**/*.xref": true
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "fzf-picker.cache.directory": "/home/user/.cache/fzf-picker",
+  "fzf-picker.customTasks": [
+    {
+      "command": "cursor $(zoxide query --interactive)",
+      "name": "zoxide"
+    }
+  ],
+  "fzf-picker.general.openCommand": "codium -g",
+  "gitlens.terminal.overrideGitEditor": false,
+  "gopls": {
+    "ui.semanticTokens": true
+  },
+  "inir.previousColorTheme": "Catppuccin Mocha",
+  "latex-workshop.bibtex-format.sort.enabled": true,
+  "latex-workshop.formatting.latex": "tex-fmt",
+  "latex-workshop.intellisense.update.aggressive.enabled": true,
+  "latex-workshop.latex.autoBuild.cleanAndRetry.enabled": false,
+  "latex-workshop.latex.autoClean.run": "onSucceeded",
+  "latex-workshop.latex.clean.subfolder.enabled": true,
+  "latex-workshop.latex.outDir": "%DIR%/out_dir",
+  "latex-workshop.view.pdf.internal.synctex.keybinding": "double-click",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "license.author": "N£utr0nys",
+  "license.default": "MIT",
+  "manim-sideview.defaultManimPath": "/nix/store/c4x12q6rxmw4x2yg3lzc71rg7l6cnn1g-python3.13-manim-0.19.1/bin/manim",
+  "markdown.extension.list.indentationSize": "inherit",
+  "markdown.extension.showActionButtons": true,
+  "markdown.extension.toc.levels": "2..6",
+  "markdown.extension.toc.omittedFromToc": {
+    "README.md": [
+      "## Table of contents"
+    ]
+  },
   "markdownlint.config": {
-    "MD033": false,
     "MD007": {
       "indent": 4
     },
+    "MD033": false,
     "MD045": false
   },
-  "markdown.extension.list.indentationSize": "inherit",
-  // =====================================
-  // ⚙️ Misc System Settings
-  // =====================================
-  "telemetry.telemetryLevel": "crash",
-  "redhat.telemetry.enabled": false,
+  "material-icon-theme.hidesExplorerArrows": true,
+  "nixEnvSelector.suggestion": false,
+  "nixEnvSelector.useFlakes": true,
   "periscope.showPreviousResultsWhenNoMatches": true,
-  "trailing-spaces.trimOnSave": true,
-  "vhdl-by-hgb.vhdlls.toml.generation": "manual",
-  "autoOpenPreviewPanel.openPreviewToSide": true,
-  "autoOpenPreviewPanel.languages": "markdown",
-  "terminal.integrated.enableImages": true,
-  "license.default": "MIT",
-  "license.author": "N£utr0nys",
-  "editor.wordWrap": "on",
-  "zig.zls.enabled": "off",
-  "manim-sideview.defaultManimPath": "/nix/store/c4x12q6rxmw4x2yg3lzc71rg7l6cnn1g-python3.13-manim-0.19.1/bin/manim",
-  "windsurfPyright.disableLanguageServices": true,
-  "shfmt.executablePath": "",
-  "[php]": {
-    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  "python.languageServer": "Jedi",
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "python.venvPath": "${workspaceFolder}/.venv",
+  "redhat.telemetry.enabled": false,
+  "ruff.nativeServer": true,
+  "scm.diffDecorations": "all",
+  "search.exclude": {
+    "**/.cache/": true,
+    "**/.direnv/": true,
+    "**/.git/": true,
+    "**/.venv/": true,
+    "**/_ide_helper.php": true,
+    "**/composer.lock": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "**/package-lock.json": true,
+    "**/public/{[^i],?[^n]}*": true,
+    "**/vendor/{[^l],?[^ai]}*": true,
+    "**/venv/": true,
+    ".phpunit.result.cache": true,
+    "storage": true
   },
-  "update.showReleaseNotes": false
+  "search.quickOpen.includeSymbols": true,
+  "search.useIgnoreFiles": false,
+  "security.workspace.trust.enabled": false,
+  "security.workspace.trust.startupPrompt": "never",
+  "security.workspace.trust.untrustedFiles": "open",
+  "shfmt.executablePath": "",
+  "svelte.enable-ts-plugin": true,
+  "syncing.separateKeybindings": false,
+  "telemetry.telemetryLevel": "crash",
+  "terminal.integrated.confirmOnKill": "never",
+  "terminal.integrated.enableImages": true,
+  "terminal.integrated.enablePersistentSessions": false,
+  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
+  "terminal.integrated.fontLigatures.enabled": true,
+  "terminal.integrated.gpuAcceleration": "on",
+  "terminal.integrated.hideOnStartup": "always",
+  "terminal.integrated.mouseWheelZoom": true,
+  "terminal.integrated.persistentSessionReviveProcess": "never",
+  "terminal.integrated.shellIntegration.history": 1000,
+  "terminal.integrated.suggest.cdPath": "relative",
+  "terminal.integrated.tabs.enabled": true,
+  "terminal.integrated.tabs.showActions": "always",
+  "terminal.integrated.tabs.showActiveTerminal": "always",
+  "todo-tree.filtering.ignoreGitSubmodules": true,
+  "todo-tree.highlights.enabled": false,
+  "trailing-spaces.trimOnSave": true,
+  "update.mode": "manual",
+  "update.showReleaseNotes": false,
+  "vhdl-by-hgb.vhdl-formatter.align.all": true,
+  "vhdl-by-hgb.vhdl-formatter.align.comments": true,
+  "vhdl-by-hgb.vhdl-formatter.align.function": true,
+  "vhdl-by-hgb.vhdl-formatter.align.generic": true,
+  "vhdl-by-hgb.vhdl-formatter.align.port": true,
+  "vhdl-by-hgb.vhdl-formatter.align.procedure": true,
+  "vhdl-by-hgb.vhdl-formatter.case.keyword": "UpperCase",
+  "vhdl-by-hgb.vhdl-formatter.case.typename": "UpperCase",
+  "vhdl-by-hgb.vhdl-formatter.indentation": "  ",
+  "vhdl-by-hgb.vhdl-formatter.insertFinalNewline": true,
+  "vhdl-by-hgb.vhdlls.toml.generation": "manual",
+  "window.menuStyle": "custom",
+  "window.nativeFullScreen": true,
+  "window.titleBarStyle": "custom",
+  "window.zoomLevel": -0.1,
+  "windsurfPyright.disableLanguageServices": true,
+  "workbench.activityBar.location": "bottom",
+  "workbench.colorTheme": "iNiR Material",
+  "workbench.editor.enablePreviewFromCodeNavigation": true,
+  "workbench.editor.enablePreviewFromQuickOpen": true,
+  "workbench.editor.labelFormat": "short",
+  "workbench.editor.revealIfOpen": true,
+  "workbench.editor.showTabs": "multiple",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.sideBar.location": "left",
+  "workbench.startupEditor": "none",
+  "workbench.statusBar.visible": true,
+  "workbench.tips.enabled": false,
+  "workbench.tree.enableStickyScroll": false,
+  "workbench.tree.indent": 10,
+  "workbench.tree.renderIndentGuides": "none",
+  "zig.zls.enabled": "off"
 }

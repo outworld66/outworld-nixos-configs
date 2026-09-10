@@ -10,6 +10,8 @@
       pi
       zcode
       rtk
+      dsh
+      codegraph
 
       # Workflow & Project Management
       bernstein
