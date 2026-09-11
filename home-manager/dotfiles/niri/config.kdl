@@ -144,6 +144,7 @@ binds {
     Mod+Alt+L allow-when-locked=true { spawn-sh "inir lock prepareSleep && systemctl suspend"; }
     Mod+X { spawn "ii" "session" "toggle"; }
     Mod+M { spawn "ii" "taskview" "toggle"; }
+    Mod+Slash { spawn "ii" "cheatsheet" "toggle"; }
     Mod+Shift+S { spawn "ii" "region" "screenshot"; }
     Mod+Shift+X { spawn "ii" "region" "ocr"; }
     Mod+Shift+A { spawn "ii" "region" "search"; }

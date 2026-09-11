@@ -184,4 +184,18 @@
     # Nix maintenance
     nix-prefetch-scripts # Calculates source hashes for Nix packages
   ];
+
+  # High-accuracy Tesseract LSTM models (tessdata_best) used by the iNiR
+  # region-selector OCR. The iNiR cache dir outranks system data and the
+  # tessdata_fast models the runner would otherwise download.
+  home.file = {
+    ".local/share/inir/tessdata/rus.traineddata".source = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/rus.traineddata";
+      sha256 = "1dnn51vqn4p8lawmxq7gy2fgxbais9zym1yxjnksmazz61lfn5xn";
+    };
+    ".local/share/inir/tessdata/eng.traineddata".source = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/eng.traineddata";
+      sha256 = "1fk6rc5mcaqwblagvljvv3wa0k1jxzkhz8cflrbp5qigg38ax042";
+    };
+  };
 }
