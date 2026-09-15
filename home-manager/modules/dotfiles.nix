@@ -81,5 +81,9 @@ in
     )
     // {
       ".config/git/config".source = gitConfig;
+
+      # pi skills: коллекция из dotfiles, живая ссылка на чекаут (правки
+      # без пересборки). ~/.pi/agent/skills — глобальная точка обнаружения pi.
+      ".pi/agent/skills".source = pkgs.lib.mkDefault (link "pi-skills");
     };
 }
