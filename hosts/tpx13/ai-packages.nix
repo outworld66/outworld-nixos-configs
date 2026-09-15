@@ -26,5 +26,8 @@
       pkgs.orca
       pkgs.pane
       pkgs.agterm
+
+      # AI office suite from outworld-packages overlay
+      pkgs.genoffice
     ];
 }

@@ -36,6 +36,17 @@ let
   # MCP servers come from the shared registry module (mcp.nix): one
   # canonical entry per server, mapped here into the mcp.json format.
 
+  # Web search comes from the pi-web-access package. Its default
+  # workflow ("summary-review") opens the browser curator and waits for
+  # the user to approve every search summary; "auto-summary" returns a
+  # model-generated summary without the approval step. Runtime toggles
+  # (/curator) cannot persist into this store path, same tradeoff as
+  # settings.json above.
+
+  basePiWebSearchConfig = {
+    workflow = "auto-summary";
+  };
+
   basePiMcpConfig = {
     mcpServers = config.mcp.pi;
   };
@@ -58,6 +69,12 @@ in
       default = basePiMcpConfig;
       description = "Base ~/.config/mcp/mcp.json MCP server configuration attrset.";
     };
+
+    baseWebSearchConfig = lib.mkOption {
+      type = lib.types.attrs;
+      default = basePiWebSearchConfig;
+      description = "Base ~/.pi/agent/web-search.json pi-web-access configuration attrset.";
+    };
   };
 
   # ── Default config file ─────────────────────────────────────────────────
@@ -72,6 +89,9 @@ in
       );
       ".config/mcp/mcp.json".source = lib.mkDefault (
         json.generate "mcp-base.json" config.pi.baseMcpConfig
+      );
+      ".pi/agent/web-search.json".source = lib.mkDefault (
+        json.generate "web-search-base.json" config.pi.baseWebSearchConfig
       );
     };
   };
