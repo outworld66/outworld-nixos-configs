@@ -29,6 +29,7 @@ let
       "npm:pi-subagents"
       "npm:@dietrichgebert/ponytail"
       "npm:pi-mcp-adapter"
+      "npm:pi-web-access"
     ];
   };
 

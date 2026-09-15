@@ -25,5 +25,6 @@
       # ADE from outworld-packages overlay
       pkgs.orca
       pkgs.pane
+      pkgs.agterm
     ];
 }

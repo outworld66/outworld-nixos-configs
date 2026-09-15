@@ -15,7 +15,9 @@ let
   # 5. NotificationUnreadCount: hover opens a notifications-only popup
   #    (NotifPopup, built on the stock StyledPopup used by the clock widget).
   # 6. StyledPopup input mask fix.
-  # 7. MprisController zombie-player filter.
+  # 7. MprisController zombie-player filter, plus MediaArtworkResolver
+  #    clearing the displayed cover when a new art source definitively fails
+  #    to resolve (a filtered-out zombie left its media stuck as the cover).
   # 8. Lock screen authentication: absolute PAM module paths (NixOS has no
   #    /lib/security, so bare "pam_fprintd.so" never loaded and the fingerprint
   #    did nothing), a pam_unix-only password config (upstream defaults to
@@ -24,6 +26,10 @@ let
   #    respond() is called), retry on PAM errors, visible scan/failure states,
   #    and password field clipping so long passwords stay inside the field.
   # The seds are no-ops if upstream changes the anchored lines.
+  # 11. M3Bar: stay loaded while the screen is locked. Unloading the bar drops
+  #     its exclusive zone, so niri retiles windows on every lock and again on
+  #     unlock ("jumping" windows after unlock). The ext-session-lock surface
+  #     renders above the bar, so keeping it alive is invisible.
   inirPatched =
     (pkgs.callPackage "${inputs.inir}/nix/package.nix" { inherit pkgs; }).overrideAttrs
       (old: {
@@ -245,6 +251,117 @@ let
           open(f, 'w').write(s[:idx + 1] + block + s[idx:].lstrip('\n'))
           PYEOF
 
+                    # 10. MediaArtworkResolver: keep failed artwork from
+                    # sticking as the cover. Upstream keeps the previously
+                    # displayed art while a new source resolves and never
+                    # clears it when resolution definitively fails (missing or
+                    # non-image local art, exhausted download retries), so a
+                    # removed zombie player's cover stayed in the media widget.
+                    ar="$dir/modules/common/widgets/MediaArtworkResolver.qml"
+                    python3 - "$ar" <<'PYEOF'
+          import sys
+
+          f = sys.argv[1]
+          s = open(f).read()
+
+          def sub(old, new):
+              global s
+              assert s.count(old) == 1, "anchor not found or not unique: " + old[:60]
+              s = s.replace(old, new)
+
+          # 1. Helper: definitive failure clears the displayed art.
+          sub("""    function _stopWorkers(): void {""",
+          """    // Patched: a definitively failed resolution must clear the displayed
+              // art, otherwise the previous player's cover stays stuck (zombie MPRIS
+              // players left their media as the cover after being filtered out).
+              function _failDisplay(): void {
+                  root.ready = false;
+                  root.displaySource = "";
+                  root._pendingDisplaySource = "";
+                  root._pendingDisplayGeneration = 0;
+                  root._pendingDisplayChecksLeft = 0;
+              }
+
+              function _stopWorkers(): void {""")
+
+          # 2. localExistsChecker: non-image source or exhausted reloads -> clear.
+          sub("""            if (exitCode === 0) {
+                          root._localReloadsLeft = 0;
+                          root._publishLocalFile();
+                      } else if (exitCode === 2) {
+                          root._localReloadsLeft = 0;
+                          const displayedPath = root._pathFromFileUrl(root.displaySource);
+                          if (displayedPath === root.localFilePath || displayedPath === root.localCachedArtFilePath) {
+                              root.ready = false;
+                              root.displaySource = "";
+                          }
+                      } else if (root._localReloadsLeft > 0) {
+                          root._localReloadsLeft -= 1;
+                          localReloadTimer.restart();
+                      }""",
+          """            if (exitCode === 0) {
+                          root._localReloadsLeft = 0;
+                          root._publishLocalFile();
+                      } else if (exitCode === 2) {
+                          root._localReloadsLeft = 0;
+                          root._failDisplay();
+                      } else if (root._localReloadsLeft > 0) {
+                          root._localReloadsLeft -= 1;
+                          localReloadTimer.restart();
+                      } else {
+                          root._failDisplay();
+                      }""")
+
+          # 3. localFileCacher: any failure -> clear.
+          sub("""            if (exitCode === 0) {
+                          root._setReadySource(Qt.resolvedUrl(artFilePath));
+                      } else if (exitCode === 2) {
+                          const displayedPath = root._pathFromFileUrl(root.displaySource);
+                          if (displayedPath === artFilePath) {
+                              root.ready = false;
+                              root.displaySource = "";
+                          }
+                      } else if (!root.displaySource.length) {
+                          root.ready = false;
+                      }""",
+          """            if (exitCode === 0) {
+                          root._setReadySource(Qt.resolvedUrl(artFilePath));
+                      } else {
+                          root._failDisplay();
+                      }""")
+
+          # 4. artworkDownloader: exhausted retries -> clear.
+          sub("""            } else if (root._retryCount < root._maxRetries) {
+                          root._retryCount += 1;
+                          retryTimer.restart();
+                      } else if (root._pathFromFileUrl(root.displaySource) === artFilePath) {
+                          root.ready = false;
+                          root.displaySource = "";
+                      }""",
+          """            } else if (root._retryCount < root._maxRetries) {
+                          root._retryCount += 1;
+                          retryTimer.restart();
+                      } else {
+                          root._failDisplay();
+                      }""")
+
+          # 5. fileSourceReadyChecker: exhausted checks -> clear.
+          sub("""            } else if (root._pendingDisplayChecksLeft > 0) {
+                          root._pendingDisplayChecksLeft -= 1;
+                          fileSourcePublishTimer.restart();
+                      } else if (!root.displaySource.length) {
+                          root.ready = false;
+                      }""",
+          """            } else if (root._pendingDisplayChecksLeft > 0) {
+                          root._pendingDisplayChecksLeft -= 1;
+                          fileSourcePublishTimer.restart();
+                      } else {
+                          root._failDisplay();
+                      }""")
+
+          open(f, "w").write(s)
+          PYEOF
+
                     # 8. Lock screen authentication (see the header comment).
                     # NixOS has no /lib/security, so bare PAM module names in the
                     # shipped pam/fprintd.conf never loaded; write both PAM
@@ -261,6 +378,10 @@ let
                     # binary path and stale swayidle instances accumulated across
                     # inir restarts (each still firing screen-off/suspend).
                     sed -i '1!s#/usr/bin/##g' "$dir/scripts/inir"
+
+                    # 11. Keep the bar loaded while locked (see the header).
+                    sed -i 's/active: GlobalStates.barOpen && !GlobalStates.screenLocked/active: GlobalStates.barOpen/' \
+                      "$dir/modules/barM3/M3Bar.qml"
 
                     patch -d "$dir" -p1 --no-backup-if-mismatch < ${../patches/inir-lock-auth.patch}
         '';
