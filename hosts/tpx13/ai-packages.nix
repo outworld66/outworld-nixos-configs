@@ -8,6 +8,7 @@
       codex
       oh-my-codex
       pi
+      herdr
       zcode
       rtk
       dsh
