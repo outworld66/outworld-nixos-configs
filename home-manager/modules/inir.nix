@@ -9,6 +9,8 @@ let
   #    its own bar widget (hyprlandXkbIndicator) with no upstream config flag.
   # 2. UtilButtons: replace the light-mode toggle with a "Keep awake"
   #    (caffeine) button that drives the built-in Idle inhibitor service.
+  #    The Idle service itself is patched (#12 below) so inhibit only
+  #    suppresses auto-suspend; lock and screen-off keep firing.
   # 3. UtilButton: no hover expansion; the animated width change re-renders
   #    the whole util-buttons pill at a visible stutter on this machine.
   # 4. ClockWidgetPopup: larger calendar popup (560px wide, taller week strip).
@@ -382,6 +384,17 @@ let
                     # 11. Keep the bar loaded while locked (see the header).
                     sed -i 's/active: GlobalStates.barOpen && !GlobalStates.screenLocked/active: GlobalStates.barOpen/' \
                       "$dir/modules/barM3/M3Bar.qml"
+
+                    # 12. "Keep awake" (inhibit) must only suppress auto-suspend,
+                    # not the idle lock or screen-off. Upstream stops swayidle
+                    # entirely while inhibit is active, so the machine also never
+                    # locked. Keep swayidle running and only drop the suspend
+                    # timeout from its command line.
+                    idl="$dir/services/Idle.qml"
+                    sed -i 's/        if (!inhibit) _startSwayidleDelayed.start()/        _startSwayidleDelayed.start()/' "$idl"
+                    sed -i '/^        if (inhibit) return$/d' "$idl"
+                    sed -i 's/if (suspendTimeout > 0 \&\& lockBeforeSleep) {/if (suspendTimeout > 0 \&\& lockBeforeSleep \&\& !inhibit) {/' "$idl"
+                    sed -i 's/^        if (suspendTimeout > 0) {$/        if (suspendTimeout > 0 \&\& !inhibit) {/' "$idl"
 
                     patch -d "$dir" -p1 --no-backup-if-mismatch < ${../patches/inir-lock-auth.patch}
         '';
