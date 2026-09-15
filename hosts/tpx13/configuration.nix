@@ -2,12 +2,23 @@
   stateVersion,
   hostname,
   pkgs,
+  user,
   ...
 }:
 
 {
   imports = [
     ./ai-packages.nix
+  ];
+
+  # iNiR's apply-chrome-theme.sh writes a BrowserThemeColor policy file into
+  # /etc/opt/chrome/policies/managed as the logged-in user. Without a
+  # user-writable directory it falls back to a desktop notification demanding
+  # sudo after every theme pipeline run (every NixOS switch restarts inir and
+  # re-runs the pipeline). tmpfiles keeps the directory present and writable
+  # without giving every local user policy control over Chrome.
+  systemd.tmpfiles.rules = [
+    "d /etc/opt/chrome/policies/managed 0755 ${user} users -"
   ];
 
   networking.hostName = hostname;

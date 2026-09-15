@@ -1,4 +1,8 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  inputs,
+  ...
+}:
 {
   home.packages = with pkgs; [
     # Low-latency iNiR IPC helper for compositor keybinds. Bypasses the
@@ -173,6 +177,7 @@
 
     # Web and entertainment
     google-chrome # Web browser
+    inputs.helium-browser.packages.${pkgs.stdenv.hostPlatform.system}.helium # Privacy-focused Chromium browser from imputnet
     steam # PC game store, launcher, and compatibility platform
 
     # System and hardware utilities
