@@ -56,25 +56,4 @@
     ];
   };
 
-  # Vicinae only indexes desktop entries at startup
-  # (https://github.com/vicinaehq/vicinae/issues/1241). Restart the server
-  # whenever the user nix profile changes, so newly installed or removed
-  # applications show up without a manual restart.
-  systemd.user.paths.vicinae-app-rescan = {
-    Unit.Description = "Watch user nix profile for desktop entry changes";
-    Path.Modified = [ "/nix/var/nix/profiles/per-user/%u/" ];
-    Install.WantedBy = [ "graphical-session.target" ];
-  };
-
-  systemd.user.services.vicinae-app-rescan = {
-    Unit = {
-      Description = "Restart Vicinae to pick up new desktop entries";
-      # avoid restart loops: restarting Vicinae does not touch the profile
-      After = [ "vicinae.service" ];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.systemd}/bin/systemctl --user restart vicinae.service";
-    };
-  };
 }
