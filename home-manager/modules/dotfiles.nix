@@ -62,6 +62,7 @@ let
     "opencode/plugins"
     "scripts"
     "vesktop/settings"
+    "agterm/ghostty.conf"
     "vesktop/themes"
     "vesktop/settings.json"
     "VSCodium/User/settings.json"
