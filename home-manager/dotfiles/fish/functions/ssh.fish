@@ -1,20 +1,9 @@
-function ssh --description 'ssh with xterm-ghostty terminfo upload'
-    # agterm/ghostty TERM is missing on most hosts, making less warn
-    # "terminal is not fully functional". Upload our terminfo entry
-    # before connecting (ghostty docs, same fix as alacritty uses):
-    #   infocmp -x xterm-ghostty | ssh HOST -- tic -x -
-    # Best effort: first non-option arg is assumed to be the host
-    # (ssh -p 2222 host misparses), BatchMode skips password prompts,
-    # any failure is ignored — the real ssh below always runs.
+function ssh --description 'ssh with TERM downgraded to xterm-256color'
+    # agterm/ghostty sets TERM=xterm-ghostty, which is missing on most
+    # remote hosts — ncurses programs exit with "Error opening terminal".
+    # Downgrade TERM for the ssh child only; local apps keep full ghostty.
     if test "$TERM" = xterm-ghostty
-        for arg in $argv
-            if test -n "$arg"; and not string match -q -- '-*' $arg
-                infocmp -x xterm-ghostty | command ssh -T \
-                    -o BatchMode=yes -o ConnectTimeout=3 \
-                    $arg -- 'tic -xe xterm-ghostty -' >/dev/null 2>&1
-                break
-            end
-        end
+        set -lx TERM xterm-256color
     end
     command ssh $argv
 end
