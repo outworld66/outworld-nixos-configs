@@ -19,7 +19,6 @@
     #./nirinit.nix # little buggy
     ./nix.nix
     ./desktop.nix
-    ./ambxst.nix
     ./timezone.nix
     ./user.nix
     ./zram.nix

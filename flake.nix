@@ -25,8 +25,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    ambxst = {
-      url = "github:Axenide/Ambxst";
+    noctalia = {
+      url = "github:noctalia-dev/noctalia";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Upstream builds against nixos-unstable; it stays unfollowed on purpose.

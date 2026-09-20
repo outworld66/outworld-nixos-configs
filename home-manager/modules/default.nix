@@ -5,7 +5,7 @@
     ./codex.nix
     ./niri.nix
     ./themes.nix
-    ./ambxst.nix
+    ./noctalia.nix
     ./alacritty.nix
     ./chromium.nix
     ./lazygit.nix

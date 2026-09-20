@@ -60,8 +60,7 @@ in
   };
 
   systemd.user.services = {
-    # Ambxst does not ship a polkit agent, so run one for the
-    # graphical session.
+    # Keep a polkit agent available for graphical authentication prompts.
     polkit-kde-agent = {
       description = "Polkit authentication agent";
       wantedBy = [ "graphical-session.target" ];

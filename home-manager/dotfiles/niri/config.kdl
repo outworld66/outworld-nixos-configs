@@ -40,7 +40,7 @@ layout {
     gaps 16
     struts
     center-focused-column "never"
-    // Transparent so the Ambxst wallpaper backdrop shows through.
+    // Keep the background transparent so Noctalia owns the shell surfaces.
     background-color "transparent"
 }
 environment {
@@ -50,10 +50,6 @@ environment {
     QT_QPA_PLATFORMTHEME "kde"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
 }
-// Ambxst generates this file from ~/.config/ambxst/config and binds.json.
-include "~/.local/share/ambxst/niri.kdl"
-spawn-at-startup "ambxst"
-
 cursor
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 hotkey-overlay { skip-at-startup; }
