@@ -8,6 +8,23 @@ let
   stateDir = "/var/lib/airllm";
   venv = "${stateDir}/venv";
   python = pkgs.python3.withPackages (ps: [ ps.torchWithRocm ]);
+
+  # Usage after rebuilding NixOS:
+  #
+  #   airllm-setup                 # create the venv and install AirLLM
+  #   rocminfo                     # verify that the Radeon is visible
+  #   airllm-qwen38                # download/load the model and run one prompt
+  #   AIRLLM_PROMPT="Hello" airllm-qwen38
+  #
+  # Hugging Face token: keep it in the environment, never in this file:
+  #
+  #   read -rsp "HF token: " HF_TOKEN; echo
+  #   export HF_TOKEN
+  #   airllm-qwen38
+  #   unset HF_TOKEN
+  #
+  # The token is read by huggingface_hub. The model is public, so it may not
+  # be needed; use it if Hugging Face asks for authentication or rate limits.
   setup = pkgs.writeShellApplication {
     name = "airllm-setup";
     runtimeInputs = [
