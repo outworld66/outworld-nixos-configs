@@ -61,12 +61,12 @@
           "notifications"
         ];
         end = [
-          "session"
-          "settings"
-          "network"
-          "volume"
-          "keyboard_layout"
           "tray"
+          "keyboard_layout"
+          "volume"
+          "network"
+          "settings"
+          "session"
         ];
       };
 
