@@ -94,7 +94,10 @@
         group = "users";
         gitUsername = "outworld66";
         gitMail = "acidcarpet@gmail.com";
-        configDirectory = privateConfig.configDirectory or "/home/${user}/nix";
+        # This checkout lives below the shared nix workspace. Home Manager
+        # uses the path to create writable links for fish, niri and the other
+        # dotfiles, so the default must point at this repository itself.
+        configDirectory = privateConfig.configDirectory or "/home/${user}/nix/outworld-nixos-configs";
         activationFlake = privateConfig.activationFlake or configDirectory;
       };
 
@@ -108,7 +111,7 @@
         }
         {
           hostname = "majesty";
-          stateVersion = "25.11";
+          stateVersion = "26.05";
           hostModule = ./hosts/majesty/configuration.nix;
           hardwareModule = ./hosts/majesty/hardware-configuration.nix;
         }
