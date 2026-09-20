@@ -1,0 +1,208 @@
+--- a/modules/bar/BarContent.qml
++++ b/modules/bar/BarContent.qml
+@@ -4,11 +4,13 @@
+ import Quickshell
+ import Quickshell.Widgets
+ import Quickshell.Wayland
++import Quickshell.Services.Mpris
+ import qs.modules.bar.workspaces
+ import qs.modules.theme
+ import qs.modules.bar.clock
+ import qs.modules.bar.systray
+ import qs.modules.widgets.overview
++import qs.modules.widgets.defaultview
+ import qs.modules.widgets.dashboard
+ import qs.modules.widgets.powermenu
+ import qs.modules.widgets.presets
+@@ -376,162 +378,43 @@
+                         // Obtener referencia al notch de esta pantalla
+                         readonly property var notchContainer: Visibilities.getNotchForScreen(root.screen.name)
+
+-                        LauncherButton {
+-                            id: launcherButton
+-                            startRadius: root.outerRadius
+-                            endRadius: root.innerRadius
+-                            enableShadow: root.shadowsEnabled
++                        CompactPlayer {
++                            id: mediaPlayer
++                            player: MprisController.activePlayer
++                            notchHovered: false
++                            Layout.preferredWidth: 240
++                            Layout.preferredHeight: 36
+                         }
+
+-                        Workspaces {
+-                            orientation: root.orientation
+-                            bar: QtObject {
+-                                property var screen: root.screen
+-                            }
+-                            startRadius: root.innerRadius
+-                            endRadius: root.innerRadius
++                        Item { Layout.fillWidth: true }
++
++                        NotificationIndicator {
++                            Layout.preferredWidth: 36
++                            Layout.preferredHeight: 36
+                         }
+
+-                        LayoutSelectorButton {
+-                            id: layoutSelectorButton
++                        Clock {
++                            id: centerClock
+                             bar: root
+                             layerEnabled: root.shadowsEnabled
+                             startRadius: root.innerRadius
+-                            endRadius: (root.pinButtonVisible) ? root.innerRadius : (root.dockAtStart ? root.innerRadius : root.outerRadius)
+-                        }
+-
+-                        // Pin button (horizontal)
+-                        Loader {
+-                            active: (Config.bar && Config.bar.showPinButton !== undefined ? Config.bar.showPinButton : true)
+-                            visible: active
+-                            Layout.alignment: Qt.AlignVCenter
+-
+-                            sourceComponent: Button {
+-                                id: pinButton
+-                                implicitWidth: 36
+-                                implicitHeight: 36
+-
+-                                background: StyledRect {
+-                                    id: pinButtonBg
+-                                    variant: root.pinned ? "primary" : "bg"
+-                                    enableShadow: root.shadowsEnabled
+-
+-                                    // PinButton is typically last in group 1 (unless IntegratedDock follows at start)
+-                                    property real startRadius: root.innerRadius
+-                                    property real endRadius: root.dockAtStart ? root.innerRadius : root.outerRadius
+-
+-                                    topLeftRadius: startRadius
+-                                    bottomLeftRadius: startRadius
+-                                    topRightRadius: endRadius
+-                                    bottomRightRadius: endRadius
+-
+-                                    Rectangle {
+-                                        anchors.fill: parent
+-                                        color: Styling.srItem("overprimary")
+-                                        opacity: root.pinned ? 0 : (pinButton.pressed ? 0.5 : (pinButton.hovered ? 0.25 : 0))
+-                                        radius: (parent.radius !== undefined ? parent.radius : 0)
+-
+-                                        Behavior on opacity {
+-                                            enabled: (Config.animDuration !== undefined ? Config.animDuration : 0) > 0
+-                                            NumberAnimation {
+-                                                duration: (Config.animDuration !== undefined ? Config.animDuration : 0) / 2
+-                                            }
+-                                        }
+-                                    }
+-                                }
+-
+-                                contentItem: Text {
+-                                    text: Icons.pin
+-                                    font.family: Icons.font
+-                                    font.pixelSize: 18
+-                                    color: root.pinned ? pinButtonBg.item : (pinButton.pressed ? Colors.background : (Styling.srItem("overprimary") || Colors.foreground))
+-                                    horizontalAlignment: Text.AlignHCenter
+-                                    verticalAlignment: Text.AlignVCenter
+-
+-                                    rotation: root.pinned ? 0 : 45
+-                                    Behavior on rotation {
+-                                        enabled: (Config.animDuration !== undefined ? Config.animDuration : 0) > 0
+-                                        NumberAnimation {
+-                                            duration: (Config.animDuration !== undefined ? Config.animDuration : 0) / 2
+-                                        }
+-                                    }
+-
+-                                    Behavior on color {
+-                                        enabled: (Config.animDuration !== undefined ? Config.animDuration : 0) > 0
+-                                        ColorAnimation {
+-                                            duration: (Config.animDuration !== undefined ? Config.animDuration : 0) / 2
+-                                        }
+-                                    }
+-                                }
+-
+-                                onClicked: root.pinned = !root.pinned
+-
+-                                StyledToolTip {
+-                                    show: pinButton.hovered
+-                                    tooltipText: root.pinned ? I18n.t("bar.tooltip.unpin_bar") : I18n.t("bar.tooltip.pin_bar")
+-                                }
+-                            }
+-                        }
+-
+-                        Item {
+-                            Layout.fillWidth: true
+-                            Layout.fillHeight: true
+-                            visible: root.orientation === "horizontal" && integratedDockEnabled
+-
+-                            Bar.IntegratedDock {
+-                                bar: root
+-                                orientation: root.orientation
+-                                anchors.verticalCenter: parent.verticalCenter
+-                                enableShadow: root.shadowsEnabled
+-
+-                                // Connect to left/right groups if at start/end
+-                                startRadius: root.dockAtStart ? root.innerRadius : root.outerRadius
+-                                endRadius: root.dockAtEnd ? root.innerRadius : root.outerRadius
+-
+-                                // Calculate target position based on config
+-                                property real targetX: {
+-                                    if (integratedDockPosition === "start")
+-                                        return 0;
+-                                    if (integratedDockPosition === "end")
+-                                        return parent.width - width;
+-
+-                                    // Center logic (reactive using parent.x + margin offset)
+-                                    // RowLayout has anchors.margins: 4, so offset is 4
+-                                    return (bar.width - width) / 2 - (parent.x + 4);
+-                                }
+-
+-                                // Clamp the x position so it never leaves the container (preventing overlap)
+-                                x: Math.max(0, Math.min(parent.width - width, targetX))
+-
+-                                width: Math.min(implicitWidth, parent.width)
+-                                height: implicitHeight
+-                            }
++                            endRadius: root.innerRadius
+                         }
+
+-                        Item {
+-                            Layout.fillWidth: true
+-                            visible: !(root.orientation === "horizontal" && integratedDockEnabled)
+-                        }
++                        Item { Layout.fillWidth: true }
+
+-                        PresetsButton {
+-                            id: presetsButton
+-                            startRadius: root.dockAtEnd ? root.innerRadius : root.outerRadius
+-                            endRadius: root.innerRadius
++                        SysTray {
++                            bar: root
+                             enableShadow: root.shadowsEnabled
+-                        }
+-
+-                        ToolsButton {
+-                            id: toolsButton
+                             startRadius: root.innerRadius
+                             endRadius: root.innerRadius
+-                            enableShadow: root.shadowsEnabled
+                         }
+
+-                        SysTray {
+-                            bar: root
+-                            enableShadow: root.shadowsEnabled
++                        ToolsButton {
++                            id: settingsButton
+                             startRadius: root.innerRadius
+                             endRadius: root.innerRadius
++                            enableShadow: root.shadowsEnabled
+                         }
+
+                         ControlsButton {
+@@ -551,7 +434,7 @@
+                         }
+
+                         Clock {
+-                            id: clockComponent
++                            id: rightClock
+                             bar: root
+                             layerEnabled: root.shadowsEnabled
+                             startRadius: root.innerRadius

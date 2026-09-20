@@ -1,8 +1,9 @@
-{ pkgs, inputs, ... }: {
+{ inputs, pkgs, ... }:
+
+{
   environment.systemPackages =
     with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
     [
-      # AI Coding Agents
       claude-code
       opencode
       codex
@@ -13,8 +14,6 @@
       rtk
       dsh
       codegraph
-
-      # Workflow & Project Management
       bernstein
       gastown
       gascity
@@ -23,12 +22,9 @@
       openspec
     ]
     ++ [
-      # ADE from outworld-packages overlay
       pkgs.orca
       pkgs.pane
       pkgs.agterm
-
-      # AI office suite from outworld-packages overlay
       pkgs.genoffice
     ];
 }

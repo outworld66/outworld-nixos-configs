@@ -11,12 +11,15 @@
     ./boot.nix
     ./env.nix
     ./home-manager.nix
+    ./ai-packages.nix
+    ./helium.nix
     ./kernel.nix
     ./net.nix
     ./nh.nix
     #./nirinit.nix # little buggy
     ./nix.nix
     ./desktop.nix
+    ./ambxst.nix
     ./timezone.nix
     ./user.nix
     ./zram.nix

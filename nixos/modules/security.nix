@@ -60,7 +60,7 @@ in
   };
 
   systemd.user.services = {
-    # DMS shipped its own polkit agent; iNiR does not, so run one for the
+    # Ambxst does not ship a polkit agent, so run one for the
     # graphical session.
     polkit-kde-agent = {
       description = "Polkit authentication agent";

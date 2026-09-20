@@ -37,7 +37,7 @@
     };
   };
 
-  # The iNiR keyboard-layout indicator resolves layout names to codes via
+  # The shell keyboard-layout indicator resolves layout names to codes via
   # /usr/share/X11/xkb/rules/base.lst, which does not exist on NixOS.
   systemd.tmpfiles.rules = [
     "L+ /usr/share/X11/xkb/rules/base.lst - - - - ${pkgs.xkeyboardconfig}/share/X11/xkb/rules/base.lst"

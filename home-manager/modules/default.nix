@@ -5,8 +5,7 @@
     ./codex.nix
     ./niri.nix
     ./themes.nix
-    #./hyprproxlock.nix # rssi signal doesn't work as i want
-    ./inir.nix
+    ./ambxst.nix
     ./alacritty.nix
     ./chromium.nix
     ./lazygit.nix

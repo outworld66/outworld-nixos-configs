@@ -25,9 +25,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    inir = {
-      url = "github:snowarch/inir";
-      inputs.nixpkgs.follows = "nixpkgs";
+    ambxst = {
+      url = "github:Axenide/Ambxst";
     };
 
     # Upstream builds against nixos-unstable; it stays unfollowed on purpose.

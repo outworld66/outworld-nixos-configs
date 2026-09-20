@@ -1,17 +1,9 @@
 {
   pkgs,
-  inputs,
   ...
 }:
 {
   home.packages = with pkgs; [
-    # Low-latency iNiR IPC helper for compositor keybinds. Bypasses the
-    # featureful but slow `inir` wrapper (~400 ms) with one `qs ipc call`
-    # (~70 ms); resolves the live symlink so it survives rebuilds.
-    (writeShellScriptBin "ii" ''
-      exec qs -p "$(readlink -f "$HOME/.config/quickshell/inir")" ipc call "$@"
-    '')
-
     # Editors and IDEs
     (vscode-with-extensions.override {
       vscode = vscodium;
@@ -106,15 +98,15 @@
 
     # Wayland and desktop integration
     bemoji # Emoji picker for the desktop
-    cliphist # Clipboard history manager for the iNiR clipboard overlay
-    glib # Provides gsettings for the iNiR Qt/GTK theme sync
-    grim # Wayland screenshots; used by the iNiR region selector
+    cliphist # Clipboard history manager
+    glib # Provides gsettings for the Qt/GTK theme sync
+    grim # Wayland screenshots
     imagemagick # Crops region-selector screenshots (magick)
     kdePackages.plasma-integration # Qt platform theme plugin (QT_QPA_PLATFORMTHEME=kde)
-    libnotify # notify-send; used by iNiR pipelines for success and error messages
-    quickshell # Provides the qs CLI used by the ii IPC wrapper below
-    slurp # Wayland region selection for iNiR color picker and screenshots
-    swayidle # Idle manager driven by the iNiR Idle service (lock, suspend)
+    libnotify # Desktop notifications
+    quickshell # QML shell runtime
+    slurp # Wayland region selection
+    swayidle # Idle manager
     showmethekey # Displays pressed keys on screen
     ueberzugpp # Renders images inside supported terminals
     wl-clipboard # Wayland clipboard command-line tools
@@ -177,7 +169,6 @@
 
     # Web and entertainment
     google-chrome # Web browser
-    inputs.helium-browser.packages.${pkgs.stdenv.hostPlatform.system}.helium # Privacy-focused Chromium browser from imputnet
     steam # PC game store, launcher, and compatibility platform
 
     # System and hardware utilities
@@ -190,15 +181,15 @@
     nix-prefetch-scripts # Calculates source hashes for Nix packages
   ];
 
-  # High-accuracy Tesseract LSTM models (tessdata_best) used by the iNiR
-  # region-selector OCR. The iNiR cache dir outranks system data and the
+  # High-accuracy Tesseract LSTM models used by region-selector OCR. The
+  # Ambxst cache dir outranks system data and the
   # tessdata_fast models the runner would otherwise download.
   home.file = {
-    ".local/share/inir/tessdata/rus.traineddata".source = pkgs.fetchurl {
+    ".local/share/ambxst/tessdata/rus.traineddata".source = pkgs.fetchurl {
       url = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/rus.traineddata";
       sha256 = "1dnn51vqn4p8lawmxq7gy2fgxbais9zym1yxjnksmazz61lfn5xn";
     };
-    ".local/share/inir/tessdata/eng.traineddata".source = pkgs.fetchurl {
+    ".local/share/ambxst/tessdata/eng.traineddata".source = pkgs.fetchurl {
       url = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/eng.traineddata";
       sha256 = "1fk6rc5mcaqwblagvljvv3wa0k1jxzkhz8cflrbp5qigg38ax042";
     };
