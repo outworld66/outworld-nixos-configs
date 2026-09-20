@@ -9,10 +9,13 @@
   imports = [
     inputs.disko.nixosModules.disko
     ./disko.nix
+    ./qwen-flash-next.nix
   ];
 
   networking.hostName = hostname;
   system.stateVersion = stateVersion;
+
+  hardware.enableRedistributableFirmware = true;
 
   hardware.graphics = {
     enable = true;

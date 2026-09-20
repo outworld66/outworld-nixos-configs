@@ -94,7 +94,7 @@
     wget # Downloads files over HTTP, HTTPS, and FTP
     zip # Creates and modifies ZIP archives
     zellij # Terminal multiplexer and workspace manager
-    ferrite # Terminal workspace and file-management utility
+    #ferrite # Terminal workspace and file-management utility
 
     # Wayland and desktop integration
     bemoji # Emoji picker for the desktop
