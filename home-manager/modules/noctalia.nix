@@ -26,6 +26,34 @@
         mShadow = "#101113";
         mHover = "#35383e";
         mOnHover = "#e1e3e6";
+        terminal = {
+          background = "#1a1b1e";
+          foreground = "#d7d9dc";
+          cursor = "#d7d9dc";
+          cursorText = "#1a1b1e";
+          selectionBg = "#4c566a";
+          selectionFg = "#e1e3e6";
+          normal = {
+            black = "#1a1b1e";
+            red = "#c58f98";
+            green = "#aeb8a3";
+            yellow = "#c1b79a";
+            blue = "#9baec2";
+            magenta = "#b0a3ba";
+            cyan = "#9fb8b8";
+            white = "#d7d9dc";
+          };
+          bright = {
+            black = "#4c5158";
+            red = "#d5a0a8";
+            green = "#bdc9b1";
+            yellow = "#d2c8aa";
+            blue = "#b5c8dc";
+            magenta = "#c5b7d0";
+            cyan = "#b9d2d2";
+            white = "#f0f1f2";
+          };
+        };
       };
     };
 
