@@ -37,14 +37,10 @@ let
         }
       ''
     else
-      ''
-        output "eDP-1" {
-            mode "1920x1080@120.030"
-            scale 1.25
-            transform "normal"
-            position x=0 y=0
-        }
-      '';
+      # Majesty is a desktop profile and has no guaranteed eDP-1 output.
+      # Leave its outputs to niri's automatic discovery instead of forcing
+      # the laptop panel configuration used by tpx13.
+      "";
 in
 {
   home.packages = with pkgs; [

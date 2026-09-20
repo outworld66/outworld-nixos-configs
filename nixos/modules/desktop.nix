@@ -5,6 +5,14 @@
 {
   programs.niri.enable = true;
 
+  # Keep the keyboard layout consistent in the greeter and desktop session.
+  # Niri repeats these settings in its user configuration because it owns
+  # the Wayland input seat after the session starts.
+  services.xserver.xkb = {
+    layout = "us,ru";
+    options = "grp:lalt_lshift_toggle,compose:ralt,ctrl:nocaps";
+  };
+
   # The GNOME file chooser uses libadwaita's portal color preference instead
   # of the GTK theme configured in Home Manager. Use the GTK backend for file
   # dialogs so VSCodium, Zed, and other portal clients consistently get the

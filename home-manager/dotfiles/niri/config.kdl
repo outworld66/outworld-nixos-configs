@@ -2,7 +2,7 @@ input {
     keyboard {
         xkb {
             layout "us,ru"
-            options "grp:alt_shift_toggle,compose:ralt,ctrl:nocaps"
+            options "grp:lalt_lshift_toggle,compose:ralt,ctrl:nocaps"
         }
     }
     touchpad {
