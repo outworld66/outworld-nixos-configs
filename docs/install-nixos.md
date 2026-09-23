@@ -112,3 +112,27 @@ It is particularly useful when the target can be reached over SSH; its quick
 start documents `--generate-hardware-config nixos-generate-config ...`.
 For a local, USB-booted installation, this script keeps the same building
 blocks while making the disk layout and confirmation step explicit.
+
+## Remote installation with `nixos-anywhere`
+
+For a server reachable over SSH, install directly from the flake:
+
+```bash
+nix run github:nix-community/nixos-anywhere -- \
+  --generate-hardware-config nixos-generate-config \
+  hosts/private/hardware-configuration.nix \
+  --flake .#private \
+  --target-host root@192.168.0.3
+```
+
+This boots the target into a temporary NixOS kexec environment, generates the
+hardware configuration, runs Disko, installs the selected flake, and reboots
+into the installed system. The Disko configuration is destructive: every
+device declared by `hosts/private/disko.nix` is erased. Verify the device paths
+and keep a console or out-of-band access available before running it.
+
+The command was used for `private` from the repository root. The target was
+running Proxmox, so SSH became unavailable while kexec booted; this is expected
+for the transition, but the temporary environment must eventually bring the
+network back. If it does not, use the local ISO procedure above or investigate
+the target's NIC/bridge configuration from its console.
