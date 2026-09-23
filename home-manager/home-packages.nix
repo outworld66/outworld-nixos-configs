@@ -155,7 +155,7 @@
     tauon # Desktop music player and library manager
 
     # Communication
-    #discord
+    discord
     legcord # Lightweight Discord client
     thunderbird # Email, calendar, and contacts client
     vencord # Discord client modification and plugin platform
