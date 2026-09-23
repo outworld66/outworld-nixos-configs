@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 
 let
-  profile = "alt2wh";
+  profile = "wh";
   whitelist = [
     "^dns.google"
     "^dns.quad9.net"
