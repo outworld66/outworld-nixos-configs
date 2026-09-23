@@ -95,6 +95,7 @@
     zip # Creates and modifies ZIP archives
     zellij # Terminal multiplexer and workspace manager
     #ferrite # Terminal workspace and file-management utility
+    limux # GPU-accelerated terminal workspace manager
 
     # Wayland and desktop integration
     bemoji # Emoji picker for the desktop

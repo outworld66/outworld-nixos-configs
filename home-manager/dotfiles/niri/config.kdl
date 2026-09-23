@@ -69,6 +69,7 @@ binds {
     // Bind for running programs
     Mod+T { spawn "alacritty"; }
     Mod+D { spawn-sh "vicinae open"; }
+    Mod+L { spawn "noctalia" "msg" "session" "lock"; }
     Mod+Q repeat=false { close-window; }
 
     // My favorite base hotkeys
