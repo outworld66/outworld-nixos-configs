@@ -16,6 +16,8 @@
   networking.hostName = hostname;
   system.stateVersion = stateVersion;
 
+  security.sudo.extraConfig = "Defaults@majesty timestamp_timeout=1440";
+
   hardware.enableRedistributableFirmware = true;
 
   hardware.graphics = {
