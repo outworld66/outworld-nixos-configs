@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 
 let
-  profile = "wh";
+  profile = "altwh";
   whitelist = [
     "^dns.google"
     "^dns.quad9.net"
@@ -62,6 +62,8 @@ let
     "localizeapi.com"
     "klipy.com"
     "live-video.net"
+  ];
+  googleWhitelist = [
     "yt3.ggpht.com"
     "yt4.ggpht.com"
     "yt3.googleusercontent.com"
@@ -81,11 +83,15 @@ let
     "ytimg.com"
     "ytimg.l.google.com"
     "play.google.com"
-    "fonts.googleapis.com"
-    "www.gstatic.com"
     "google.ru"
   ];
-  hostlist = pkgs.writeText "zapret-whitelist" (lib.concatStringsSep "\n" whitelist);
+  hostlist = pkgs.writeText "zapret-whitelist" (
+    lib.concatStringsSep "\n" (whitelist ++ googleWhitelist)
+  );
+  generalHostlist = pkgs.writeText "zapret-general-whitelist" (lib.concatStringsSep "\n" whitelist);
+  googleHostlist = pkgs.writeText "zapret-google-whitelist" (
+    lib.concatStringsSep "\n" googleWhitelist
+  );
   params = {
     wh = [
       "--filter-udp=443"
@@ -124,19 +130,17 @@ let
     ];
     altwh = [
       "--filter-udp=443"
-      "--hostlist=${hostlist}"
+      "--hostlist=${generalHostlist}"
       "--dpi-desync=fake"
       "--dpi-desync-repeats=6"
       "--new"
       "--filter-udp=19294-19344,50000-50100"
       "--filter-l7=discord,stun"
-      "--hostlist=${hostlist}"
       "--dpi-desync=fake"
       "--dpi-desync-repeats=6"
       "--new"
       "--filter-tcp=2053,2083,2087,2096,8443"
       "--hostlist-domains=discord.media"
-      "--hostlist=${hostlist}"
       "--dpi-desync=fake,fakedsplit"
       "--dpi-desync-repeats=6"
       "--dpi-desync-fooling=ts"
@@ -144,7 +148,7 @@ let
       "--dpi-desync-fake-tls=!"
       "--new"
       "--filter-tcp=443"
-      "--hostlist=${hostlist}"
+      "--hostlist=${googleHostlist}"
       "--ip-id=zero"
       "--dpi-desync=fake,fakedsplit"
       "--dpi-desync-repeats=6"
@@ -153,7 +157,7 @@ let
       "--dpi-desync-fake-tls=!"
       "--new"
       "--filter-tcp=80,443"
-      "--hostlist=${hostlist}"
+      "--hostlist=${generalHostlist}"
       "--dpi-desync=fake,fakedsplit"
       "--dpi-desync-repeats=6"
       "--dpi-desync-fooling=ts"
@@ -197,7 +201,7 @@ in
 {
   services.zapret = {
     enable = true;
-    inherit whitelist;
+    whitelist = [ ];
     params = params.${profile};
     udpSupport = true;
     udpPorts = [
