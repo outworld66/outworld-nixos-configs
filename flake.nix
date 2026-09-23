@@ -59,6 +59,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # The bundled implementation exports empty settings. Override this input
     # with a private companion flake to add identity and local
     # modules without making that repository a prerequisite.
@@ -115,6 +120,13 @@
           hostModule = ./hosts/majesty/configuration.nix;
           hardwareModule = ./hosts/majesty/hardware-configuration.nix;
         }
+        {
+          hostname = "private";
+          stateVersion = "26.05";
+          moduleSet = ./nixos/modules/server;
+          hostModule = ./hosts/private/configuration.nix;
+          hardwareModule = ./hosts/private/hardware-configuration.nix;
+        }
       ];
 
       # Package set used by formatter, checks, apps and the development shell.
@@ -156,6 +168,7 @@
           extraModules ? [ ],
           extraHomeModules ? [ ],
           extraSpecialArgs ? { },
+          moduleSet ? ./nixos/modules,
         }:
         nixpkgs.lib.nixosSystem {
           inherit system;
@@ -183,7 +196,7 @@
             {
               nixpkgs.overlays = [ (_final: _previous: inputs.outworld-packages.packages.${system}) ];
             }
-            ./nixos/modules
+            moduleSet
             hostModule
           ]
           ++ nixpkgs.lib.optional (hardwareModule != null) hardwareModule
@@ -226,6 +239,7 @@
 
       nixosModules = {
         default = ./nixos/modules;
+        server = ./nixos/modules/server;
         tpx13 = ./hosts/tpx13/configuration.nix;
         majesty = ./hosts/majesty/configuration.nix;
       };
@@ -242,6 +256,7 @@
               stateVersion
               hostModule
               ;
+            moduleSet = host.moduleSet or ./nixos/modules;
             inherit (identity)
               user
               group

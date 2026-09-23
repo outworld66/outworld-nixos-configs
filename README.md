@@ -1,7 +1,8 @@
 # NixOS and Home Manager configuration
 
-This repository contains reusable NixOS and Home Manager modules, two example
-host profiles, package re-exports, formatting, checks, and developer tooling.
+This repository contains reusable NixOS and Home Manager modules, desktop and
+server host profiles, package re-exports, formatting, checks, and developer
+tooling.
 Identity and organization-specific inputs belong in a separate private flake.
 Host hardware configurations and Disko layouts are versioned here, so review
 their hardware identifiers and device paths before publishing.
@@ -16,6 +17,7 @@ defaults to `nixos` and optional private modules are absent.
 
 - `flake.nix` exports `lib.makeSystem`, modules, checks, packages and apps.
 - `nixos/modules/` contains shared system configuration.
+- `nixos/modules/server/` contains reusable server-service modules.
 - `home-manager/` contains the Home Manager profile and declarative dotfiles.
 - `hosts/` contains host behavior, generated hardware configurations and Disko
   layouts.

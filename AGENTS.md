@@ -1,6 +1,6 @@
 # Repository guide
 
-This public repository defines two `x86_64-linux` NixOS systems. Home Manager
+This public repository defines desktop and server `x86_64-linux` NixOS systems. Home Manager
 is integrated as a NixOS module. The bundled empty `private` input uses the
 safe default user `nixos`; an optional private library can override identity
 and add extra modules.
@@ -8,6 +8,8 @@ and add extra modules.
 - `tpx13` is a workstation profile with additional llm-agents packages.
 - `majesty` is the second host profile. Machine-specific Disko layouts and
   hardware configuration live with their public host profiles.
+- `private` is the first server profile; reusable server services live below
+  `nixos/modules/server/` and host routing stays in `hosts/private/`.
 
 ## Repository map
 
