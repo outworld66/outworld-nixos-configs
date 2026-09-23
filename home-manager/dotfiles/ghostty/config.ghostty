@@ -9,3 +9,4 @@ window-inherit-working-directory = true
 shell-integration-features = true
 link-previews = true
 link-url = true
+theme = noctalia

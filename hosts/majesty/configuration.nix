@@ -10,6 +10,7 @@
     inputs.disko.nixosModules.disko
     ./disko.nix
     ./qwen-flash-next.nix
+    #../../nixos/modules/zapret.nix
   ];
 
   networking.hostName = hostname;

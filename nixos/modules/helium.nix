@@ -19,6 +19,9 @@ let
         --replace-fail 'pressedKey === "shift+alt+q"' 'pressedKey === "ctrl+shift+z"' \
         --replace-fail 'Shift+Alt+Q' 'Ctrl+Shift+Z'
 
+      substituteInPlace ui/popup.html \
+        --replace-fail 'Shift + Alt + Q' 'Ctrl + Shift + Z'
+
       python -c 'import json; from pathlib import Path; p=Path("manifest.json"); d=json.loads(p.read_text()); d["host_permissions"]=["https://translate.googleapis.com/*"]; d["commands"]={"translate-selection":{"suggested_key":{"default":"Ctrl+Shift+Z"},"description":"Translate selected text"}}; p.write_text(json.dumps(d, indent=2)+"\n"); p=Path("src/background.js"); s=p.read_text(); s=s.replace("chrome.runtime.onMessage.addListener", "chrome.commands.onCommand.addListener(async (command) => { if (command !== \"translate-selection\") return; const [tab] = await chrome.tabs.query({ active: true, currentWindow: true }); if (tab?.id) chrome.tabs.sendMessage(tab.id, { action: \"translate-selection\" }); });"+chr(10)+"chrome.runtime.onMessage.addListener", 1); p.write_text(s)'
     '';
 
@@ -38,7 +41,7 @@ in
     [Desktop Entry]
     Name=Helium
     Comment=Private, fast, and honest web browser
-    Exec=/run/current-system/sw/bin/helium %U
+    Exec=/run/current-system/sw/bin/helium --load-extension=${heliumInlineTranslator} %U
     Terminal=false
     Type=Application
     Icon=helium

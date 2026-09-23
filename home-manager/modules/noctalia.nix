@@ -64,6 +64,16 @@
         mode = "dark";
         source = "custom";
         custom_palette = "agterm-grey";
+
+        templates = {
+          enable_builtin_templates = true;
+          builtin_ids = [
+            "gtk3"
+            "gtk4"
+            "qt"
+            "ghostty"
+          ];
+        };
       };
 
       bar.order = [ "main" ];

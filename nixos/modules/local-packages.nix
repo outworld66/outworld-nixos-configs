@@ -5,5 +5,7 @@
     git
     pciutils
     inetutils
+
+    git-credential-manager
   ];
 }

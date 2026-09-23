@@ -17,7 +17,7 @@ let
 
   gitConfig = pkgs.replaceVars ../dotfiles/git/config {
     inherit user gitUsername gitMail;
-    gitCredentialManager = "${pkgs.git-credential-manager}/bin/git-credential-manager-core";
+    gitCredentialManager = "${pkgs.git-credential-manager}/bin/git-credential-manager";
   };
 
   configLinks = [
