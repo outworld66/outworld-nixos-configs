@@ -41,12 +41,9 @@ let
         --alias qwen3.8-27b-speculative \
         --host 127.0.0.1 \
         --port 8081 \
-        --ctx-size 262144 \
+        --ctx-size 32768 \
         --n-gpu-layers 999 \
         --device ROCm0 \
-        --no-kv-offload \
-        --cache-type-k q4_0 \
-        --cache-type-v q4_0 \
         --flash-attn on \
         --parallel 1 \
         --spec-draft-hf Anbeeld/Qwen3.8-27B-DSpark-GGUF:Q4_K_M \
