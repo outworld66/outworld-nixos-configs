@@ -118,6 +118,11 @@ systemctl list-timers nixos-private-update.timer
 
 ## Which model to choose
 
+For the first installation of a server with SOPS, use the bootstrap tasks
+described in the [server bootstrap guide](server-bootstrap.md). They separate
+machine-key generation from secret activation and stop for confirmation before
+changing encrypted data.
+
 For one or a few home servers, start with manual deployment. It is simpler,
 does not require GitHub credentials on the server, and lets you review the
 configuration before activation.

@@ -17,6 +17,60 @@ the encrypted file, switching the private flake to `enable`, and deploying.
 Use `SERVER_TARGET` and `PRIVATE_FLAKE` to override the defaults. To review the
 recipient before the final task, run the first task by itself.
 
+Before running the tasks, update both repositories:
+
+```bash
+cd ~/nix/outworld-nixos-configs
+git pull --ff-only
+cd ../outworld-nixos-private
+git pull --ff-only
+cd ../outworld-nixos-configs
+```
+
+`server-bootstrap-key` performs the bootstrap activation and prints the
+server's public recipient:
+
+```bash
+task server-bootstrap-key
+```
+
+`server-bootstrap-finish` obtains the recipient again, verifies its `age1...`
+format, asks for confirmation, updates `.sops.yaml`, re-encrypts
+`secrets/private.yaml`, switches the private flake from `bootstrap` to
+`enable`, validates the flake, and performs the final activation:
+
+```bash
+task server-bootstrap-finish
+```
+
+The default target is `root@192.168.0.3`. Override it, and the private checkout
+path when necessary:
+
+```bash
+task server-bootstrap-key \
+  SERVER_TARGET=root@192.168.0.10 \
+  PRIVATE_FLAKE=/path/to/outworld-nixos-private
+
+task server-bootstrap-finish \
+  SERVER_TARGET=root@192.168.0.10 \
+  PRIVATE_FLAKE=/path/to/outworld-nixos-private
+```
+
+The tasks do not commit or push changes in the private repository. Review and
+publish the generated recipient and mode change explicitly:
+
+```bash
+cd ../outworld-nixos-private
+git diff
+git add .sops.yaml flake.nix secrets/private.yaml
+git commit -m "Enable private server secrets"
+git push origin main
+```
+
+The local admin age identity must be available through
+`SOPS_AGE_KEY_FILE`, or at the default path
+`~/.config/sops/age/keys.txt`.
+
 ## 1. Install the public server configuration
 
 Boot a NixOS live ISO, review the disks, and run the installer script:

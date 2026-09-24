@@ -22,10 +22,12 @@
         "--addr=0.0.0.0"
         "--port=7890"
         "--ws-url=ws://192.168.0.3:7890"
+        "--fifo-out=/srv/goaccess/goaccess.fifo"
       ];
+      ExecStartPre = "${pkgs.coreutils}/bin/rm -f /srv/goaccess/goaccess.fifo";
       WorkingDirectory = "/srv/goaccess";
       Restart = "on-failure";
-      ProtectSystem = "strict";
+      ProtectSystem = "full";
       ReadOnlyPaths = [ "/var/log/caddy/access.log" ];
       ReadWritePaths = [ "/srv/goaccess" ];
     };
