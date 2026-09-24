@@ -150,7 +150,7 @@ tasks:
         set -eu
         private_dir="{{.PRIVATE_FLAKE_DIR}}"
         host="{{.CLI_ARGS}}"
-        server_hosts="$(nix eval --json .#serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n')"
+        server_hosts="$(nix eval --json .#lib.serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n')"
 
         if test -z "$host"; then
           echo "Usage: task server-update -- <host>" >&2
@@ -190,7 +190,7 @@ tasks:
   server-list:
     desc: List hosts available for server-update
     cmds:
-      - nix eval --json .#serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n'
+      - nix eval --json .#lib.serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n'
 
   dns:
     desc: Plan and optionally apply Selectel DNS changes

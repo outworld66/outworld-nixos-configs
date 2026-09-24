@@ -135,7 +135,7 @@ task server-list
 task server-update -- private
 ```
 
-The host name is selected from the flake's `serverHosts` output. A host is
+The host name is selected from the flake's `lib.serverHosts` output. A host is
 included when its host entry uses `./nixos/modules/server`. Task requires `--`
 before task arguments; `task server-update private` would mean two task names
 instead of selecting `private`.

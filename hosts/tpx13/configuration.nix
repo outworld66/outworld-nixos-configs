@@ -29,7 +29,7 @@
   # device is not compliant to SW_LID"), and logind answers each one with
   # suspend even on AC. Ignore lid events on external power; on battery the
   # default suspend-on-close still applies.
-  services.logind.lidSwitchExternalPower = "ignore";
+  services.logind.settings.Login.HandleLidSwitchExternalPower = "ignore";
 
   system.stateVersion = stateVersion;
 }
