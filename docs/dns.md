@@ -5,17 +5,22 @@ current DNS Hosting API. The repository manages the `private` record through
 the managed source; the imported source preserves the rest of the existing
 zone.
 
-The Selectel DNS provider expects a Keystone project token in
-`KEYSTONE_PROJECT_TOKEN`. Keep the token outside the repository. For example,
-load it from the private SOPS checkout with `sops exec-env`.
+The Selectel DNS provider expects a short-lived Keystone project token in
+`KEYSTONE_PROJECT_TOKEN`. Keep it only in the current shell and do not store it
+in Git, SOPS, shell history, or a persistent environment file:
+
+```sh
+read -rsp 'Selectel token: ' KEYSTONE_PROJECT_TOKEN
+export KEYSTONE_PROJECT_TOKEN
+echo
+```
 
 ## Initial import
 
 Import the current Selectel zone before the first plan:
 
 ```sh
-sops exec-env ../outworld-nixos-private/secrets/selectel.yaml \
-  'task dns-import'
+task dns-import
 ```
 
 Review the generated `.octodns/zones/imported/outworld66.ru.yaml` and commit
@@ -27,15 +32,19 @@ existing records are not accidentally removed.
 Show the changes without modifying Selectel:
 
 ```sh
-sops exec-env ../outworld-nixos-private/secrets/selectel.yaml \
-  'task dns-plan'
+task dns-plan
 ```
 
 Apply the reviewed plan explicitly:
 
 ```sh
-sops exec-env ../outworld-nixos-private/secrets/selectel.yaml \
-  'DNS_CONFIRM=apply task dns-sync'
+DNS_CONFIRM=apply task dns-sync
+```
+
+Remove the token from the shell when finished:
+
+```sh
+unset KEYSTONE_PROJECT_TOKEN
 ```
 
 The managed file currently points `private.outworld66.ru.` to the temporary
