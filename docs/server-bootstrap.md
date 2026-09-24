@@ -5,6 +5,18 @@ NixOS system and generates a machine-specific age identity. The second phase
 adds that identity to the private SOPS file and enables the services that need
 secrets.
 
+The two post-install phases can be run with Task:
+
+```bash
+task server-bootstrap-key
+task server-bootstrap-finish
+```
+
+The second task asks for confirmation before changing `.sops.yaml`, updating
+the encrypted file, switching the private flake to `enable`, and deploying.
+Use `SERVER_TARGET` and `PRIVATE_FLAKE` to override the defaults. To review the
+recipient before the final task, run the first task by itself.
+
 ## 1. Install the public server configuration
 
 Boot a NixOS live ISO, review the disks, and run the installer script:
@@ -28,7 +40,8 @@ The private flake starts the server in bootstrap mode:
 { server.secrets.bootstrap = true; }
 ```
 
-Deploy that bootstrap configuration from the workstation:
+Deploy that bootstrap configuration from the workstation, or run
+`task server-bootstrap-key`:
 
 ```bash
 cd ~/nix/outworld-nixos-configs
@@ -69,7 +82,8 @@ creation_rules:
           - *private
 ```
 
-Then re-encrypt the existing secret file:
+Then re-encrypt the existing secret file, or let
+`task server-bootstrap-finish` do it after confirmation:
 
 ```bash
 cd ~/nix/outworld-nixos-private

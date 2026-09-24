@@ -3,6 +3,8 @@ version: "3"
 vars:
   PRIVATE_FLAKE_DIR: '{{.PRIVATE_FLAKE | default "../outworld-nixos-private"}}'
   PACKAGES_FLAKE_DIR: '{{.PACKAGES_FLAKE | default "../outworld-nixos-packages"}}'
+  SERVER_TARGET: '{{.SERVER_TARGET | default "root@192.168.0.3"}}'
+  SERVER_AGE_KEY: '{{.SERVER_AGE_KEY | default "/var/lib/sops-nix/key.txt"}}'
 
 tasks:
   update-lock:
@@ -63,3 +65,80 @@ tasks:
           set -- "$@" --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
         fi
         nh os switch . "$@"
+
+  server-bootstrap-key:
+    desc: Deploy bootstrap mode and print the server age recipient
+    cmds:
+      - |
+        set -eu
+        private_flake="{{.PRIVATE_FLAKE_DIR}}/flake.nix"
+        test -f "$private_flake"
+        count="$(grep -F -c '{ server.secrets.bootstrap = true; }' "$private_flake" || true)"
+        test "$count" = 1
+        nixos-rebuild switch --flake .#private \
+          --target-host "{{.SERVER_TARGET}}" \
+          --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
+        ssh "{{.SERVER_TARGET}}" \
+          /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}"
+
+  server-bootstrap-finish:
+    desc: Add the server recipient, enable SOPS secrets, and deploy
+    cmds:
+      - |
+        set -eu
+        private_dir="{{.PRIVATE_FLAKE_DIR}}"
+        sops_file="$private_dir/secrets/private.yaml"
+        sops_config="$private_dir/.sops.yaml"
+        private_flake="$private_dir/flake.nix"
+        key_file="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
+
+        test -f "$sops_file"
+        test -f "$sops_config"
+        test -f "$private_flake"
+        test -r "$key_file"
+
+        recipient="${SERVER_AGE_RECIPIENT:-$(ssh "{{.SERVER_TARGET}}" \
+          /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}")}"
+        case "$recipient" in
+          age1*) ;;
+          *) echo "Invalid age recipient: $recipient" >&2; exit 1 ;;
+        esac
+
+        if grep -Fq "&private $recipient" "$sops_config"; then
+          :
+        elif grep -Eq '^  - &private ' "$sops_config"; then
+          echo "The private recipient already exists but does not match $recipient" >&2
+          exit 1
+        else
+          tmp="$(mktemp)"
+          trap 'rm -f "$tmp"' EXIT
+          awk -v recipient="$recipient" '
+            /^  - &admin / { print; print "  - &private " recipient; next }
+            /^          - \*admin$/ { print; print "          - *private"; next }
+            { print }
+          ' "$sops_config" > "$tmp"
+          mv "$tmp" "$sops_config"
+          trap - EXIT
+        fi
+
+        if ! grep -Fq "          - *private" "$sops_config"; then
+          echo "The private recipient is not referenced by the creation rule" >&2
+          exit 1
+        fi
+
+        printf 'This will update SOPS recipients and enable server secrets. Continue? [y/N] '
+        read answer
+        test "$answer" = y || test "$answer" = Y
+
+        SOPS_AGE_KEY_FILE="$key_file" \
+          nix run nixpkgs#sops -- updatekeys --yes "$sops_file"
+
+        count="$(grep -F -c '{ server.secrets.bootstrap = true; }' "$private_flake" || true)"
+        test "$count" = 1
+        sed -i 's/{ server\.secrets\.bootstrap = true; }/{ server.secrets.enable = true; }/' "$private_flake"
+
+        nix flake check --no-build --no-write-lock-file \
+          --override-input private "path:$private_dir"
+        nixos-rebuild switch --flake .#private \
+          --target-host "{{.SERVER_TARGET}}" \
+          --override-input private "path:$private_dir"
