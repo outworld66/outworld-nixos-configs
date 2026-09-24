@@ -15,37 +15,22 @@ export KEYSTONE_PROJECT_TOKEN
 echo
 ```
 
-## Initial import
-
-Import the current Selectel zone before the first plan:
-
-```sh
-task dns-import
-```
-
-Review the generated `.octodns/zones/imported/outworld66.ru.yaml` and commit
-it. The first import is intentionally separate from synchronization so that
-existing records are not accidentally removed.
-
 ## Plan and apply
 
-Show the changes without modifying Selectel:
+Run the single interactive task:
 
 ```sh
-task dns-plan
+task dns
 ```
 
-Apply the reviewed plan explicitly:
+On the first run, the task imports the current Selectel zone into
+`.octodns/zones/imported/outworld66.ru.yaml`. Review the generated file and
+commit it. The task then shows the plan and asks for confirmation before
+modifying Selectel.
 
-```sh
-DNS_CONFIRM=apply task dns-sync
-```
-
-Remove the token from the shell when finished:
-
-```sh
-unset KEYSTONE_PROJECT_TOKEN
-```
+The task reads `KEYSTONE_PROJECT_TOKEN` without echoing it. If the variable is
+already set, it reuses that value; otherwise it prompts for the token. The
+token exists only in the task process and is not saved by the repository.
 
 The managed file currently points `private.outworld66.ru.` to the temporary
 address `192.168.0.3`. Replace it before exposing the service outside the

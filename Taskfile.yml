@@ -192,55 +192,40 @@ tasks:
     cmds:
       - nix eval --json .#serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n'
 
-  dns-import:
-    desc: Import the current Selectel DNS zone into the repository
+  dns:
+    desc: Plan and optionally apply Selectel DNS changes
     cmds:
       - |
         set -eu
-        test -n "${KEYSTONE_PROJECT_TOKEN:-}" || {
-          echo "KEYSTONE_PROJECT_TOKEN is required" >&2
-          exit 1
-        }
-        mkdir -p .octodns/zones/imported
-        uv run --locked octodns-dump \
-          --config-file=.octodns/config.yaml \
-          --output-dir=.octodns/zones/imported \
-          --output-provider imported \
-          outworld66.ru. selectel
-        echo "Review and commit .octodns/zones/imported/outworld66.ru.yaml"
+        if test -z "${KEYSTONE_PROJECT_TOKEN:-}"; then
+          printf 'Selectel Keystone project token: '
+          read -r -s KEYSTONE_PROJECT_TOKEN
+          printf '\n'
+          export KEYSTONE_PROJECT_TOKEN
+        fi
 
-  dns-plan:
-    desc: Show pending Selectel DNS changes
-    cmds:
-      - |
-        set -eu
-        test -n "${KEYSTONE_PROJECT_TOKEN:-}" || {
-          echo "KEYSTONE_PROJECT_TOKEN is required" >&2
-          exit 1
-        }
-        test -f .octodns/zones/imported/outworld66.ru.yaml || {
-          echo "Run task dns-import before planning" >&2
-          exit 1
-        }
+        if ! test -f .octodns/zones/imported/outworld66.ru.yaml; then
+          mkdir -p .octodns/zones/imported
+          uv run --locked octodns-dump \
+            --config-file=.octodns/config.yaml \
+            --output-dir=.octodns/zones/imported \
+            --output-provider imported \
+            outworld66.ru. selectel
+          echo "Imported the current zone into .octodns/zones/imported/outworld66.ru.yaml"
+          echo "Review the imported file before continuing."
+        fi
+
         uv run --locked octodns-sync --config-file=.octodns/config.yaml
 
-  dns-sync:
-    desc: Apply reviewed DNS changes to Selectel
-    cmds:
-      - |
-        set -eu
-        test "${DNS_CONFIRM:-}" = apply || {
-          echo "Set DNS_CONFIRM=apply to modify Selectel DNS" >&2
-          exit 1
-        }
-        test -n "${KEYSTONE_PROJECT_TOKEN:-}" || {
-          echo "KEYSTONE_PROJECT_TOKEN is required" >&2
-          exit 1
-        }
-        test -f .octodns/zones/imported/outworld66.ru.yaml || {
-          echo "Run task dns-import before syncing" >&2
-          exit 1
-        }
-        uv run --locked octodns-sync \
-          --config-file=.octodns/config.yaml \
-          --doit
+        printf 'Apply this DNS plan to Selectel? [y/N] '
+        read -r answer
+        case "$answer" in
+          y|Y|yes|YES)
+            uv run --locked octodns-sync \
+              --config-file=.octodns/config.yaml \
+              --doit
+            ;;
+          *)
+            echo "DNS sync skipped."
+            ;;
+        esac
