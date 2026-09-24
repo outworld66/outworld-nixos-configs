@@ -14,5 +14,11 @@ zones:
     sources:
       - imported
       - managed
+    processors:
+      - no-root-ns
     targets:
       - selectel
+
+processors:
+  no-root-ns:
+    class: octodns.processor.filter.IgnoreRootNsFilter
