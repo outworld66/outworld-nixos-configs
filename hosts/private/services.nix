@@ -2,7 +2,6 @@ _: {
   services.caddy.virtualHosts = {
     "auth.private.outworld66.ru" = {
       extraConfig = ''
-        tls internal
         log {
           output file /var/log/caddy/access.log
         }
@@ -12,7 +11,6 @@ _: {
 
     "files.private.outworld66.ru" = {
       extraConfig = ''
-        tls internal
         log {
           output file /var/log/caddy/access.log
         }
@@ -26,7 +24,6 @@ _: {
 
     "stats.private.outworld66.ru" = {
       extraConfig = ''
-        tls internal
         log {
           output file /var/log/caddy/access.log
         }

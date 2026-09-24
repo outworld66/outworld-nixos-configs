@@ -198,10 +198,34 @@ tasks:
       - |
         set -eu
         if test -z "${KEYSTONE_PROJECT_TOKEN:-}"; then
-          printf 'Selectel Keystone project token: '
-          read -r -s KEYSTONE_PROJECT_TOKEN
-          printf '\n'
-          export KEYSTONE_PROJECT_TOKEN
+          private_secrets="{{.PRIVATE_FLAKE_DIR}}/secrets/private.yaml"
+          test -f "$private_secrets"
+          selectel_secret() {
+            nix run nixpkgs#sops -- --decrypt --extract "$1" "$private_secrets"
+          }
+          selectel_user="$(selectel_secret '["selectel"]["user"]')"
+          selectel_password="$(selectel_secret '["selectel"]["password"]')"
+          selectel_account_id="$(selectel_secret '["selectel"]["account_id"]')"
+          selectel_project_name="$(selectel_secret '["selectel"]["project_name"]')"
+          token_tmp="$(mktemp -d)"
+          trap 'rm -f "$token_tmp/response.json" "$token_tmp/headers.txt"; rmdir "$token_tmp"' EXIT
+          export KEYSTONE_PROJECT_TOKEN="$(
+            jq -n \
+              --arg user "$selectel_user" \
+              --arg password "$selectel_password" \
+              --arg account_id "$selectel_account_id" \
+              --arg project_name "$selectel_project_name" \
+              '{auth:{identity:{methods:["password"],password:{user:{name:$user,domain:{name:$account_id},password:$password}}},scope:{project:{name:$project_name,domain:{name:$account_id}}}}}' \
+              | curl --fail --silent --show-error \
+                  -H 'Content-Type: application/json' \
+                  -D - \
+                  -o "$token_tmp/response.json" \
+                  -X POST \
+                  --data-binary @- \
+                  https://cloud.api.selcloud.ru/identity/v3/auth/tokens \
+              >"$token_tmp/headers.txt"
+            awk 'tolower($1) == "x-subject-token:" { print $2 }' "$token_tmp/headers.txt" | tr -d '\\r'
+          )"
         fi
 
         if ! test -f .octodns/zones/imported/outworld66.ru.yaml; then
