@@ -114,6 +114,7 @@
 
     # File managers, disks, and filesystems
     gparted # Graphical disk partition editor
+    gvfs # GNOME virtual filesystem backends, including WebDAV
     nautilus # GNOME graphical file manager
     ntfs3g # Read/write support for NTFS filesystems
     yazi # Terminal file manager
