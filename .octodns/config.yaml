@@ -1,0 +1,18 @@
+providers:
+  imported:
+    class: octodns.provider.yaml.YamlProvider
+    directory: ./.octodns/zones/imported
+  managed:
+    class: octodns.provider.yaml.YamlProvider
+    directory: ./.octodns/zones/managed
+  selectel:
+    class: octodns_selectel.SelectelProvider
+    token: env/KEYSTONE_PROJECT_TOKEN
+
+zones:
+  outworld66.ru.:
+    sources:
+      - imported
+      - managed
+    targets:
+      - selectel

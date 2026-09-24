@@ -191,3 +191,56 @@ tasks:
     desc: List hosts available for server-update
     cmds:
       - nix eval --json .#serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n'
+
+  dns-import:
+    desc: Import the current Selectel DNS zone into the repository
+    cmds:
+      - |
+        set -eu
+        test -n "${KEYSTONE_PROJECT_TOKEN:-}" || {
+          echo "KEYSTONE_PROJECT_TOKEN is required" >&2
+          exit 1
+        }
+        mkdir -p .octodns/zones/imported
+        uv run --locked octodns-dump \
+          --config-file=.octodns/config.yaml \
+          --output-dir=.octodns/zones/imported \
+          --output-provider imported \
+          outworld66.ru. selectel
+        echo "Review and commit .octodns/zones/imported/outworld66.ru.yaml"
+
+  dns-plan:
+    desc: Show pending Selectel DNS changes
+    cmds:
+      - |
+        set -eu
+        test -n "${KEYSTONE_PROJECT_TOKEN:-}" || {
+          echo "KEYSTONE_PROJECT_TOKEN is required" >&2
+          exit 1
+        }
+        test -f .octodns/zones/imported/outworld66.ru.yaml || {
+          echo "Run task dns-import before planning" >&2
+          exit 1
+        }
+        uv run --locked octodns-sync --config-file=.octodns/config.yaml
+
+  dns-sync:
+    desc: Apply reviewed DNS changes to Selectel
+    cmds:
+      - |
+        set -eu
+        test "${DNS_CONFIRM:-}" = apply || {
+          echo "Set DNS_CONFIRM=apply to modify Selectel DNS" >&2
+          exit 1
+        }
+        test -n "${KEYSTONE_PROJECT_TOKEN:-}" || {
+          echo "KEYSTONE_PROJECT_TOKEN is required" >&2
+          exit 1
+        }
+        test -f .octodns/zones/imported/outworld66.ru.yaml || {
+          echo "Run task dns-import before syncing" >&2
+          exit 1
+        }
+        uv run --locked octodns-sync \
+          --config-file=.octodns/config.yaml \
+          --doit
