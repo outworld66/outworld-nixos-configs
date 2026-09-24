@@ -1,6 +1,7 @@
 {
   config,
   inputs,
+  lib,
   pkgs,
   user,
   group,
@@ -26,6 +27,9 @@
     timeout = 0;
   };
   boot.initrd.systemd.enable = true;
+
+  nix.settings.extra-substituters = lib.mkForce [ ];
+  nix.settings.extra-trusted-public-keys = lib.mkForce [ ];
 
   networking.useDHCP = true;
 
