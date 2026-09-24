@@ -11,16 +11,19 @@
     wantedBy = [ "multi-user.target" ];
     after = [ "caddy.service" ];
     wants = [ "caddy.service" ];
+    unitConfig.ConditionPathExists = "/var/log/caddy/access.log";
     serviceConfig = {
-      ConditionPathExists = "/var/log/caddy/access.log";
       ExecStart = lib.concatStringsSep " " [
         "${pkgs.goaccess}/bin/goaccess"
         "/var/log/caddy/access.log"
         "--log-format=CADDY"
         "--output=/srv/goaccess/index.html"
         "--real-time-html"
-        "--addr=127.0.0.1"
+        "--addr=0.0.0.0"
+        "--port=7890"
+        "--ws-url=ws://192.168.0.3:7890"
       ];
+      WorkingDirectory = "/srv/goaccess";
       Restart = "on-failure";
       ProtectSystem = "strict";
       ReadOnlyPaths = [ "/var/log/caddy/access.log" ];

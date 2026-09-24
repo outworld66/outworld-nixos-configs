@@ -48,8 +48,8 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
+      unitConfig.ConditionPathExists = cfg.environmentFile;
       serviceConfig = {
-        ConditionPathExists = cfg.environmentFile;
         ExecStart = "${pkgs.webdav}/bin/webdav -c /etc/webdav/config.yml";
         EnvironmentFile = cfg.environmentFile;
         User = "webdav";

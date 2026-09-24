@@ -13,6 +13,9 @@ and add extra modules.
 
 ## Repository map
 
+All repository documentation, including `README.md`, files under `docs/`, and
+documentation comments intended for users, must be written in English.
+
 - `flake.nix`: inputs, optional-private-library contract, shared host arguments,
   NixOS configurations, formatter, checks, development shell and runnable apps.
 - `defaults/private/`: empty flake used when no private library is supplied.

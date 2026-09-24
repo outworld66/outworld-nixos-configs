@@ -42,8 +42,8 @@ in
       description = "GoBackup backup job";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
+      unitConfig.ConditionPathExists = cfg.configFile;
       serviceConfig = {
-        ConditionPathExists = cfg.configFile;
         Type = "oneshot";
         ExecStart = "${gobackup}/bin/gobackup perform --config ${cfg.configFile}";
         ProtectSystem = "strict";

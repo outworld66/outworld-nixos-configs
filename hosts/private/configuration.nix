@@ -25,5 +25,9 @@
     interface = "eno1";
   };
   networking.nameservers = [ "192.168.0.1" ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    7890
+  ];
   system.stateVersion = stateVersion;
 }

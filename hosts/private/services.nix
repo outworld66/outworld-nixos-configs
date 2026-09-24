@@ -1,5 +1,4 @@
-_:
-{
+_: {
   services.caddy.virtualHosts = {
     ":80" = {
       extraConfig = ''
@@ -16,10 +15,6 @@ _:
           file_server
         }
       '';
-    };
-
-    ":7890" = {
-      extraConfig = "reverse_proxy 127.0.0.1:7890";
     };
   };
 }
