@@ -81,7 +81,6 @@
     bat # Syntax-highlighted alternative to cat
     bottom # Interactive terminal system monitor
     brightnessctl # Controls display and keyboard backlight brightness
-    go-task # Task runner / simpler Make alternative written in Go
     htop # Interactive process and resource monitor
     pwgen # Generates random passwords
     silicon # Renders source code as styled images

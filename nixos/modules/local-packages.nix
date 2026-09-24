@@ -6,6 +6,7 @@
     pciutils
     inetutils
 
+    go-task
     git-credential-manager
   ];
 }
