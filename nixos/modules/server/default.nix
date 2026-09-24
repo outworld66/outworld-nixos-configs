@@ -56,5 +56,6 @@
     git
     htop
     vim
+    go-task
   ];
 }
