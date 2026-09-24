@@ -1,4 +1,5 @@
 {
+  lib,
   inputs,
   hostname,
   stateVersion,
@@ -12,5 +13,17 @@
   ];
 
   networking.hostName = hostname;
+  networking.useDHCP = lib.mkForce false;
+  networking.interfaces.eno1.ipv4.addresses = [
+    {
+      address = "192.168.0.3";
+      prefixLength = 16;
+    }
+  ];
+  networking.defaultGateway = {
+    address = "192.168.0.1";
+    interface = "eno1";
+  };
+  networking.nameservers = [ "192.168.0.1" ];
   system.stateVersion = stateVersion;
 }
