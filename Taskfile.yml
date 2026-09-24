@@ -104,6 +104,10 @@ tasks:
           *) echo "Invalid age recipient: $recipient" >&2; exit 1 ;;
         esac
 
+        printf 'This will update SOPS recipients and enable server secrets. Continue? [y/N] '
+        read answer
+        test "$answer" = y || test "$answer" = Y
+
         if grep -Fq "&private $recipient" "$sops_config"; then
           :
         elif grep -Eq '^  - &private ' "$sops_config"; then
@@ -125,10 +129,6 @@ tasks:
           echo "The private recipient is not referenced by the creation rule" >&2
           exit 1
         fi
-
-        printf 'This will update SOPS recipients and enable server secrets. Continue? [y/N] '
-        read answer
-        test "$answer" = y || test "$answer" = Y
 
         SOPS_AGE_KEY_FILE="$key_file" \
           nix run nixpkgs#sops -- updatekeys --yes "$sops_file"
