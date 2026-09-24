@@ -9,7 +9,7 @@ let
   llama =
     (import inputs.llama-cpp-nixpkgs {
       inherit system;
-      config = pkgs.config;
+      inherit (pkgs) config;
     }).llama-cpp.override
       {
         rocmSupport = true;
