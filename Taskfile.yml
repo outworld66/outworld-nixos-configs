@@ -212,7 +212,12 @@ tasks:
             --output-provider imported \
             outworld66.ru. selectel
           echo "Imported the current zone into .octodns/zones/imported/outworld66.ru.yaml"
-          echo "Review the imported file before continuing."
+          printf 'Review the imported file, then continue to plan? [y/N] '
+          read -r imported_answer
+          case "$imported_answer" in
+            y|Y|yes|YES) ;;
+            *) echo "DNS plan skipped."; exit 0 ;;
+          esac
         fi
 
         uv run --locked octodns-sync --config-file=.octodns/config.yaml
