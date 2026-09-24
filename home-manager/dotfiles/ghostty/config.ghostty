@@ -10,3 +10,4 @@ shell-integration-features = true
 link-previews = true
 link-url = true
 theme = noctalia
+keybind = ctrl+shift+key_v=paste_from_clipboard

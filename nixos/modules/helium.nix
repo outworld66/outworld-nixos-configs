@@ -63,6 +63,17 @@ in
         "en-US"
         "ru"
       ];
+      ManagedBookmarks = [
+        {
+          toplevel_name = "Helium";
+          children = [
+            {
+              name = "cookies";
+              url = "helium://settings/content/all";
+            }
+          ];
+        }
+      ];
     };
   };
 }

@@ -28,6 +28,6 @@
   networking.firewall.allowedTCPPorts = [
     443
   ];
-  server.goaccess.wsUrl = "wss://stats.private.outworld66.ru";
+  server.goaccess.wsUrl = "wss://stats.private.outworld66.ru:443";
   system.stateVersion = stateVersion;
 }
