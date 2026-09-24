@@ -274,6 +274,10 @@
         }
       ) { } hosts;
 
+      serverHosts = map (host: host.hostname) (
+        builtins.filter (host: (host.moduleSet or null) == ./nixos/modules/server) hosts
+      );
+
       # Re-exported package-library packages are also build checks.
       packages.${system} = customPackages // {
         check = checkScript;

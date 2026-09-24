@@ -144,11 +144,29 @@ tasks:
           --override-input private "path:$private_dir"
 
   server-update:
-    desc: Pull public and private repositories, check, and deploy private
+    desc: Pull repositories, check, and deploy a selected host (use -- <host>)
     cmds:
       - |
         set -eu
         private_dir="{{.PRIVATE_FLAKE_DIR}}"
+        host="{{.CLI_ARGS}}"
+        server_hosts="$(nix eval --json .#serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n')"
+
+        if test -z "$host"; then
+          echo "Usage: task server-update -- <host>" >&2
+          echo "Available hosts:" >&2
+          printf '%s\n' "$server_hosts" | sed '/^$/d; s/^/  /' >&2
+          exit 2
+        fi
+        case "$host" in
+          *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;
+        esac
+        printf '%s\n' "$server_hosts" | grep -Fxq "$host" || {
+          echo "Unknown server host: $host" >&2
+          echo "Available hosts:" >&2
+          printf '%s\n' "$server_hosts" | sed '/^$/d; s/^/  /' >&2
+          exit 2
+        }
 
         test -f "$private_dir/flake.nix"
         test -z "$(git status --porcelain)" || {
@@ -165,6 +183,11 @@ tasks:
 
         nix flake check --no-build --no-write-lock-file \
           --override-input private "path:$private_dir"
-        nixos-rebuild switch --flake .#private \
+        nixos-rebuild switch --flake ".#$host" \
           --target-host "{{.SERVER_TARGET}}" \
           --override-input private "path:$private_dir"
+
+  server-list:
+    desc: List hosts available for server-update
+    cmds:
+      - nix eval --json .#serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n'

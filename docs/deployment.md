@@ -131,18 +131,25 @@ Once the bootstrap is complete, update the server with:
 
 ```bash
 cd ~/nix/outworld-nixos-configs
-task server-update
+task server-list
+task server-update -- private
 ```
 
-This task refuses to run with uncommitted changes, pulls both sibling
+The host name is selected from the flake's `serverHosts` output. A host is
+included when its host entry uses `./nixos/modules/server`. Task requires `--`
+before task arguments; `task server-update private` would mean two task names
+instead of selecting `private`.
+
+The update task refuses to run with uncommitted changes, pulls both sibling
 repositories using `git pull --ff-only`, evaluates the complete flake, and
-activates `private` over SSH. Override the target or private checkout when
-needed:
+activates the selected host over SSH. Override the target or private checkout
+when needed:
 
 ```bash
 task server-update \
   SERVER_TARGET=root@192.168.0.10 \
-  PRIVATE_FLAKE=/path/to/outworld-nixos-private
+  PRIVATE_FLAKE=/path/to/outworld-nixos-private \
+  -- private
 ```
 
 Pull-based updates make sense when a server must update without a workstation.
