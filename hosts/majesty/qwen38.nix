@@ -49,8 +49,11 @@ let
         --cache-type-v q4_0 \
         --flash-attn on \
         --parallel 1 \
-        --spec-type draft-mtp \
-        --spec-draft-n-max 2 \
+        --spec-draft-hf Anbeeld/Qwen3.8-27B-DSpark-GGUF:Q4_K_M \
+        --spec-type draft-dspark \
+        --spec-draft-device ROCm0 \
+        --spec-draft-ngl all \
+        --spec-draft-n-max 7 \
         --jinja
     '';
   };
