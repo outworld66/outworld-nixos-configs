@@ -8,9 +8,10 @@ Host hardware configurations and Disko layouts are versioned here, so review
 their hardware identifiers and device paths before publishing.
 
 See the [repository layout](docs/repository.md), [development workflow](docs/workflow.md),
-[deployment models](docs/deployment.md), [server bootstrap sequence](docs/server-bootstrap.md),
-the [DNS workflow](docs/dns.md), [Authelia setup](docs/authelia.md), and
-[installation guide](docs/install-nixos.md).
+and the server [deployment](docs/server/deployment.md),
+[bootstrap](docs/server/server-bootstrap.md), [DNS](docs/server/dns.md),
+[Authelia](docs/server/authelia.md), and [installation](docs/server/install-nixos.md)
+guides.
 
 The public flake is the only system entry point. Its bundled `private` input is
 an empty library, so the repository evaluates without a private checkout or
