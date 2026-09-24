@@ -1,10 +1,20 @@
-{ pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  system,
+  ...
+}:
 
 let
-  llama = pkgs.llama-cpp.override {
-    rocmSupport = true;
-    rocmGpuTargets = [ "gfx1100" ];
-  };
+  llama =
+    (import inputs.llama-cpp-nixpkgs {
+      inherit system;
+      config = pkgs.config;
+    }).llama-cpp.override
+      {
+        rocmSupport = true;
+        rocmGpuTargets = [ "gfx1100" ];
+      };
   qwen38 = pkgs.writeShellApplication {
     name = "qwen38-server";
     runtimeInputs = [ llama ];
