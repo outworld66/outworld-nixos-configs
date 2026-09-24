@@ -9,7 +9,7 @@
   imports = [
     inputs.disko.nixosModules.disko
     ./disko.nix
-    ./qwen-flash-next.nix
+    ./qwen38.nix
     ../../nixos/modules/zapret.nix
   ];
 
