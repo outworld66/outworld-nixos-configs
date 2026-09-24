@@ -127,6 +127,24 @@ For one or a few home servers, start with manual deployment. It is simpler,
 does not require GitHub credentials on the server, and lets you review the
 configuration before activation.
 
+Once the bootstrap is complete, update the server with:
+
+```bash
+cd ~/nix/outworld-nixos-configs
+task server-update
+```
+
+This task refuses to run with uncommitted changes, pulls both sibling
+repositories using `git pull --ff-only`, evaluates the complete flake, and
+activates `private` over SSH. Override the target or private checkout when
+needed:
+
+```bash
+task server-update \
+  SERVER_TARGET=root@192.168.0.10 \
+  PRIVATE_FLAKE=/path/to/outworld-nixos-private
+```
+
 Pull-based updates make sense when a server must update without a workstation.
 Restrict the deploy key to read-only access to the required repository, disable
 automatic `nix flake update`, and keep normal NixOS generation rollback.
