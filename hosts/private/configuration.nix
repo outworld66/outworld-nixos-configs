@@ -26,8 +26,8 @@
   };
   networking.nameservers = [ "192.168.0.1" ];
   networking.firewall.allowedTCPPorts = [
-    80
-    7890
+    443
   ];
+  server.goaccess.wsUrl = "wss://stats.private.outworld66.ru";
   system.stateVersion = stateVersion;
 }

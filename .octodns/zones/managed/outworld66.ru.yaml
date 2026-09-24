@@ -4,3 +4,15 @@ private:
   - ttl: 300
     type: A
     value: 192.168.0.3
+auth.private:
+  - ttl: 300
+    type: CNAME
+    value: private.outworld66.ru.
+files.private:
+  - ttl: 300
+    type: CNAME
+    value: private.outworld66.ru.
+stats.private:
+  - ttl: 300
+    type: CNAME
+    value: private.outworld66.ru.
