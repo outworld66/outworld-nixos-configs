@@ -131,7 +131,7 @@ tasks:
         fi
 
         SOPS_AGE_KEY_FILE="$key_file" \
-          nix run nixpkgs#sops -- updatekeys --yes "$sops_file"
+          nix run nixpkgs#sops -- --config "$sops_config" updatekeys --yes "$sops_file"
 
         count="$(grep -F -c '{ server.secrets.bootstrap = true; }' "$private_flake" || true)"
         test "$count" = 1
