@@ -10,4 +10,5 @@ shell-integration-features = true
 link-previews = true
 link-url = true
 theme = noctalia
+term = xterm-256color
 keybind = ctrl+shift+key_v=paste_from_clipboard
