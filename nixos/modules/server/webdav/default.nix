@@ -19,7 +19,7 @@ in
 
     systemd.tmpfiles.rules = [
       "d /srv/webdav 0750 webdav users -"
-      "d /etc/webdav 0750 root root -"
+      "d /etc/webdav 0755 root root -"
     ];
 
     users.users.webdav = {
