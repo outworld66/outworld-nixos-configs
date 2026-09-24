@@ -38,7 +38,7 @@ let
         uv venv --system-site-packages ${venv} --python ${python.interpreter}
       fi
       uv pip install --python ${venv}/bin/python \
-        airllm \
+        "airllm==3.2.0" \
         "transformers @ git+https://github.com/huggingface/transformers.git"
       ${venv}/bin/python -c 'import torch; assert torch.cuda.is_available(), torch.__version__; print(torch.cuda.get_device_name(0))'
     '';
@@ -56,7 +56,7 @@ let
 
         assert torch.cuda.is_available(), "ROCm/PyTorch cannot see the GPU"
         model = AutoModel.from_pretrained(
-            "Qwen/Qwen3.8-Flash-Next",
+            "Qwen/Qwen3.8-27B",
             delete_original=True,
             layer_shards_saving_path="/var/lib/airllm/layers",
         )
@@ -65,12 +65,12 @@ let
             return_tensors="pt",
             return_attention_mask=False,
             truncation=True,
-            max_length=128,
+            max_length=1024,
             padding=False,
         )
         output = model.generate(
             tokens["input_ids"].cuda(),
-            max_new_tokens=128,
+            max_new_tokens=256,
             use_cache=True,
             return_dict_in_generate=True,
         )
