@@ -1,8 +1,14 @@
 {
+  lib,
   pkgs,
   ...
 }:
 {
+  home.sessionVariables.GIO_EXTRA_MODULES = lib.makeSearchPath "lib/gio/modules" [
+    pkgs.dconf.lib
+    pkgs.gvfs
+  ];
+
   home.packages = with pkgs; [
     # Editors and IDEs
     (vscode-with-extensions.override {
