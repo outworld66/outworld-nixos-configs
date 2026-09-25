@@ -1,11 +1,15 @@
 {
-  configDirectory,
+  inputs,
   pkgs,
   user,
   ...
 }:
 let
   portfolioDomain = "portfolio.private.outworld66.ru";
+  portfolioSource = inputs.self + "/portfolio";
+  portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
+    hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
+  '';
 in
 {
   systemd.services.portfolio-hugo = {
@@ -13,11 +17,13 @@ in
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.hugo}/bin/hugo server --source ${configDirectory}/portfolio --bind 127.0.0.1 --port 1313 --appendPort=false --disableLiveReload --baseURL=https://${portfolioDomain}/";
-      Restart = "on-failure";
+      ExecStart = "${pkgs.python3}/bin/python -m http.server 1313 --bind 127.0.0.1 --directory ${portfolioSite}";
+      Restart = "always";
       User = user;
-      WorkingDirectory = "${configDirectory}/portfolio";
-      ReadWritePaths = [ "${configDirectory}/portfolio" ];
+      WorkingDirectory = portfolioSite;
+      ProtectSystem = "strict";
+      PrivateTmp = true;
+      NoNewPrivileges = true;
     };
   };
 
