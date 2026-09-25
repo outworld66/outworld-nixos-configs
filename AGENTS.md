@@ -34,6 +34,16 @@ documentation comments intended for users, must be written in English.
 - `.githooks/pre-push`: optional local CI hook installed with
   `nix run .#install-hooks`.
 
+The sibling repositories use this same file as their instructions:
+
+- `../outworld-nixos-private/`: optional private flake library. Its main files
+  are `flake.nix`, `personal.nix`, `models.nix`, `modules/`, `home/` and
+  `certificates/`. It must export the public/private interface without becoming
+  a second system-building entry point.
+- `../outworld-nixos-packages/`: reusable package library. Its main files are
+  `flake.nix` and `packages/<name>/default.nix`; it must stay independent of
+  users, hosts and organization-specific configuration.
+
 ## Validation
 
 Run checks from the repository root.
@@ -47,6 +57,12 @@ Run checks from the repository root.
 - After changing the private-library interface, also evaluate with
   `--no-write-lock-file --override-input private
   path:../outworld-nixos-private` when that sibling checkout is available.
+- For changes in `../outworld-nixos-private/`, validate from this checkout with
+  the same override command and run `git -C ../outworld-nixos-private diff
+  --check`. Do not add its standalone `flake.lock`.
+- For changes in `../outworld-nixos-packages/`, run `nixfmt`,
+  `nix flake check --no-build --no-write-lock-file --print-build-logs`, and
+  `git diff --check`; build changed packages explicitly when practical.
 - Change package derivations in `outworld-nixos-packages`, not in this
   repository. Public flake outputs re-export them for convenience.
 - `task ci` runs formatting followed by the full `nix flake check`; unlike
@@ -111,10 +127,11 @@ arguments.
 
 ## Commits and pushes
 
-Do not commit or push by default. Only do so after the user explicitly asks
-for it in the current task. When explicitly requested, stage only the task's
-files, run the mandatory secret check below, commit with a concise message,
-and push only to the existing upstream. Never force-push.
+Do not commit or push by default. A single explicit user authorization to
+commit and push applies to subsequent tasks in all three repositories until
+the user explicitly revokes it. When authorized, stage only the task's files,
+run the mandatory secret check below, commit with a concise message, and push
+only to the existing upstream. Never force-push.
 
 ### Mandatory secret check (after staging, before committing)
 
