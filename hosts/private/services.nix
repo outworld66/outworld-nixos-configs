@@ -5,6 +5,7 @@
   ...
 }:
 let
+  homepageDomain = "homepage.private.outworld66.ru";
   portfolioDomain = "portfolio.private.outworld66.ru";
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
@@ -12,6 +13,65 @@ let
   '';
 in
 {
+  services.homepage-dashboard = {
+    enable = true;
+    allowedHosts = homepageDomain;
+    settings = {
+      title = "Outworld services";
+      theme = "dark";
+      color = "slate";
+      headerStyle = "clean";
+      layout = {
+        Infrastructure = {
+          style = "row";
+          columns = 4;
+        };
+        Applications = {
+          style = "row";
+          columns = 4;
+        };
+      };
+    };
+    services = [
+      {
+        Infrastructure = [
+          {
+            "Authelia" = {
+              href = "https://auth.private.outworld66.ru";
+              icon = "authelia.png";
+              description = "Authentication portal";
+            };
+          }
+          {
+            "GoAccess" = {
+              href = "https://stats.private.outworld66.ru";
+              icon = "goaccess.png";
+              description = "Web traffic statistics";
+            };
+          }
+        ];
+      }
+      {
+        Applications = [
+          {
+            "Portfolio" = {
+              href = "https://${portfolioDomain}";
+              icon = "hugo.png";
+              description = "Personal portfolio";
+            };
+          }
+          {
+            "WebDAV" = {
+              href = "https://files.private.outworld66.ru/webdav";
+              icon = "filebrowser.png";
+              description = "Private files";
+            };
+          }
+        ];
+      }
+    ];
+  };
+
   systemd.services.portfolio-hugo = {
     description = "Hugo portfolio site";
     wantedBy = [ "multi-user.target" ];
@@ -100,6 +160,21 @@ in
           root * /srv/goaccess
           file_server
         }
+      '';
+    };
+
+    ${homepageDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+
+        forward_auth 127.0.0.1:9091 {
+          uri /api/authz/forward-auth
+          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+        }
+
+        reverse_proxy 127.0.0.1:8082
       '';
     };
 

@@ -140,10 +140,10 @@ included when its host entry uses `./nixos/modules/server`. Task requires `--`
 before task arguments; `task server-update private` would mean two task names
 instead of selecting `private`.
 
-The update task refuses to run with uncommitted changes, pulls both sibling
-repositories using `git pull --ff-only`, evaluates the complete flake, and
-activates the selected host over SSH. Override the target or private checkout
-when needed:
+The update task pulls both sibling repositories with `git pull --ff-only
+--autostash`, evaluates the complete flake, and activates the selected host
+over SSH. Existing tracked changes are restored after each pull. Override the
+target or private checkout when needed:
 
 ```bash
 task server-update \
