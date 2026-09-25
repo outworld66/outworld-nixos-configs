@@ -39,6 +39,32 @@ Use `sops` to edit the existing private file. Do not commit plaintext values.
 Generate Argon2 password hashes locally with the Authelia CLI and insert only
 the hashes into the users database.
 
+## Generate an Argon2 password hash
+
+Run the Authelia CLI once through Nix:
+
+```sh
+nix run nixpkgs#authelia -- crypto hash generate argon2
+```
+
+Enter the password and confirmation, then copy the value after `Digest:` into
+the user's `password` field. The generated digest already contains its salt:
+
+```yaml
+password: "$argon2id$v=19$m=65536,t=3,p=4$..."
+```
+
+For a one-off non-interactive invocation, use `--password` (avoid this for real
+passwords because the value can be visible in shell history and process lists):
+
+```sh
+nix run nixpkgs#authelia -- crypto hash generate argon2 --password 'replace-me'
+```
+
+Keep both the plaintext password and the resulting hash out of the public
+repository. See the [Authelia password hashing guide](https://www.authelia.com/reference/guides/passwords/)
+for the command reference and users-file format.
+
 ## TLS
 
 Caddy currently uses its `internal` CA because the server address is local.
