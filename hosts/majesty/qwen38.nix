@@ -66,10 +66,9 @@ let
         --alias qwen3.8-27b-solstice \
         --host 127.0.0.1 \
         --port 8082 \
-        --ctx-size 262144 \
+        --ctx-size 40960 \
         --n-gpu-layers 999 \
         --device ROCm0 \
-        --no-kv-offload \
         --cache-type-k q4_0 \
         --cache-type-v q4_0 \
         --flash-attn on \
