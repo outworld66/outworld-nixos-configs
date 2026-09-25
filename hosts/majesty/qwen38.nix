@@ -66,7 +66,7 @@ let
         --alias qwen3.8-27b-solstice \
         --host 127.0.0.1 \
         --port 8082 \
-        --ctx-size 40960 \
+        --ctx-size 65536 \
         --n-gpu-layers 999 \
         --device ROCm0 \
         --cache-type-k q4_0 \
