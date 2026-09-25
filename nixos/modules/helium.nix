@@ -3,27 +3,14 @@
 let
   heliumInlineTranslator = pkgs.stdenvNoCC.mkDerivation {
     pname = "helium-inline-translator";
-    version = "1.1.1-c95e7b6";
+    version = "0.3.1-f743566";
 
     src = pkgs.fetchFromGitHub {
-      owner = "wesleymartinsDV";
-      repo = "helium-inline-translator";
-      rev = "c95e7b672a5b37e9c2ea98578ee6f4994071f4c5";
-      hash = "sha256-GHlmm4j0fPrMOTrcsqvUaTe6JpF2qKIa1L4Q5mx8Knk=";
+      owner = "WINEEL";
+      repo = "chrome-inline-translate";
+      rev = "f7435667a92bf6dc473fc5732eb424c9a79b9255";
+      hash = "sha256-TLOQSl9nUUNyuHdUpfAjNlg8O+jXrLuyFuRd6mFU7kM=";
     };
-
-    nativeBuildInputs = [ pkgs.python3 ];
-
-    postPatch = ''
-      substituteInPlace src/content.js \
-        --replace-fail 'pressedKey === "shift+alt+q"' 'pressedKey === "ctrl+shift+z"' \
-        --replace-fail 'Shift+Alt+Q' 'Ctrl+Shift+Z'
-
-      substituteInPlace ui/popup.html \
-        --replace-fail 'Shift + Alt + Q' 'Ctrl + Shift + Z'
-
-      python -c 'import json; from pathlib import Path; p=Path("manifest.json"); d=json.loads(p.read_text()); d["host_permissions"]=["https://translate.googleapis.com/*"]; d["commands"]={"translate-selection":{"suggested_key":{"default":"Ctrl+Shift+Z"},"description":"Translate selected text"}}; p.write_text(json.dumps(d, indent=2)+"\n"); p=Path("src/background.js"); s=p.read_text(); s=s.replace("chrome.runtime.onMessage.addListener", "chrome.commands.onCommand.addListener(async (command) => { if (command !== \"translate-selection\") return; const [tab] = await chrome.tabs.query({ active: true, currentWindow: true }); if (tab?.id) chrome.tabs.sendMessage(tab.id, { action: \"translate-selection\" }); });"+chr(10)+"chrome.runtime.onMessage.addListener", 1); p.write_text(s)'
-    '';
 
     installPhase = ''
       runHook preInstall
