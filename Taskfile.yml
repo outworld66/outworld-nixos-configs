@@ -224,7 +224,7 @@ tasks:
                   --data-binary @- \
                   https://cloud.api.selcloud.ru/identity/v3/auth/tokens \
               >"$token_tmp/headers.txt"
-            awk 'tolower($1) == "x-subject-token:" { print $2 }' "$token_tmp/headers.txt" | tr -d '\\r'
+            awk 'tolower($1) == "x-subject-token:" { print $2 }' "$token_tmp/headers.txt" | tr -d '\r'
           )"
         fi
 

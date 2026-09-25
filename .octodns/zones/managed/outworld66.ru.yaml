@@ -1,5 +1,9 @@
 # Keep the imported Selectel zone in .octodns/zones/imported.
-# Replace this address when the server gets a public address.
+# Internal address of the private host.
+"*.private":
+  - ttl: 300
+    type: CNAME
+    value: private.outworld66.ru.
 auth.private:
   - ttl: 300
     type: CNAME
