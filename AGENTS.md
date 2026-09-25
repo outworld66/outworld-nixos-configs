@@ -84,9 +84,8 @@ arguments.
 - Do not update `flake.lock` unless an input change requires it or the user
   explicitly asks for an update. Prefer targeted input updates over updating
   the entire lock file.
-- Do not stage or commit unrelated or pre-existing dirty state; committing and
-  pushing follows the automated policy below and requires its mandatory secret
-  check.
+- Do not stage or commit unrelated or pre-existing dirty state. Never commit
+  or push unless the user explicitly asks for it in the current task.
 - Keep secrets out of the repository regardless of the automated checks; the
   check is a heuristic gate, not permission to store credentials.
 - Do not add secrets, credentials, private keys, tokens or machine runtime
@@ -110,22 +109,12 @@ arguments.
 - Keep comments focused on non-obvious constraints and reasons, not a
   line-by-line restatement of Nix syntax.
 
-## Automated commit and push
+## Commits and pushes
 
-When the requested changes are complete and the Validation requirements for
-the changed file types have passed, commit and push to `origin/main` without
-asking for confirmation. This permission is scoped to the current task only:
-stage the files this task touched (explicit `git add <paths>`; `git add .`
-only when every change in the worktree belongs to the task), and never
-commit in a sibling repository as part of the same task.
-
-Sequence:
-
-1. Stage the task's files.
-2. Run the secret check below; any match or suspicion aborts the automation.
-3. Commit with a concise message describing the change.
-4. Push the current branch to its existing upstream only. If the branch has
-   no upstream, stop and ask. Never force-push.
+Do not commit or push by default. Only do so after the user explicitly asks
+for it in the current task. When explicitly requested, stage only the task's
+files, run the mandatory secret check below, commit with a concise message,
+and push only to the existing upstream. Never force-push.
 
 ### Mandatory secret check (after staging, before committing)
 

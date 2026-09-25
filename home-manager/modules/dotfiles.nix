@@ -82,6 +82,7 @@ in
     )
     // {
       ".config/git/config".source = gitConfig;
+      "nix/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink "${configDirectory}/AGENTS.md";
 
       # pi skills: коллекция из dotfiles, живая ссылка на чекаут (правки
       # без пересборки). ~/.pi/agent/skills — глобальная точка обнаружения pi.
