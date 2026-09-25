@@ -54,9 +54,6 @@ in
   services.caddy.virtualHosts = {
     "*.private.outworld66.ru" = {
       extraConfig = ''
-        tls {
-          dns selectel
-        }
         abort
       '';
     };
