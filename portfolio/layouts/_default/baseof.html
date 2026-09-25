@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ if .Title }}{{ .Title }} · {{ end }}{{ site.Title }}</title>
+    <meta name="description" content="{{ .Description | default site.Params.description }}">
+    {{ with .OutputFormats.Get "RSS" }}<link rel="alternate" type="application/rss+xml" href="{{ .Permalink }}" title="{{ site.Title }}">{{ end }}
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header><a href="/">{{ site.Title }}</a><nav><a href="/cv/">CVs</a> · <a href="/index.xml">RSS</a></nav></header>
+    <main>{{ block "main" . }}{{ end }}</main>
+    <footer>Demo content · Replace with your own portfolio.</footer>
+  </body>
+</html>

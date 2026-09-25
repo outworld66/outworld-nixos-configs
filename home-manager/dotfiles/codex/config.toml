@@ -11,6 +11,7 @@ url = "https://developers.openai.com/mcp"
 
 [tui]
 notifications = false
+screen_reader_detection_done = true
 
 [tui.model_availability_nux]
 "gpt-5.6-sol" = 4

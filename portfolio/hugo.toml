@@ -1,0 +1,11 @@
+baseURL = "https://portfolio.private.outworld66.ru/"
+locale = "en-us"
+title = "Portfolio — Demo"
+enableRobotsTXT = true
+
+[params]
+description = "A small self-hosted portfolio and CV collection."
+
+[outputs]
+home = ["html", "rss"]
+section = ["html", "rss"]

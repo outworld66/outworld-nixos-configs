@@ -1,0 +1,7 @@
+:root { color-scheme: light dark; font: 18px/1.6 system-ui, sans-serif; }
+body { max-width: 760px; margin: 0 auto; padding: 2rem 1rem; }
+header, footer { display: flex; justify-content: space-between; gap: 1rem; color: #777; }
+main { min-height: 80vh; }
+a { color: #4da3ff; }
+h1, h2, h3 { line-height: 1.2; }
+blockquote { border-left: 3px solid #888; margin-left: 0; padding-left: 1rem; color: #888; }

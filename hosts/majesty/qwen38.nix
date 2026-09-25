@@ -41,18 +41,21 @@ let
         --alias qwen3.8-27b-speculative \
         --host 127.0.0.1 \
         --port 8082 \
-        --ctx-size 32768 \
+        --ctx-size 65536 \
         --n-gpu-layers 999 \
         --device ROCm0 \
         --cache-type-k q4_0 \
         --cache-type-v q4_0 \
+        --spec-draft-type-k q4_0 \
+        --spec-draft-type-v q4_0 \
         --flash-attn on \
         --parallel 1 \
         --spec-draft-hf Anbeeld/Qwen3.8-27B-DSpark-GGUF:Q4_K_M \
         --spec-type draft-dspark \
         --spec-draft-device ROCm0 \
-        --spec-draft-ngl all \
+        --spec-draft-ngl auto \
         --spec-draft-n-max 4 \
+        --no-mmproj \
         --jinja
     '';
   };
