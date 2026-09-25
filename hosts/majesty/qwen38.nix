@@ -44,13 +44,15 @@ let
         --ctx-size 32768 \
         --n-gpu-layers 999 \
         --device ROCm0 \
+        --cache-type-k q4_0 \
+        --cache-type-v q4_0 \
         --flash-attn on \
         --parallel 1 \
         --spec-draft-hf Anbeeld/Qwen3.8-27B-DSpark-GGUF:Q4_K_M \
         --spec-type draft-dspark \
         --spec-draft-device ROCm0 \
         --spec-draft-ngl all \
-        --spec-draft-n-max 7 \
+        --spec-draft-n-max 4 \
         --jinja
     '';
   };
