@@ -15,6 +15,12 @@ let
 
   link = path: config.lib.file.mkOutOfStoreSymlink "${dotfilesDirectory}/${path}";
 
+  sharedSkills = [
+    "agterm-multiagent"
+    "limux-multiagent"
+    "ripgrep"
+  ];
+
   gitConfig = pkgs.replaceVars ../dotfiles/git/config {
     inherit user gitUsername gitMail;
     gitCredentialManager = "${pkgs.git-credential-manager}/bin/git-credential-manager";
@@ -80,12 +86,17 @@ in
         value.source = pkgs.lib.mkDefault (link path);
       }) configLinks
     )
+    // builtins.listToAttrs (
+      map (skill: {
+        name = ".codex/skills/${skill}";
+        value.source = pkgs.lib.mkDefault (link "agent-skills/${skill}");
+      }) sharedSkills
+    )
     // {
       ".config/git/config".source = gitConfig;
       "nix/AGENTS.md".text = builtins.readFile ../../AGENTS.md;
 
-      # pi skills: коллекция из dotfiles, живая ссылка на чекаут (правки
-      # без пересборки). ~/.pi/agent/skills — глобальная точка обнаружения pi.
-      ".pi/agent/skills".source = pkgs.lib.mkDefault (link "pi-skills");
+      # Shared agent skills: живые ссылки на чекаут (правки без пересборки).
+      ".pi/agent/skills".source = pkgs.lib.mkDefault (link "agent-skills");
     };
 }

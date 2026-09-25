@@ -23,7 +23,7 @@ let
         -hf ggml-org/Qwen3.8-27B-GGUF:Q4_K_M \
         --alias qwen3.8-27b \
         --host 127.0.0.1 \
-        --port 8080 \
+        --port 8082 \
         --ctx-size 32768 \
         --n-gpu-layers 999 \
         --device ROCm0 \
@@ -40,7 +40,7 @@ let
         -hf ggml-org/Qwen3.8-27B-GGUF:Q4_K_M \
         --alias qwen3.8-27b-speculative \
         --host 127.0.0.1 \
-        --port 8081 \
+        --port 8082 \
         --ctx-size 32768 \
         --n-gpu-layers 999 \
         --device ROCm0 \
