@@ -52,6 +52,15 @@ in
   };
 
   services.caddy.virtualHosts = {
+    "*.private.outworld66.ru" = {
+      extraConfig = ''
+        tls {
+          dns selectel
+        }
+        abort
+      '';
+    };
+
     "auth.private.outworld66.ru" = {
       extraConfig = ''
         log {
