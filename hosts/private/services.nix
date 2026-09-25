@@ -6,6 +6,7 @@
 }:
 let
   homepageDomain = "homepage.private.outworld66.ru";
+  bitmagnetDomain = "bitmagnet.private.outworld66.ru";
   portfolioDomain = "portfolio.private.outworld66.ru";
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
@@ -67,9 +68,22 @@ in
               description = "Private files";
             };
           }
+          {
+            "Bitmagnet" = {
+              href = "https://${bitmagnetDomain}";
+              icon = "https://cdn.jsdelivr.net/gh/bitmagnet-io/bitmagnet@main/webui/public/favicon.png";
+              description = "BitTorrent indexer";
+            };
+          }
         ];
       }
     ];
+  };
+
+  services.bitmagnet = {
+    enable = true;
+    openFirewall = true;
+    settings.http_server.port = "127.0.0.1:3333";
   };
 
   systemd.services.portfolio-hugo = {
@@ -160,6 +174,21 @@ in
           root * /srv/goaccess
           file_server
         }
+      '';
+    };
+
+    ${bitmagnetDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+
+        forward_auth 127.0.0.1:9091 {
+          uri /api/authz/forward-auth
+          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+        }
+
+        reverse_proxy 127.0.0.1:3333
       '';
     };
 
