@@ -30,7 +30,7 @@ in
       api = {
         enable = true;
         enableLocalDB = true;
-        domain = "ente-api.private.outworld66.ru";
+        domain = "ente-api.outworld66.ru";
         nginx.enable = true;
         settings = {
           s3 = {
@@ -53,11 +53,11 @@ in
       web = {
         enable = true;
         domains = {
-          api = "ente-api.private.outworld66.ru";
-          accounts = "ente-accounts.private.outworld66.ru";
-          cast = "ente-cast.private.outworld66.ru";
-          albums = "ente-albums.private.outworld66.ru";
-          photos = "ente-photos.private.outworld66.ru";
+          api = "ente-api.outworld66.ru";
+          accounts = "ente-accounts.outworld66.ru";
+          cast = "ente-cast.outworld66.ru";
+          albums = "ente-albums.outworld66.ru";
+          photos = "ente-photos.outworld66.ru";
         };
       };
     };
@@ -71,11 +71,11 @@ in
     services.nginx.virtualHosts =
       lib.genAttrs
         [
-          "ente-api.private.outworld66.ru"
-          "ente-accounts.private.outworld66.ru"
-          "ente-cast.private.outworld66.ru"
-          "ente-albums.private.outworld66.ru"
-          "ente-photos.private.outworld66.ru"
+          "ente-api.outworld66.ru"
+          "ente-accounts.outworld66.ru"
+          "ente-cast.outworld66.ru"
+          "ente-albums.outworld66.ru"
+          "ente-photos.outworld66.ru"
         ]
         (_: {
           forceSSL = false;

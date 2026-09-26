@@ -1,4 +1,4 @@
-baseURL = "https://portfolio.private.outworld66.ru/"
+baseURL = "https://portfolio.outworld66.ru/"
 locale = "en-us"
 title = "Portfolio — Demo"
 enableRobotsTXT = true

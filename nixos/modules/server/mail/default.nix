@@ -115,6 +115,29 @@ in
       };
     };
 
+    systemd.services.maddy-dkim-migrate = {
+      description = "Migrate the Maddy DKIM key to the primary domain";
+      wantedBy = [ "maddy.service" ];
+      before = [ "maddy.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.writeShellScript "maddy-dkim-migrate" ''
+          old=/var/lib/maddy/dkim_keys/private.outworld66.ru_default
+          new=/var/lib/maddy/dkim_keys/${cfg.primaryDomain}_default
+          if [ -e "$old.key" ] && [ ! -e "$new.key" ]; then
+            install -d -m 0750 -o maddy -g maddy /var/lib/maddy/dkim_keys
+            install -m 0600 -o maddy -g maddy "$old.key" "$new.key"
+            install -m 0640 -o maddy -g maddy "$old.dns" "$new.dns"
+          fi
+        '';
+      };
+    };
+
+    systemd.services.maddy = {
+      after = [ "maddy-dkim-migrate.service" ];
+      requires = [ "maddy-dkim-migrate.service" ];
+    };
+
     systemd.timers.maddy-certs = {
       wantedBy = [ "timers.target" ];
       timerConfig = {

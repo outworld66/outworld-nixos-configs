@@ -11,7 +11,7 @@ server:
   port: 2021
   serve_frontend: true
   serve_swagger: false
-  public_host: https://donetick.private.outworld66.ru
+  public_host: https://donetick.outworld66.ru
 logging:
   level: info
   encoding: json

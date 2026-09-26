@@ -8,7 +8,7 @@
       STATIC_API_KEY = "/var/lib/pocket-id/static-api-key";
     };
     settings = {
-      APP_URL = "https://id.private.outworld66.ru";
+      APP_URL = "https://id.outworld66.ru";
       TRUST_PROXY = true;
       ANALYTICS_DISABLED = true;
     };
@@ -134,22 +134,22 @@
         }
 
         provision_client gotify Gotify \
-          '["https://gotify.private.outworld66.ru/auth/oidc/callback","gotify://oidc/callback"]' \
+          '["https://gotify.outworld66.ru/auth/oidc/callback","gotify://oidc/callback"]' \
           /var/lib/gotify/oidc-client-secret
         provision_client immich Immich \
-          '["https://immich.private.outworld66.ru/auth/login","https://immich.private.outworld66.ru/user-settings","app.immich:///oauth-callback"]' \
+          '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","app.immich:///oauth-callback"]' \
           /var/lib/immich/oidc-client-secret
         provision_client roundcube Roundcube \
-          '["https://webmail.private.outworld66.ru/oauth2/callback"]' \
+          '["https://webmail.outworld66.ru/oauth2/callback"]' \
           /var/lib/roundcube/oidc-client-secret
 
         umask 077
         cat > /var/lib/gotify/oidc.env <<EOF
         GOTIFY_OIDC_ENABLED=true
-        GOTIFY_OIDC_ISSUER=https://id.private.outworld66.ru
+        GOTIFY_OIDC_ISSUER=https://id.outworld66.ru
         GOTIFY_OIDC_CLIENTID=gotify
         GOTIFY_OIDC_CLIENTSECRET=$(cat /var/lib/gotify/oidc-client-secret)
-        GOTIFY_OIDC_REDIRECTURL=https://gotify.private.outworld66.ru/auth/oidc/callback
+        GOTIFY_OIDC_REDIRECTURL=https://gotify.outworld66.ru/auth/oidc/callback
         GOTIFY_OIDC_AUTOREGISTER=true
         GOTIFY_OIDC_USERNAMECLAIM=preferred_username
         GOTIFY_OIDC_SCOPES=openid,profile,email,groups

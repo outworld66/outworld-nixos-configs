@@ -5,18 +5,18 @@
   ...
 }:
 let
-  homepageDomain = "home.private.outworld66.ru";
-  bitmagnetDomain = "bitmagnet.private.outworld66.ru";
-  portfolioDomain = "portfolio.private.outworld66.ru";
-  gotifyDomain = "gotify.private.outworld66.ru";
-  elengrabDomain = "elengrab.private.outworld66.ru";
-  donetickDomain = "donetick.private.outworld66.ru";
-  cloudreveDomain = "cloudreve.private.outworld66.ru";
-  pocketIdDomain = "id.private.outworld66.ru";
-  immichDomain = "immich.private.outworld66.ru";
-  webmailDomain = "webmail.private.outworld66.ru";
-  mailHostname = "mail.private.outworld66.ru";
-  mailDomain = "private.outworld66.ru";
+  homepageDomain = "home.outworld66.ru";
+  bitmagnetDomain = "bitmagnet.outworld66.ru";
+  portfolioDomain = "portfolio.outworld66.ru";
+  gotifyDomain = "gotify.outworld66.ru";
+  elengrabDomain = "elengrab.outworld66.ru";
+  donetickDomain = "donetick.outworld66.ru";
+  cloudreveDomain = "cloudreve.outworld66.ru";
+  pocketIdDomain = "id.outworld66.ru";
+  immichDomain = "immich.outworld66.ru";
+  webmailDomain = "webmail.outworld66.ru";
+  mailHostname = "mail.outworld66.ru";
+  mailDomain = "outworld66.ru";
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
     hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
@@ -47,7 +47,7 @@ in
         Infrastructure = [
           {
             "Authelia" = {
-              href = "https://auth.private.outworld66.ru";
+              href = "https://auth.outworld66.ru";
               icon = "authelia.png";
               description = "Authentication portal";
             };
@@ -61,7 +61,7 @@ in
           }
           {
             "GoAccess" = {
-              href = "https://stats.private.outworld66.ru";
+              href = "https://stats.outworld66.ru";
               icon = "goaccess.png";
               description = "Web traffic statistics";
             };
@@ -79,7 +79,7 @@ in
           }
           {
             "WebDAV" = {
-              href = "https://files.private.outworld66.ru/webdav";
+              href = "https://files.outworld66.ru/webdav";
               icon = "filebrowser.png";
               description = "Private files";
             };
@@ -100,7 +100,7 @@ in
           }
           {
             "Ente" = {
-              href = "https://ente-photos.private.outworld66.ru";
+              href = "https://ente-photos.outworld66.ru";
               icon = "https://github.com/ente-io.png?size=64";
               description = "Encrypted photos and albums";
             };
@@ -162,12 +162,12 @@ in
     enable = true;
     hostname = mailHostname;
     primaryDomain = mailDomain;
-    certificateSource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.private.outworld66.ru/wildcard_.private.outworld66.ru.crt";
-    keySource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.private.outworld66.ru/wildcard_.private.outworld66.ru.key";
+    certificateSource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.outworld66.ru/wildcard_.outworld66.ru.crt";
+    keySource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.outworld66.ru/wildcard_.outworld66.ru.key";
     webmail = {
       enable = true;
       hostname = webmailDomain;
-      oidcIssuer = "https://id.private.outworld66.ru";
+      oidcIssuer = "https://id.outworld66.ru";
     };
   };
 
@@ -211,13 +211,13 @@ in
   };
 
   services.caddy.virtualHosts = {
-    "*.private.outworld66.ru" = {
+    "*.outworld66.ru" = {
       extraConfig = ''
         abort
       '';
     };
 
-    "auth.private.outworld66.ru" = {
+    "auth.outworld66.ru" = {
       extraConfig = ''
         log {
           output file /var/log/caddy/access.log
@@ -235,7 +235,7 @@ in
       '';
     };
 
-    "files.private.outworld66.ru" = {
+    "files.outworld66.ru" = {
       extraConfig = ''
         log {
           output file /var/log/caddy/access.log
@@ -248,7 +248,7 @@ in
       '';
     };
 
-    "stats.private.outworld66.ru" = {
+    "stats.outworld66.ru" = {
       extraConfig = ''
         log {
           output file /var/log/caddy/access.log
@@ -340,19 +340,19 @@ in
       '';
     };
 
-    "ente-api.private.outworld66.ru" = {
+    "ente-api.outworld66.ru" = {
       extraConfig = "reverse_proxy 127.0.0.1:8081";
     };
-    "ente-accounts.private.outworld66.ru" = {
+    "ente-accounts.outworld66.ru" = {
       extraConfig = "reverse_proxy 127.0.0.1:8081";
     };
-    "ente-cast.private.outworld66.ru" = {
+    "ente-cast.outworld66.ru" = {
       extraConfig = "reverse_proxy 127.0.0.1:8081";
     };
-    "ente-albums.private.outworld66.ru" = {
+    "ente-albums.outworld66.ru" = {
       extraConfig = "reverse_proxy 127.0.0.1:8081";
     };
-    "ente-photos.private.outworld66.ru" = {
+    "ente-photos.outworld66.ru" = {
       extraConfig = "reverse_proxy 127.0.0.1:8081";
     };
 

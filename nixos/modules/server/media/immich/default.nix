@@ -18,10 +18,10 @@ in
       port = 2283;
       mediaLocation = "/var/lib/immich";
       settings = {
-        server.externalDomain = "https://immich.private.outworld66.ru";
+        server.externalDomain = "https://immich.outworld66.ru";
         oauth = {
           enabled = true;
-          issuerUrl = "https://id.private.outworld66.ru";
+          issuerUrl = "https://id.outworld66.ru";
           clientId = "immich";
           clientSecret._secret = "/var/lib/immich/oidc-client-secret";
           scope = "openid email profile groups";

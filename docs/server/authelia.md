@@ -2,11 +2,11 @@
 
 The private server uses four HTTPS names:
 
-- `auth.private.outworld66.ru` — Authelia portal;
-- `home.private.outworld66.ru` — Homepage service dashboard, available to
+- `auth.outworld66.ru` — Authelia portal;
+- `home.outworld66.ru` — Homepage service dashboard, available to
   every authenticated user;
-- `stats.private.outworld66.ru` — GoAccess, restricted to the `admins` group;
-- `files.private.outworld66.ru` — WebDAV with WebDAV Basic Authentication.
+- `stats.outworld66.ru` — GoAccess, restricted to the `admins` group;
+- `files.outworld66.ru` — WebDAV with WebDAV Basic Authentication.
 
 Authelia protects GoAccess through Caddy `forward_auth`. WebDAV keeps its own
 Basic Authentication because desktop WebDAV clients do not reliably support a
