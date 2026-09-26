@@ -14,6 +14,8 @@ let
   cloudreveDomain = "cloudreve.private.outworld66.ru";
   pocketIdDomain = "id.private.outworld66.ru";
   immichDomain = "immich.private.outworld66.ru";
+  mailHostname = "mail.private.outworld66.ru";
+  mailDomain = "private.outworld66.ru";
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
     hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
@@ -147,6 +149,14 @@ in
   server.ente.enable = true;
   server.gotify.enable = true;
   server.immich.enable = true;
+
+  server.mail = {
+    enable = true;
+    hostname = mailHostname;
+    primaryDomain = mailDomain;
+    certificateSource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.private.outworld66.ru/wildcard_.private.outworld66.ru.crt";
+    keySource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.private.outworld66.ru/wildcard_.private.outworld66.ru.key";
+  };
 
   systemd.services.portfolio-hugo = {
     description = "Hugo portfolio site";

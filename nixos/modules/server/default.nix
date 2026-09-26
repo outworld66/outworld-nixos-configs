@@ -18,6 +18,7 @@
     ./caddy
     ./gobackup
     ./goaccess
+    ./mail
     ./webdav
     ./media/cloudreve
     ./media/donetick
