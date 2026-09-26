@@ -4,36 +4,38 @@
   - ttl: 300
     type: CNAME
     value: private.outworld66.ru.
+_dmarc.private:
+  - ttl: 300
+    type: TXT
+    value: "v=DMARC1\\; p=quarantine\\; rua=mailto:postmaster@private.outworld66.ru"
 auth.private:
   - ttl: 300
     type: CNAME
     value: private.outworld66.ru.
+default._domainkey.private:
+  - ttl: 300
+    type: TXT
+    value: "v=DKIM1\\; k=rsa\\; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAweunmuOwFMtc0itjU9kIxePXnh5aQkh6shL0KwxQSeOqgV7OI22jEyMhbytgxif7m6Z7RMLwSpmKCtW9XIF22ayXe31e80B2ExoxBIzEl0Q6U1Zy+EGl5WnOM4S22adMptmZevEpFGzGbMXfhQ7sav353SKK2GkroTk5V/MvMNXq7dnON151T02+pfRsTO1msnPRdsguAuYWUT9qcQrI0pEKRS2PD5cBaFFaaH4oD5Wfblv0tzVjzyPSysWz0qM+mlkjo9QQ+UkRk6ia3b+FB3RR/Tu8X9AuFF49W26DWaJ4RlC9huyY6lADzjfdiJX/mFIXSyx8it08iE2gr6I0jQIDAQAB"
 files.private:
   - ttl: 300
     type: CNAME
     value: private.outworld66.ru.
+mail.private:
+  - ttl: 300
+    type: A
+    value: 85.142.172.131
 private:
   - ttl: 300
     type: A
     value: 192.168.0.3
   - ttl: 300
     type: MX
-    value: 10 mail.private.outworld66.ru.
+    value:
+      exchange: mail.private.outworld66.ru.
+      preference: 10
   - ttl: 300
     type: TXT
     value: v=spf1 mx ~all
-mail.private:
-  - ttl: 300
-    type: A
-    value: 85.142.172.131
-_dmarc.private:
-  - ttl: 300
-    type: TXT
-    value: "v=DMARC1; p=quarantine; rua=mailto:postmaster@private.outworld66.ru"
-default._domainkey.private:
-  - ttl: 300
-    type: TXT
-    value: "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAweunmuOwFMtc0itjU9kIxePXnh5aQkh6shL0KwxQSeOqgV7OI22jEyMhbytgxif7m6Z7RMLwSpmKCtW9XIF22ayXe31e80B2ExoxBIzEl0Q6U1Zy+EGl5WnOM4S22adMptmZevEpFGzGbMXfhQ7sav353SKK2GkroTk5V/MvMNXq7dnON151T02+pfRsTO1msnPRdsguAuYWUT9qcQrI0pEKRS2PD5cBaFFaaH4oD5Wfblv0tzVjzyPSysWz0qM+mlkjo9QQ+UkRk6ia3b+FB3RR/Tu8X9AuFF49W26DWaJ4RlC9huyY6lADzjfdiJX/mFIXSyx8it08iE2gr6I0jQIDAQAB"
 stats.private:
   - ttl: 300
     type: CNAME
