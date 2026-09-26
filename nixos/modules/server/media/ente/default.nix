@@ -96,11 +96,14 @@ in
             ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n' > /var/lib/ente/s3-secret-key
             ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 > /var/lib/ente/encryption-key
             ${pkgs.coreutils}/bin/head -c 64 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 > /var/lib/ente/hash-key
-            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 > /var/lib/ente/jwt-secret
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 | ${pkgs.coreutils}/bin/tr '+/' '-_' > /var/lib/ente/jwt-secret
           elif ! ${pkgs.gnugrep}/bin/grep -Eq '^GK[[:xdigit:]]{24}$' /var/lib/ente/s3-access-key 2>/dev/null \
             || ! ${pkgs.gnugrep}/bin/grep -Eq '^[[:xdigit:]]{64}$' /var/lib/ente/s3-secret-key 2>/dev/null; then
             printf 'GK%s\n' "$(${pkgs.coreutils}/bin/head -c 12 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n')" > /var/lib/ente/s3-access-key
             ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n' > /var/lib/ente/s3-secret-key
+          fi
+          if ! ${pkgs.gnugrep}/bin/grep -Eq '^[A-Za-z0-9_-]{43}=$' /var/lib/ente/jwt-secret 2>/dev/null; then
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 | ${pkgs.coreutils}/bin/tr '+/' '-_' > /var/lib/ente/jwt-secret
           fi
           ${pkgs.coreutils}/bin/chmod 0400 /var/lib/ente/*-key /var/lib/ente/jwt-secret
           ${pkgs.coreutils}/bin/chown ente:ente /var/lib/ente/*-key /var/lib/ente/jwt-secret
