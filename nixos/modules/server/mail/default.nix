@@ -52,6 +52,23 @@ in
       type = lib.types.path;
       description = "Private key source copied from the existing certificate manager.";
     };
+    webmail = {
+      enable = lib.mkEnableOption "Roundcube webmail";
+      hostname = lib.mkOption {
+        type = lib.types.str;
+        default = "webmail.localhost";
+        description = "Hostname used by Roundcube webmail.";
+      };
+      backendPort = lib.mkOption {
+        type = lib.types.port;
+        default = 8083;
+        description = "Local port used by the Roundcube nginx backend.";
+      };
+      oidcIssuer = lib.mkOption {
+        type = lib.types.str;
+        description = "OIDC issuer used by oauth2-proxy.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -105,6 +122,78 @@ in
         Persistent = true;
         Unit = "maddy-certs.service";
       };
+    };
+
+    services.roundcube = lib.mkIf cfg.webmail.enable {
+      enable = true;
+      hostName = cfg.webmail.hostname;
+      extraConfig = ''
+        $config['imap_host'] = 'ssl://${cfg.hostname}:993';
+        $config['smtp_host'] = 'ssl://${cfg.hostname}:465';
+        $config['smtp_user'] = '%u';
+        $config['smtp_pass'] = '%p';
+        $config['product_name'] = 'Outworld Mail';
+      '';
+    };
+
+    services.nginx.virtualHosts.${cfg.webmail.hostname} = lib.mkIf cfg.webmail.enable {
+      forceSSL = false;
+      enableACME = false;
+      listen = [
+        {
+          addr = "127.0.0.1";
+          port = cfg.webmail.backendPort;
+        }
+      ];
+    };
+
+    services.oauth2-proxy = lib.mkIf cfg.webmail.enable {
+      enable = true;
+      provider = "oidc";
+      oidcIssuerUrl = cfg.webmail.oidcIssuer;
+      clientID = "roundcube";
+      clientSecretFile = "/var/lib/roundcube/oidc-client-secret";
+      cookie.secretFile = "/var/lib/roundcube/oauth2-cookie-secret";
+      redirectURL = "https://${cfg.webmail.hostname}/oauth2/callback";
+      httpAddress = "http://127.0.0.1:4180";
+      upstream = [ "static://200" ];
+      scope = "openid profile email groups";
+      reverseProxy = true;
+      trustedProxyIP = [ "127.0.0.1" ];
+      setXauthrequest = true;
+      email.domains = [ "*" ];
+      extraConfig = {
+        allowed-group = "admins";
+        oidc-groups-claim = "groups";
+      };
+    };
+
+    systemd.services.roundcube-oauth2-secret = lib.mkIf cfg.webmail.enable {
+      description = "Generate Roundcube OAuth2 proxy cookie secret";
+      before = [ "oauth2-proxy.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.writeShellScript "roundcube-oauth2-secret" ''
+          install -d -m 0750 /var/lib/roundcube
+          if [ ! -s /var/lib/roundcube/oauth2-cookie-secret ]; then
+            umask 077
+            head -c 32 /dev/urandom | base64 -w0 > /var/lib/roundcube/oauth2-cookie-secret
+          fi
+          chmod 0400 /var/lib/roundcube/oauth2-cookie-secret
+        '';
+      };
+    };
+
+    systemd.services.oauth2-proxy = lib.mkIf cfg.webmail.enable {
+      after = [
+        "roundcube-oauth2-secret.service"
+        "pocket-id-oidc-provision.service"
+      ];
+      requires = [
+        "roundcube-oauth2-secret.service"
+        "pocket-id-oidc-provision.service"
+      ];
     };
   };
 }

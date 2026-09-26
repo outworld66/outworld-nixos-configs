@@ -14,6 +14,7 @@ let
   cloudreveDomain = "cloudreve.private.outworld66.ru";
   pocketIdDomain = "id.private.outworld66.ru";
   immichDomain = "immich.private.outworld66.ru";
+  webmailDomain = "webmail.private.outworld66.ru";
   mailHostname = "mail.private.outworld66.ru";
   mailDomain = "private.outworld66.ru";
   portfolioSource = inputs.self + "/portfolio";
@@ -132,6 +133,13 @@ in
               description = "Cloud file storage";
             };
           }
+          {
+            "Webmail" = {
+              href = "https://${webmailDomain}";
+              icon = "https://roundcube.net/images/logo.svg";
+              description = "Private email";
+            };
+          }
         ];
       }
     ];
@@ -156,6 +164,11 @@ in
     primaryDomain = mailDomain;
     certificateSource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.private.outworld66.ru/wildcard_.private.outworld66.ru.crt";
     keySource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.private.outworld66.ru/wildcard_.private.outworld66.ru.key";
+    webmail = {
+      enable = true;
+      hostname = webmailDomain;
+      oidcIssuer = "https://id.private.outworld66.ru";
+    };
   };
 
   systemd.services.portfolio-hugo = {
@@ -353,6 +366,26 @@ in
           copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
         }
         reverse_proxy 127.0.0.1:2283
+      '';
+    };
+
+    ${webmailDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+
+        handle /oauth2/* {
+          reverse_proxy 127.0.0.1:4180
+        }
+
+        handle {
+          forward_auth 127.0.0.1:4180 {
+            uri /oauth2/auth
+            copy_headers X-Auth-Request-User X-Auth-Request-Email
+          }
+          reverse_proxy 127.0.0.1:8083
+        }
       '';
     };
 
