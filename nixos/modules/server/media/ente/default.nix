@@ -91,15 +91,19 @@ in
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "ente-secrets" ''
           install -d -m 0750 -o ente -g ente /var/lib/ente
-          if [ ! -s /var/lib/ente/s3-access-key ]; then
-            printf 'ente-local-access\n' > /var/lib/ente/s3-access-key
-            head -c 24 /dev/urandom | base64 -w0 > /var/lib/ente/s3-secret-key
-            head -c 32 /dev/urandom | base64 -w0 > /var/lib/ente/encryption-key
-            head -c 64 /dev/urandom | base64 -w0 > /var/lib/ente/hash-key
-            head -c 32 /dev/urandom | base64 -w0 > /var/lib/ente/jwt-secret
-            chmod 0400 /var/lib/ente/*-key /var/lib/ente/jwt-secret
-            chown ente:ente /var/lib/ente/*-key /var/lib/ente/jwt-secret
+          if [ ! -s /var/lib/ente/encryption-key ]; then
+            printf 'GK%s\n' "$(${pkgs.coreutils}/bin/head -c 12 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n')" > /var/lib/ente/s3-access-key
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n' > /var/lib/ente/s3-secret-key
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 > /var/lib/ente/encryption-key
+            ${pkgs.coreutils}/bin/head -c 64 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 > /var/lib/ente/hash-key
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0 > /var/lib/ente/jwt-secret
+          elif ! ${pkgs.gnugrep}/bin/grep -Eq '^GK[[:xdigit:]]{24}$' /var/lib/ente/s3-access-key 2>/dev/null \
+            || ! ${pkgs.gnugrep}/bin/grep -Eq '^[[:xdigit:]]{64}$' /var/lib/ente/s3-secret-key 2>/dev/null; then
+            printf 'GK%s\n' "$(${pkgs.coreutils}/bin/head -c 12 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n')" > /var/lib/ente/s3-access-key
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n' > /var/lib/ente/s3-secret-key
           fi
+          ${pkgs.coreutils}/bin/chmod 0400 /var/lib/ente/*-key /var/lib/ente/jwt-secret
+          ${pkgs.coreutils}/bin/chown ente:ente /var/lib/ente/*-key /var/lib/ente/jwt-secret
         '';
       };
     };
@@ -119,18 +123,31 @@ in
         "garage.service"
         "ente-secrets.service"
       ];
-      path = [ pkgs.garage ];
+      path = [
+        pkgs.garage
+        pkgs.coreutils
+        pkgs.gnugrep
+      ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "ente-garage" ''
-          node_id=$(garage status | tail -n1 | awk '{ print $1 }')
+          set -e
+          node_id=$(garage node id -q | ${pkgs.coreutils}/bin/cut -d@ -f1)
           garage layout show | grep -q "$node_id" || garage layout assign -c 1G -z ente "$node_id"
-          garage layout apply --version 1 || true
-          if ! garage key info "$(cat /var/lib/ente/s3-access-key)" >/dev/null 2>&1; then
-            garage key import "$(cat /var/lib/ente/s3-access-key)" "$(cat /var/lib/ente/s3-secret-key)" --yes
-            garage bucket create ente
-            garage bucket allow --read --write ente --key "$(cat /var/lib/ente/s3-access-key)"
+          if garage layout show | grep -q 'Staged role changes'; then
+            version=$(garage layout show | ${pkgs.coreutils}/bin/sed -n 's/^Current cluster layout version: //p')
+            garage layout apply --version "$((version + 1))"
           fi
+          if ! ${pkgs.gnugrep}/bin/grep -Eq '^[[:xdigit:]]{64}$' /var/lib/ente/s3-secret-key; then
+            ${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n' > /var/lib/ente/s3-secret-key
+            ${pkgs.coreutils}/bin/chmod 0400 /var/lib/ente/s3-secret-key
+            ${pkgs.coreutils}/bin/chown ente:ente /var/lib/ente/s3-secret-key
+          fi
+          access_key=$(${pkgs.coreutils}/bin/cat /var/lib/ente/s3-access-key)
+          secret_key=$(${pkgs.coreutils}/bin/cat /var/lib/ente/s3-secret-key)
+          garage key info "$access_key" >/dev/null 2>&1 || garage key import "$access_key" "$secret_key" --yes
+          garage bucket info ente >/dev/null 2>&1 || garage bucket create ente
+          garage bucket allow --read --write ente --key "$access_key"
         '';
         RemainAfterExit = true;
       };
