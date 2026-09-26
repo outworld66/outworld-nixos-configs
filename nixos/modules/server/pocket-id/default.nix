@@ -65,13 +65,16 @@
         set -eu
         api_key=$(cat /var/lib/pocket-id/static-api-key)
         api="http://127.0.0.1:1411/api"
+        curl_api() {
+          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 "$@"
+        }
 
-        group_id=$(curl --fail --silent --show-error \
+        group_id=$(curl_api \
           -H "X-API-KEY: $api_key" \
-          "$api/user-groups?pagination[limit]=100" \
+          "$api/user-groups?pagination%5Blimit%5D=100" \
           | jq -r '.data[] | select(.name == "nogroup") | .id' | head -n1)
         if [ -z "$group_id" ]; then
-          group_id=$(curl --fail --silent --show-error \
+          group_id=$(curl_api \
             -H "X-API-KEY: $api_key" \
             -H 'Content-Type: application/json' \
             -d '{"friendlyName":"No access","name":"nogroup"}' \
@@ -97,10 +100,10 @@
 
           mkdir -p "$(dirname "$client_secret_file")"
           chmod 0750 "$(dirname "$client_secret_file")"
-          if ! curl --fail --silent --show-error \
+          if ! curl_api \
             -H "X-API-KEY: $api_key" \
             "$api/oidc/clients/$client_id" >/dev/null; then
-            curl --fail --silent --show-error \
+            curl_api \
               -H "X-API-KEY: $api_key" \
               -H 'Content-Type: application/json' \
               -d "$payload" \
@@ -108,7 +111,7 @@
           fi
 
           if [ ! -s "$client_secret_file" ]; then
-            curl --fail --silent --show-error \
+            curl_api \
               -H "X-API-KEY: $api_key" \
               -H 'Content-Type: application/json' \
               -d '{}' \
