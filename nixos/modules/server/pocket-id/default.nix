@@ -69,6 +69,18 @@
           curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 "$@"
         }
 
+        media_group_id=$(curl_api \
+          -H "X-API-KEY: $api_key" \
+          "$api/user-groups?pagination%5Blimit%5D=100" \
+          | jq -r '.data[] | select(.name == "media") | .id' | head -n1)
+        if [ -z "$media_group_id" ]; then
+          curl_api \
+            -H "X-API-KEY: $api_key" \
+            -H 'Content-Type: application/json' \
+            -d '{"friendlyName":"Media","name":"media"}' \
+            "$api/user-groups" >/dev/null
+        fi
+
         group_id=$(curl_api \
           -H "X-API-KEY: $api_key" \
           "$api/user-groups?pagination%5Blimit%5D=100" \
@@ -139,7 +151,7 @@
         GOTIFY_OIDC_USERNAMECLAIM=preferred_username
         GOTIFY_OIDC_SCOPES=openid,profile,email,groups
         GOTIFY_OIDC_GROUPS_CLAIM=groups
-        GOTIFY_OIDC_GROUPS_USER=personal-services
+        GOTIFY_OIDC_GROUPS_USER=media
         GOTIFY_OIDC_GROUPS_ADMIN=admins
         EOF
         chmod 0400 /var/lib/gotify/oidc.env
