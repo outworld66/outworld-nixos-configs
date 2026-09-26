@@ -5,9 +5,15 @@
   ...
 }:
 let
-  homepageDomain = "homepage.private.outworld66.ru";
+  homepageDomain = "home.private.outworld66.ru";
   bitmagnetDomain = "bitmagnet.private.outworld66.ru";
   portfolioDomain = "portfolio.private.outworld66.ru";
+  gotifyDomain = "gotify.private.outworld66.ru";
+  elengrabDomain = "elengrab.private.outworld66.ru";
+  donetickDomain = "donetick.private.outworld66.ru";
+  cloudreveDomain = "cloudreve.private.outworld66.ru";
+  pocketIdDomain = "id.private.outworld66.ru";
+  immichDomain = "immich.private.outworld66.ru";
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
     hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
@@ -44,6 +50,13 @@ in
             };
           }
           {
+            "Pocket ID" = {
+              href = "https://${pocketIdDomain}";
+              icon = "https://github.com/pocket-id/pocket-id.png?size=64";
+              description = "OIDC identity provider";
+            };
+          }
+          {
             "GoAccess" = {
               href = "https://stats.private.outworld66.ru";
               icon = "goaccess.png";
@@ -75,6 +88,48 @@ in
               description = "BitTorrent indexer";
             };
           }
+          {
+            "Gotify" = {
+              href = "https://${gotifyDomain}";
+              icon = "https://gotify.net/img/logo.png";
+              description = "Push notifications";
+            };
+          }
+          {
+            "Ente" = {
+              href = "https://ente-photos.private.outworld66.ru";
+              icon = "https://github.com/ente-io.png?size=64";
+              description = "Encrypted photos and albums";
+            };
+          }
+          {
+            "Immich" = {
+              href = "https://${immichDomain}";
+              icon = "immich.png";
+              description = "Photo and video backup";
+            };
+          }
+          {
+            "Elengrab" = {
+              href = "https://${elengrabDomain}";
+              icon = "https://github.com/neosy.png?size=64";
+              description = "Video and audio downloader";
+            };
+          }
+          {
+            "Donetick" = {
+              href = "https://${donetickDomain}";
+              icon = "vikunja.png";
+              description = "Tasks and reminders";
+            };
+          }
+          {
+            "Cloudreve" = {
+              href = "https://${cloudreveDomain}";
+              icon = "https://github.com/cloudreve.png?size=64";
+              description = "Cloud file storage";
+            };
+          }
         ];
       }
     ];
@@ -85,6 +140,13 @@ in
     openFirewall = true;
     settings.http_server.port = "127.0.0.1:3333";
   };
+
+  server.cloudreve.enable = true;
+  server.donetick.enable = true;
+  server.elengrab.enable = true;
+  server.ente.enable = true;
+  server.gotify.enable = true;
+  server.immich.enable = true;
 
   systemd.services.portfolio-hugo = {
     description = "Hugo portfolio site";
@@ -138,6 +200,15 @@ in
           output file /var/log/caddy/access.log
         }
         reverse_proxy 127.0.0.1:9091
+      '';
+    };
+
+    ${pocketIdDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        reverse_proxy 127.0.0.1:1411
       '';
     };
 
@@ -204,6 +275,74 @@ in
         }
 
         reverse_proxy 127.0.0.1:8082
+      '';
+    };
+
+    ${gotifyDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        reverse_proxy 127.0.0.1:8090
+      '';
+    };
+
+    ${elengrabDomain} = {
+      extraConfig = ''
+        forward_auth 127.0.0.1:9091 {
+          uri /api/authz/forward-auth
+          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+        }
+        reverse_proxy 127.0.0.1:8080
+      '';
+    };
+
+    ${donetickDomain} = {
+      extraConfig = ''
+        forward_auth 127.0.0.1:9091 {
+          uri /api/authz/forward-auth
+          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+        }
+        reverse_proxy 127.0.0.1:2021
+      '';
+    };
+
+    ${cloudreveDomain} = {
+      extraConfig = ''
+        forward_auth 127.0.0.1:9091 {
+          uri /api/authz/forward-auth
+          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+        }
+        reverse_proxy 127.0.0.1:5212
+      '';
+    };
+
+    "ente-api.private.outworld66.ru" = {
+      extraConfig = "reverse_proxy 127.0.0.1:8081";
+    };
+    "ente-accounts.private.outworld66.ru" = {
+      extraConfig = "reverse_proxy 127.0.0.1:8081";
+    };
+    "ente-cast.private.outworld66.ru" = {
+      extraConfig = "reverse_proxy 127.0.0.1:8081";
+    };
+    "ente-albums.private.outworld66.ru" = {
+      extraConfig = "reverse_proxy 127.0.0.1:8081";
+    };
+    "ente-photos.private.outworld66.ru" = {
+      extraConfig = "reverse_proxy 127.0.0.1:8081";
+    };
+
+    ${immichDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        forward_auth 127.0.0.1:9091 {
+          uri /api/authz/forward-auth
+          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
+        }
+        reverse_proxy 127.0.0.1:2283
       '';
     };
 

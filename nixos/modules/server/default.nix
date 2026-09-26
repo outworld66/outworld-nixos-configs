@@ -19,6 +19,13 @@
     ./gobackup
     ./goaccess
     ./webdav
+    ./media/cloudreve
+    ./media/donetick
+    ./media/elengrab
+    ./media/ente
+    ./media/gotify
+    ./media/immich
+    ./pocket-id
   ];
 
   boot.loader = {

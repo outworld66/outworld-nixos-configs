@@ -1,0 +1,18 @@
+name: selfhosted
+is_done_tick_dot_com: false
+is_user_creation_disabled: false
+database:
+  type: sqlite
+  migration: true
+jwt:
+  session_time: 168h
+  max_refresh: 1440h
+server:
+  port: 2021
+  serve_frontend: true
+  serve_swagger: false
+  public_host: https://donetick.private.outworld66.ru
+logging:
+  level: info
+  encoding: json
+  development: false
