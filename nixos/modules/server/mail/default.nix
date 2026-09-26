@@ -60,7 +60,7 @@ in
       inherit (cfg) hostname;
       inherit (cfg) primaryDomain;
       localDomains = [ cfg.primaryDomain ];
-      openFirewall = true;
+      openFirewall = false;
       ensureAccounts = builtins.attrNames cfg.accounts;
       ensureCredentials = cfg.accounts;
       tls = {
@@ -76,7 +76,9 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [
+      25
       465
+      587
       993
     ];
 
