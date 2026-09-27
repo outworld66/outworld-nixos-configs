@@ -56,7 +56,7 @@ allows users in `admins` or `media` for the common browser-protected services:
 - `elengrab.outworld66.ru` — Elengrab;
 - `donetick.outworld66.ru` — Donetick;
 - `cloudreve.outworld66.ru` — Cloudreve;
-- `webmail.outworld66.ru` — Roundcube.
+- `mail.outworld66.ru` — Stalwart Mail Server.
 
 `stats.outworld66.ru` is an exception: Caddy performs the common OIDC check
 and then permits only the `admins` group before serving GoAccess or its

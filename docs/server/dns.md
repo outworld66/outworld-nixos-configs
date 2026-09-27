@@ -35,7 +35,7 @@ token exists only in the task process and is not saved by the repository.
 The mail host is published at `85.142.172.131`, while the application host
 remains on the private address `192.168.0.3`.
 
-For Maddy, forward these TCP ports from `85.142.172.131` to `192.168.0.3`:
+For Stalwart, forward these TCP ports from `85.142.172.131` to `192.168.0.3`:
 
 - `25` for inbound SMTP and direct MX delivery;
 - `465` for authenticated SMTPS submission;

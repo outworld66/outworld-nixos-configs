@@ -14,7 +14,6 @@ let
   cloudreveDomain = "cloudreve.outworld66.ru";
   pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
-  webmailDomain = "webmail.outworld66.ru";
   mailHostname = "mail.outworld66.ru";
   mailDomain = "outworld66.ru";
   authDomain = "auth.outworld66.ru";
@@ -103,13 +102,6 @@ in
             };
           }
           {
-            "Ente" = {
-              href = "https://ente-photos.outworld66.ru";
-              icon = "https://github.com/ente-io.png?size=64";
-              description = "Encrypted photos and albums";
-            };
-          }
-          {
             "Immich" = {
               href = "https://${immichDomain}";
               icon = "immich.png";
@@ -138,10 +130,10 @@ in
             };
           }
           {
-            "Webmail" = {
-              href = "https://${webmailDomain}";
-              icon = "roundcube.png";
-              description = "Private email";
+            "Mail" = {
+              href = "https://${mailHostname}";
+              icon = "mdi-email-outline";
+              description = "Stalwart mail server";
             };
           }
         ];
@@ -158,7 +150,6 @@ in
   server.cloudreve.enable = true;
   server.donetick.enable = true;
   server.elengrab.enable = true;
-  server.ente.enable = true;
   server.gotify.enable = true;
   server.immich.enable = true;
 
@@ -168,11 +159,6 @@ in
     primaryDomain = mailDomain;
     certificateSource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.outworld66.ru/wildcard_.outworld66.ru.crt";
     keySource = "/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/wildcard_.outworld66.ru/wildcard_.outworld66.ru.key";
-    webmail = {
-      enable = true;
-      hostname = webmailDomain;
-      oidcIssuer = "https://id.outworld66.ru";
-    };
   };
 
   systemd.services.portfolio-hugo = {
@@ -314,7 +300,7 @@ in
     ${elengrabDomain} = {
       extraConfig = ''
         ${oauth2ForwardAuth}
-        reverse_proxy 127.0.0.1:8080
+        reverse_proxy 127.0.0.1:8084
       '';
     };
 
@@ -332,22 +318,6 @@ in
       '';
     };
 
-    "ente-api.outworld66.ru" = {
-      extraConfig = "reverse_proxy 127.0.0.1:8081";
-    };
-    "ente-accounts.outworld66.ru" = {
-      extraConfig = "reverse_proxy 127.0.0.1:8081";
-    };
-    "ente-cast.outworld66.ru" = {
-      extraConfig = "reverse_proxy 127.0.0.1:8081";
-    };
-    "ente-albums.outworld66.ru" = {
-      extraConfig = "reverse_proxy 127.0.0.1:8081";
-    };
-    "ente-photos.outworld66.ru" = {
-      extraConfig = "reverse_proxy 127.0.0.1:8081";
-    };
-
     ${immichDomain} = {
       extraConfig = ''
         log {
@@ -357,14 +327,13 @@ in
       '';
     };
 
-    ${webmailDomain} = {
+    ${mailHostname} = {
       extraConfig = ''
         log {
           output file /var/log/caddy/access.log
         }
 
-        ${oauth2ForwardAuth}
-        reverse_proxy 127.0.0.1:8083
+        reverse_proxy 127.0.0.1:8080
       '';
     };
 

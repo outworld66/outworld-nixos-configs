@@ -23,7 +23,6 @@
     ./media/cloudreve
     ./media/donetick
     ./media/elengrab
-    ./media/ente
     ./gotify
     ./media/immich
     ./pocket-id

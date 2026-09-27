@@ -38,6 +38,7 @@ in
         Environment = [
           "ELENGRAB_ROOT_DIR=/var/lib/elengrab"
           "ELENGRAB_MODE=authenticated"
+          "ELENGRAB_HTTP_SERVER_PORT=8084"
           "ELENGRAB_DOWNLOAD_WORKERS=1"
           "PATH=${
             lib.makeBinPath [
