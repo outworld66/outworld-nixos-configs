@@ -89,8 +89,9 @@ binds {
     Mod+Shift+Down      { focus-monitor-down; }
     Mod+Shift+Up        { focus-monitor-up; }
     Mod+Shift+Right     { focus-monitor-right; }
-    Mod+Ctrl+Page_Down  { move-workspace-down; }
-    Mod+Ctrl+Page_Up    { move-workspace-up; }
+    Mod+Ctrl+Page_Down  { move-column-to-monitor-down; }
+    Mod+Ctrl+Page_Up { move-column-to-monitor-up; }
+
 
     // Home End
     Mod+Home { focus-column-first; }
