@@ -33,6 +33,12 @@ let
   '';
 in
 {
+  services.caddy.globalConfig = ''
+    servers {
+      protocols h1 h2
+    }
+  '';
+
   services.homepage-dashboard = {
     enable = true;
     allowedHosts = homepageDomain;
