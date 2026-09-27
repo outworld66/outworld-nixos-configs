@@ -261,7 +261,7 @@ in
 
         ${oauth2ForwardAuth}
 
-        @statsNonAdmin not header_regexp X-Auth-Request-Groups (?i)(^|, ?)(admins)(, ?|$)
+        @statsNonAdmin not header_regexp X-Auth-Request-Groups "(?i)(^|, ?)(admins)(, ?|$)"
         respond @statsNonAdmin "Forbidden" 403
 
         @websocket header Connection *Upgrade
