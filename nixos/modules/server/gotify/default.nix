@@ -63,9 +63,9 @@ in
           if [ ! -s /var/lib/gotify/default-password ]; then
             umask 077
             head -c 32 /dev/urandom | base64 -w0 > /var/lib/gotify/default-password
-            chown gotify:gotify /var/lib/gotify/default-password
-            chmod 0400 /var/lib/gotify/default-password
           fi
+          chown gotify:gotify /var/lib/gotify/default-password
+          chmod 0400 /var/lib/gotify/default-password
           cat > /var/lib/gotify/default.env <<EOF
           GOTIFY_DEFAULTUSER_NAME=admin
           GOTIFY_DEFAULTUSER_PASS_FILE=/var/lib/gotify/default-password
@@ -73,6 +73,8 @@ in
           chown gotify:gotify /var/lib/gotify/default.env
           chmod 0400 /var/lib/gotify/default.env
         '';
+        User = lib.mkForce "root";
+        Group = lib.mkForce "root";
       };
     };
 
