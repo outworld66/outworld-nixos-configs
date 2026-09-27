@@ -281,5 +281,61 @@ in
         Persistent = true;
       };
     };
+
+    services.oauth2-proxy = {
+      enable = true;
+      provider = "oidc";
+      oidcIssuerUrl = "https://id.outworld66.ru";
+      clientID = "oauth2-proxy";
+      clientSecretFile = "/var/lib/oauth2-proxy/client-secret";
+      cookie.domain = ".outworld66.ru";
+      cookie.secretFile = "/var/lib/oauth2-proxy/cookie-secret";
+      redirectURL = "https://auth.outworld66.ru/oauth2/callback";
+      httpAddress = "http://127.0.0.1:4180";
+      upstream = [ "static://200" ];
+      scope = "openid profile email groups";
+      reverseProxy = true;
+      trustedProxyIP = [ "127.0.0.1" ];
+      setXauthrequest = true;
+      email.domains = [ "*" ];
+      extraConfig = {
+        allowed-group = [
+          "admins"
+          "media"
+        ];
+        code-challenge-method = "S256";
+        oidc-groups-claim = "groups";
+        whitelist-domain = [ ".outworld66.ru" ];
+      };
+    };
+
+    systemd.services.oauth2-proxy-secret = {
+      description = "Generate OAuth2 Proxy cookie secret";
+      before = [ "oauth2-proxy.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.writeShellScript "oauth2-proxy-secret" ''
+          install -d -m 0750 -o oauth2-proxy -g oauth2-proxy /var/lib/oauth2-proxy
+          if [ ! -s /var/lib/oauth2-proxy/cookie-secret ] || [ "$(wc -c < /var/lib/oauth2-proxy/cookie-secret)" -ne 32 ]; then
+            umask 077
+            head -c 32 /dev/urandom > /var/lib/oauth2-proxy/cookie-secret
+          fi
+          chown oauth2-proxy:oauth2-proxy /var/lib/oauth2-proxy/cookie-secret
+          chmod 0400 /var/lib/oauth2-proxy/cookie-secret
+        '';
+      };
+    };
+
+    systemd.services.oauth2-proxy = {
+      after = [
+        "oauth2-proxy-secret.service"
+        "pocket-id-oidc-provision.service"
+      ];
+      requires = [
+        "oauth2-proxy-secret.service"
+        "pocket-id-oidc-provision.service"
+      ];
+    };
   };
 }
