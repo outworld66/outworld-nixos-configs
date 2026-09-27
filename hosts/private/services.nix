@@ -35,7 +35,7 @@ in
 {
   services.caddy.globalConfig = ''
     servers {
-      protocols h1 h2
+      protocols h1
     }
   '';
 
