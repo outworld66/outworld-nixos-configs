@@ -285,6 +285,7 @@ in
     services.oauth2-proxy = {
       enable = true;
       provider = "oidc";
+      approvalPrompt = "auto";
       oidcIssuerUrl = "https://id.outworld66.ru";
       clientID = "oauth2-proxy";
       clientSecretFile = "/var/lib/oauth2-proxy/client-secret";
