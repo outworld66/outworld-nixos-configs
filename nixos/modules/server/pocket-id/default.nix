@@ -139,9 +139,9 @@
         provision_client immich Immich \
           '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","app.immich:///oauth-callback"]' \
           /var/lib/immich/oidc-client-secret
-        provision_client roundcube Roundcube \
-          '["https://webmail.outworld66.ru/oauth2/callback"]' \
-          /var/lib/roundcube/oidc-client-secret
+        provision_client oauth2-proxy 'OAuth2 Proxy' \
+          '["https://auth.outworld66.ru/oauth2/callback"]' \
+          /var/lib/oauth2-proxy/client-secret
 
         umask 077
         cat > /var/lib/gotify/oidc.env <<EOF

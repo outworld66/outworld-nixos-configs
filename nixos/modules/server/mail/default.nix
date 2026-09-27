@@ -174,10 +174,11 @@ in
       enable = true;
       provider = "oidc";
       oidcIssuerUrl = cfg.webmail.oidcIssuer;
-      clientID = "roundcube";
-      clientSecretFile = "/var/lib/roundcube/oidc-client-secret";
-      cookie.secretFile = "/var/lib/roundcube/oauth2-cookie-secret";
-      redirectURL = "https://${cfg.webmail.hostname}/oauth2/callback";
+      clientID = "oauth2-proxy";
+      clientSecretFile = "/var/lib/oauth2-proxy/client-secret";
+      cookie.domain = ".outworld66.ru";
+      cookie.secretFile = "/var/lib/oauth2-proxy/cookie-secret";
+      redirectURL = "https://auth.outworld66.ru/oauth2/callback";
       httpAddress = "http://127.0.0.1:4180";
       upstream = [ "static://200" ];
       scope = "openid profile email groups";
@@ -191,30 +192,31 @@ in
       };
     };
 
-    systemd.services.roundcube-oauth2-secret = lib.mkIf cfg.webmail.enable {
-      description = "Generate Roundcube OAuth2 proxy cookie secret";
+    systemd.services.oauth2-proxy-secret = lib.mkIf cfg.webmail.enable {
+      description = "Generate OAuth2 proxy cookie secret";
       before = [ "oauth2-proxy.service" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = pkgs.writeShellScript "roundcube-oauth2-secret" ''
-          install -d -m 0750 /var/lib/roundcube
-          if [ ! -s /var/lib/roundcube/oauth2-cookie-secret ] || [ "$(wc -c < /var/lib/roundcube/oauth2-cookie-secret)" -ne 32 ]; then
+        ExecStart = pkgs.writeShellScript "oauth2-proxy-secret" ''
+          install -d -m 0750 -o oauth2-proxy -g oauth2-proxy /var/lib/oauth2-proxy
+          if [ ! -s /var/lib/oauth2-proxy/cookie-secret ] || [ "$(wc -c < /var/lib/oauth2-proxy/cookie-secret)" -ne 32 ]; then
             umask 077
-            head -c 32 /dev/urandom > /var/lib/roundcube/oauth2-cookie-secret
+            head -c 32 /dev/urandom > /var/lib/oauth2-proxy/cookie-secret
           fi
-          chmod 0400 /var/lib/roundcube/oauth2-cookie-secret
+          chown oauth2-proxy:oauth2-proxy /var/lib/oauth2-proxy/cookie-secret
+          chmod 0400 /var/lib/oauth2-proxy/cookie-secret
         '';
       };
     };
 
     systemd.services.oauth2-proxy = lib.mkIf cfg.webmail.enable {
       after = [
-        "roundcube-oauth2-secret.service"
+        "oauth2-proxy-secret.service"
         "pocket-id-oidc-provision.service"
       ];
       requires = [
-        "roundcube-oauth2-secret.service"
+        "oauth2-proxy-secret.service"
         "pocket-id-oidc-provision.service"
       ];
     };

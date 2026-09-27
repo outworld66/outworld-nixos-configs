@@ -17,6 +17,18 @@ let
   webmailDomain = "webmail.outworld66.ru";
   mailHostname = "mail.outworld66.ru";
   mailDomain = "outworld66.ru";
+  authDomain = "auth.outworld66.ru";
+  oauth2ForwardAuth = ''
+    forward_auth 127.0.0.1:4180 {
+      uri /oauth2/auth
+      copy_headers X-Auth-Request-User X-Auth-Request-Email X-Auth-Request-Groups
+    }
+
+    handle_errors {
+      @unauthorized expression `{http.error.status_code} == 401`
+      redir @unauthorized https://${authDomain}/oauth2/start?rd=https://{host}{uri} 302
+    }
+  '';
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
     hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
@@ -45,13 +57,6 @@ in
     services = [
       {
         Infrastructure = [
-          {
-            "Authelia" = {
-              href = "https://auth.outworld66.ru";
-              icon = "authelia.png";
-              description = "Authentication portal";
-            };
-          }
           {
             "Pocket ID" = {
               href = "https://${pocketIdDomain}";
@@ -222,7 +227,8 @@ in
         log {
           output file /var/log/caddy/access.log
         }
-        reverse_proxy 127.0.0.1:9091
+        redir / /oauth2/start 302
+        reverse_proxy 127.0.0.1:4180
       '';
     };
 
@@ -254,10 +260,7 @@ in
           output file /var/log/caddy/access.log
         }
 
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
 
         @websocket header Connection *Upgrade
         handle @websocket {
@@ -277,10 +280,7 @@ in
           output file /var/log/caddy/access.log
         }
 
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
 
         reverse_proxy 127.0.0.1:3333
       '';
@@ -292,10 +292,7 @@ in
           output file /var/log/caddy/access.log
         }
 
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
 
         reverse_proxy 127.0.0.1:8082
       '';
@@ -312,30 +309,21 @@ in
 
     ${elengrabDomain} = {
       extraConfig = ''
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
         reverse_proxy 127.0.0.1:8080
       '';
     };
 
     ${donetickDomain} = {
       extraConfig = ''
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
         reverse_proxy 127.0.0.1:2021
       '';
     };
 
     ${cloudreveDomain} = {
       extraConfig = ''
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
         reverse_proxy 127.0.0.1:5212
       '';
     };
@@ -361,10 +349,7 @@ in
         log {
           output file /var/log/caddy/access.log
         }
-        forward_auth 127.0.0.1:9091 {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
+        ${oauth2ForwardAuth}
         reverse_proxy 127.0.0.1:2283
       '';
     };
@@ -375,17 +360,8 @@ in
           output file /var/log/caddy/access.log
         }
 
-        handle /oauth2/* {
-          reverse_proxy 127.0.0.1:4180
-        }
-
-        handle {
-          forward_auth 127.0.0.1:4180 {
-            uri /oauth2/auth
-            copy_headers X-Auth-Request-User X-Auth-Request-Email
-          }
-          reverse_proxy 127.0.0.1:8083
-        }
+        ${oauth2ForwardAuth}
+        reverse_proxy 127.0.0.1:8083
       '';
     };
 
