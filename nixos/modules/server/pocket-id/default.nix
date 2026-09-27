@@ -182,9 +182,16 @@ in
 
             mkdir -p "$(dirname "$client_secret_file")"
             chmod 0750 "$(dirname "$client_secret_file")"
-            if ! curl_api \
+            if curl_api \
               -H "X-API-KEY: $api_key" \
               "$api/oidc/clients/$client_id" >/dev/null; then
+              curl_api \
+                -H "X-API-KEY: $api_key" \
+                -H 'Content-Type: application/json' \
+                -X PUT \
+                -d "$payload" \
+                "$api/oidc/clients/$client_id" >/dev/null
+            else
               curl_api \
                 -H "X-API-KEY: $api_key" \
                 -H 'Content-Type: application/json' \
