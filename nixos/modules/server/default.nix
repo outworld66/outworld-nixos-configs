@@ -24,7 +24,7 @@
     ./media/donetick
     ./media/elengrab
     ./media/ente
-    ./media/gotify
+    ./gotify
     ./media/immich
     ./pocket-id
   ];
