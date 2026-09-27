@@ -187,7 +187,10 @@ in
       setXauthrequest = true;
       email.domains = [ "*" ];
       extraConfig = {
-        allowed-group = "admins";
+        allowed-group = [
+          "admins"
+          "media"
+        ];
         oidc-groups-claim = "groups";
       };
     };

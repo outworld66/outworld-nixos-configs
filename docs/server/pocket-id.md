@@ -8,7 +8,8 @@ activation.
 The default Pocket ID signup group is `nogroup`. It has no service access.
 Grant users membership in `admins` or `media` from Pocket ID as needed.
 
-The following services require the `admins` group through OAuth2 Proxy:
+The following services require the `admins` or `media` group through OAuth2
+Proxy:
 
 - `home.outworld66.ru` — Homepage;
 - `stats.outworld66.ru` — GoAccess;
