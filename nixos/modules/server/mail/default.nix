@@ -226,7 +226,9 @@ in
         RemainAfterExit = true;
         ExecStart = pkgs.writeShellScript "stalwart-ensure-accounts" ''
           set -eu
-          until ${pkgs.curl}/bin/curl --silent --fail http://127.0.0.1:8080/api/discover/${cfg.primaryDomain} >/dev/null; do
+          until ${pkgs.curl}/bin/curl --silent --fail \
+            --user "admin:$(cat ${lib.escapeShellArg cfg.adminPasswordFile})" \
+            http://127.0.0.1:8080/api/discover/${cfg.primaryDomain} >/dev/null; do
             sleep 1
           done
           jmap() {
