@@ -353,7 +353,6 @@ in
         log {
           output file /var/log/caddy/access.log
         }
-        ${oauth2ForwardAuth}
         reverse_proxy 127.0.0.1:2283
       '';
     };

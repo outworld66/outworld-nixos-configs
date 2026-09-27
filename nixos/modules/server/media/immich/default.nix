@@ -11,10 +11,31 @@ let
 in
 {
   options.server.immich.enable = lib.mkEnableOption "immich service";
+  options.server.immich.oauthRoleMappings = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.enum [
+        "admin"
+        "user"
+      ]
+    );
+    default = {
+      admins = "admin";
+      media = "user";
+    };
+    description = "Map Pocket ID groups from the groups claim to Immich roles.";
+  };
   config = lib.mkIf cfg.enable {
     services.immich = {
       enable = true;
-      package = inputs.llama-cpp-nixpkgs.legacyPackages.${system}.immich;
+      package = inputs.nixpkgs-unstable.legacyPackages.${system}.immich.overrideAttrs (old: {
+        postInstall = (old.postInstall or "") + ''
+          role_mappings='${builtins.toJSON cfg.oauthRoleMappings}'
+          substituteInPlace "$out/lib/node_modules/immich/dist/services/auth.service.js" \
+            --replace-fail \
+              'const isRole = (role) => roles.includes(role);' \
+              "const roleMappings = $role_mappings; const isRole = (role) => roles.some((group) => roleMappings[group] === role);"
+        '';
+      });
       host = "127.0.0.1";
       port = 2283;
       mediaLocation = "/srv/immich";
@@ -27,9 +48,13 @@ in
           clientSecret._secret = "/var/lib/immich/oidc-client-secret";
           scope = "openid email profile groups";
           buttonText = "Login with Pocket ID";
-          autoRegister = true;
+          autoRegister = false;
           autoLaunch = false;
+          mobileOverrideEnabled = true;
+          mobileRedirectUri = "https://immich.outworld66.ru/api/oauth/mobile-redirect";
+          roleClaim = "groups";
         };
+        passwordLogin.enabled = false;
       };
     };
 

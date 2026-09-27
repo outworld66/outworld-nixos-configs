@@ -7,7 +7,7 @@
 
 let
   llama =
-    (import inputs.llama-cpp-nixpkgs {
+    (import inputs.nixpkgs-unstable {
       inherit system;
       inherit (pkgs) config;
     }).llama-cpp.override

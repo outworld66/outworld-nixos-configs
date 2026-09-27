@@ -13,7 +13,7 @@ in
       lib.types.submodule {
         options = {
           email = lib.mkOption { type = lib.types.str; };
-          group = lib.mkOption { type = lib.types.str; };
+          groups = lib.mkOption { type = lib.types.listOf lib.types.str; };
         };
       }
     );
@@ -29,10 +29,22 @@ in
         ENCRYPTION_KEY = "/var/lib/pocket-id/encryption-key";
         STATIC_API_KEY = "/var/lib/pocket-id/static-api-key";
       };
+      package = pkgs.pocket-id.overrideAttrs (old: {
+        preBuild = (old.preBuild or "") + ''
+          webauthn_login=$(find ./vendor -path '*/github.com/go-webauthn/webauthn/webauthn/login.go' -print -quit)
+          if [ -z "$webauthn_login" ]; then
+            echo "go-webauthn login source not found" >&2
+            exit 1
+          fi
+          chmod -R u+w "$(dirname "$(dirname "$webauthn_login")")"
+          sed -i '/Check if the BackupEligible flag has changed\./,+4d' "$webauthn_login"
+        '';
+      });
       settings = {
         APP_URL = "https://id.outworld66.ru";
         TRUST_PROXY = true;
         ANALYTICS_DISABLED = true;
+        WEBAUTHN_ALLOW_SYNCED_PASSKEYS = true;
       };
     };
 
@@ -143,7 +155,11 @@ in
           apply_user_group_mapping() {
             mapping=$1
             email=$(printf '%s' "$mapping" | jq -er .email)
-            target_group_id=$(ensure_group "$(printf '%s' "$mapping" | jq -er .group)")
+            target_group_ids=$(printf '%s' "$mapping" | jq -r '.groups[]' \
+              | while IFS= read -r group_name; do
+                  ensure_group "$group_name"
+                  printf '\n'
+                done | jq -Rsc 'split("\n") | map(select(length > 0))')
             user_id=$(curl_api \
               -H "X-API-KEY: $api_key" \
               "$api/users?pagination%5Blimit%5D=100" \
@@ -151,19 +167,33 @@ in
                 '.data[] | select(.emailVerified == true and (.email | ascii_downcase) == ($email | ascii_downcase)) | .id' \
               | head -n1)
             if [ -n "$user_id" ]; then
+              user=$(curl_api \
+                -H "X-API-KEY: $api_key" \
+                "$api/users/$user_id")
               user_groups=$(curl_api \
                 -H "X-API-KEY: $api_key" \
                 "$api/users/$user_id/groups" | jq -c 'map(.id)')
               updated_groups=$(jq -cn \
-                --arg group_id "$target_group_id" \
+                --argjson target_group_ids "$target_group_ids" \
                 --argjson user_groups "$user_groups" \
-                '$user_groups + [$group_id] | unique')
+                '$user_groups + $target_group_ids | unique')
               curl_api \
                 -H "X-API-KEY: $api_key" \
                 -H 'Content-Type: application/json' \
                 -X PUT \
                 -d "{\"userGroupIds\":$updated_groups}" \
                 "$api/users/$user_id/user-groups" >/dev/null
+              is_admin=$(printf '%s' "$mapping" | jq -r '(.groups // []) | any(. == "admins")')
+              printf '%s' "$user" | jq -c \
+                --argjson isAdmin "$is_admin" \
+                --argjson userGroupIds "$updated_groups" \
+                '. + {isAdmin: $isAdmin, userGroupIds: $userGroupIds}' \
+                | curl_api \
+                    -H "X-API-KEY: $api_key" \
+                    -H 'Content-Type: application/json' \
+                    -X PUT \
+                    --data-binary @- \
+                    "$api/users/$user_id" >/dev/null
             fi
           }
 
@@ -218,7 +248,7 @@ in
             '["https://gotify.outworld66.ru/auth/oidc/callback","gotify://oidc/callback"]' \
             /var/lib/gotify/oidc-client-secret
           provision_client immich Immich \
-            '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","app.immich:///oauth-callback"]' \
+            '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","https://immich.outworld66.ru/api/oauth/mobile-redirect","app.immich:///oauth-callback"]' \
             /var/lib/immich/oidc-client-secret
           provision_client oauth2-proxy 'OAuth2 Proxy' \
             '["https://auth.outworld66.ru/oauth2/callback"]' \
