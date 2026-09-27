@@ -273,6 +273,9 @@ in
 
         ${oauth2ForwardAuth}
 
+        @statsNonAdmin not header_regexp X-Auth-Request-Groups (?i)(^|, ?)(admins)(, ?|$)
+        respond @statsNonAdmin "Forbidden" 403
+
         @websocket header Connection *Upgrade
         handle @websocket {
           reverse_proxy 127.0.0.1:7890
