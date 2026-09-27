@@ -199,9 +199,9 @@ in
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "roundcube-oauth2-secret" ''
           install -d -m 0750 /var/lib/roundcube
-          if [ ! -s /var/lib/roundcube/oauth2-cookie-secret ]; then
+          if [ ! -s /var/lib/roundcube/oauth2-cookie-secret ] || [ "$(wc -c < /var/lib/roundcube/oauth2-cookie-secret)" -ne 32 ]; then
             umask 077
-            head -c 32 /dev/urandom | base64 -w0 > /var/lib/roundcube/oauth2-cookie-secret
+            head -c 32 /dev/urandom > /var/lib/roundcube/oauth2-cookie-secret
           fi
           chmod 0400 /var/lib/roundcube/oauth2-cookie-secret
         '';
