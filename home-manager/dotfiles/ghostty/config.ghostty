@@ -9,7 +9,7 @@ window-inherit-working-directory = true
 shell-integration-features = true
 link-previews = true
 link-url = true
-theme = noctalia
+theme = high-contrast
 term = xterm-256color
 keybind = ctrl+shift+key_v=paste_from_clipboard
 keybind = ctrl+shift+м=paste_from_clipboard
