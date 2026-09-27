@@ -19,24 +19,12 @@ let
   mailDomain = "outworld66.ru";
   authDomain = "auth.outworld66.ru";
   oauth2ForwardAuth = ''
-    route {
-      reverse_proxy 127.0.0.1:4180 {
-        method GET
-        rewrite /oauth2/auth
-        header_up X-Forwarded-Method {method}
-        header_up X-Forwarded-Uri {uri}
-
-        @authorized status 2xx
-        handle_response @authorized {
-          request_header X-Auth-Request-User {rp.header.X-Auth-Request-User}
-          request_header X-Auth-Request-Email {rp.header.X-Auth-Request-Email}
-          request_header X-Auth-Request-Groups {rp.header.X-Auth-Request-Groups}
-        }
-
-        @unauthorized status 401
-        handle_response @unauthorized {
-          redir https://${authDomain}/oauth2/start?rd=https://{host}{uri} 302
-        }
+    forward_auth 127.0.0.1:4180 {
+      uri /oauth2/auth
+      copy_headers X-Auth-Request-User X-Auth-Request-Email X-Auth-Request-Groups
+      @unauthorized status 401
+      handle_response @unauthorized {
+        redir https://${authDomain}/oauth2/start?rd=https://{host}{uri} 302
       }
     }
   '';
