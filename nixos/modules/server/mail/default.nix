@@ -17,6 +17,7 @@ let
 
     api_key=$(cat "$POCKET_ID_API_KEY_FILE")
     api="$STALWART_URL/api"
+    pocket_api="''${POCKET_ID_URL:-http://127.0.0.1:1411}/api"
     domain="''${STALWART_DOMAIN:-${cfg.primaryDomain}}"
     allowed_groups="''${STALWART_ALLOWED_GROUPS:-admins,media}"
 
@@ -24,61 +25,71 @@ let
       ${pkgs.curl}/bin/curl --fail --silent --show-error "$@"
     }
 
-    jmap() {
+    domains=$(curl_api \
+      --user "$STALWART_USER:$STALWART_PASSWORD" \
+      "$api/principal?type=domain&fields=name&limit=1000")
+    if ! printf '%s' "$domains" | ${pkgs.jq}/bin/jq -e --arg domain "$domain" \
+      '.data.items[] | select(.name == $domain)' >/dev/null; then
       curl_api \
         --user "$STALWART_USER:$STALWART_PASSWORD" \
         -H 'Content-Type: application/json' \
-        --data-binary "$1" \
-        "$STALWART_URL/api"
-    }
-
-    accounts_response() {
-      jmap '{"using":["urn:ietf:params:jmap:core","urn:stalwart:jmap"],"methodCalls":[["x:Account/query",{"filter":{}},"q"],["x:Account/get",{"ids":{"#ids":{"resultOf":"q","name":"x:Account/query","path":"/ids"}}},"g"]]}'
-    }
-
-    domain_id=$(jmap "$(printf '%s' "$domain" | ${pkgs.jq}/bin/jq -Rs '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Domain/query",{filter:{name:(rtrimstr("\\n"))}},"q"]]}')" \
-      | ${pkgs.jq}/bin/jq -er '.methodResponses[] | select(.[0] | endswith("Domain/query")) | .[1].ids[0]')
+        --data-binary "$(printf '%s' "$domain" | ${pkgs.jq}/bin/jq -Rs '{type:"domain",name:(rtrimstr("\\n"))}')" \
+        "$api/principal" >/dev/null
+    fi
 
     tmp_dir=$(${pkgs.coreutils}/bin/mktemp -d)
     trap '${pkgs.coreutils}/bin/rm -rf "$tmp_dir"' EXIT
     : > "$tmp_dir/desired"
     curl_api -H "X-API-KEY: $api_key" \
-      "$api/users?pagination%5Blimit%5D=1000" \
+      "$pocket_api/users?pagination%5Blimit%5D=1000" \
       | ${pkgs.jq}/bin/jq -c --arg domain "$domain" \
         '.data[] | select(.emailVerified == true and (.email | endswith("@" + $domain))) | {email, id}' \
       | while IFS= read -r user; do
         email=$(printf '%s' "$user" | ${pkgs.jq}/bin/jq -er .email)
         user_id=$(printf '%s' "$user" | ${pkgs.jq}/bin/jq -er .id)
-        groups=$(curl_api -H "X-API-KEY: $api_key" "$api/users/$user_id/groups")
+        groups=$(curl_api -H "X-API-KEY: $api_key" "$pocket_api/users/$user_id/groups")
         if printf '%s' "$groups" | ${pkgs.jq}/bin/jq -e --arg allowed "$allowed_groups" \
           '($allowed | split(",")) as $names | any(.[]; .name as $name | $names | index($name))' >/dev/null; then
           printf '%s\n' "$email" >> "$tmp_dir/desired"
         fi
       done
 
-    accounts=$(accounts_response | ${pkgs.jq}/bin/jq -c '.methodResponses[] | select(.[0] | endswith("Account/get")) | .[1].list[]')
+    accounts=$(curl_api \
+      --user "$STALWART_USER:$STALWART_PASSWORD" \
+      "$api/principal?type=individual&fields=name&limit=1000" \
+      | ${pkgs.jq}/bin/jq -c '.data.items[]')
     while IFS= read -r email; do
       [ -n "$email" ] || continue
       account=$(printf '%s\n' "$accounts" | ${pkgs.jq}/bin/jq -c --arg email "$email" \
-        'select(.emailAddress == $email)' | head -n1)
+        'select(.name == $email)' | head -n1)
       if [ -z "$account" ]; then
-        local_part=''${email%@*}
-        jmap "$(jq -n --arg name "$local_part" --arg domain_id "$domain_id" \
-          '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Account/set",{create:{new:{"@type":"User",name:$name,domainId:$domain_id,credentials:{},memberGroupIds:{},roles:{"@type":"User"},permissions:{"@type":"Inherit"},quotas:{},aliases:{},encryptionAtRest:{"@type":"Disabled"}}}},"c"]]}')" >/dev/null
+        curl_api \
+          --user "$STALWART_USER:$STALWART_PASSWORD" \
+          -H 'Content-Type: application/json' \
+          --data-binary "$(printf '%s' "$email" | ${pkgs.jq}/bin/jq -Rs '{type:"individual",name:(rtrimstr("\\n")),emails:[(rtrimstr("\\n"))],roles:["user"]}')" \
+          "$api/principal" >/dev/null
       else
-        account_id=$(printf '%s' "$account" | ${pkgs.jq}/bin/jq -er .id)
-        jmap "$(jq -n --arg id "$account_id" \
-          '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Account/set",{update:{($id):{permissions:{"@type":"Inherit"}}}},"c"]]}')" >/dev/null
+        principal_url=$(printf '%s' "$email" | ${pkgs.jq}/bin/jq -sRr @uri)
+        curl_api \
+          --user "$STALWART_USER:$STALWART_PASSWORD" \
+          -X PATCH \
+          -H 'Content-Type: application/json' \
+          --data-binary '[{"action":"removeItem","field":"disabledPermissions","value":"authenticate"}]' \
+          "$api/principal/$principal_url" >/dev/null
       fi
     done < "$tmp_dir/desired"
 
-    printf '%s\n' "$accounts" | ${pkgs.jq}/bin/jq -r --arg domain "$domain" \
-      'select(.emailAddress | endswith("@" + $domain)) | [.id, .emailAddress] | @tsv' \
-      | while IFS=$'\t' read -r account_id email; do
+    printf '%s\n' "$accounts" | ${pkgs.jq}/bin/jq -r '.name' \
+      | while IFS= read -r email; do
         [ "$email" = "pocket-id@$domain" ] && continue
         if ! ${pkgs.coreutils}/bin/grep -Fqx "$email" "$tmp_dir/desired"; then
-          jmap "$(jq -n --arg id "$account_id" \
-            '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Account/set",{update:{($id):{permissions:{"@type":"Replace",disabledPermissions:["authenticate"]}}}},"c"]]}')" >/dev/null
+          principal_url=$(printf '%s' "$email" | ${pkgs.jq}/bin/jq -sRr @uri)
+          curl_api \
+            --user "$STALWART_USER:$STALWART_PASSWORD" \
+            -X PATCH \
+            -H 'Content-Type: application/json' \
+            --data-binary '[{"action":"addItem","field":"disabledPermissions","value":"authenticate"}]' \
+            "$api/principal/$principal_url" >/dev/null
         fi
       done
   '';
@@ -226,47 +237,39 @@ in
         RemainAfterExit = true;
         ExecStart = pkgs.writeShellScript "stalwart-ensure-accounts" ''
           set -eu
-          until ${pkgs.curl}/bin/curl --silent --fail \
-            --user "admin:$(cat ${lib.escapeShellArg cfg.adminPasswordFile})" \
-            http://127.0.0.1:8080/api/discover/${cfg.primaryDomain} >/dev/null; do
-            sleep 1
-          done
-          jmap() {
-            ${pkgs.curl}/bin/curl --fail --silent --show-error \
+          while :; do
+            http_code=$(${pkgs.curl}/bin/curl --silent --output /dev/null --write-out '%{http_code}' \
               --user "admin:$(cat ${lib.escapeShellArg cfg.adminPasswordFile})" \
-              -H 'Content-Type: application/json' \
-              --data-binary "$1" \
-              http://127.0.0.1:8080/api
+              'http://127.0.0.1:8080/api/principal?type=domain')
+            case "$http_code" in
+              000|404) sleep 1 ;;
+              *) break ;;
+            esac
+          done
+          api=http://127.0.0.1:8080/api
+          curl_api() {
+            ${pkgs.curl}/bin/curl --fail --silent --show-error \
+              --user "admin:$(cat ${lib.escapeShellArg cfg.adminPasswordFile})" "$@"
           }
-          domain_id=$(jmap "$(jq -n --arg domain ${lib.escapeShellArg cfg.primaryDomain} \
-            '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Domain/query",{filter:{name:$domain}},"q"]]}')" \
-            | jq -er '.methodResponses[] | select(.[0] | endswith("Domain/query")) | .[1].ids[0]' || true)
-          if [ -z "$domain_id" ]; then
-            jmap "$(jq -n --arg domain ${lib.escapeShellArg cfg.primaryDomain} \
-              '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Domain/set",{create:{new:{name:$domain,isEnabled:true}}},"c"]]}')" >/dev/null
-            domain_id=$(jmap "$(jq -n --arg domain ${lib.escapeShellArg cfg.primaryDomain} \
-              '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Domain/query",{filter:{name:$domain}},"q"]]}')" \
-              | jq -er '.methodResponses[] | select(.[0] | endswith("Domain/query")) | .[1].ids[0]')
+          domains=$(curl_api "$api/principal?type=domain&fields=name&limit=1000")
+          if ! printf '%s' "$domains" | jq -e --arg domain ${lib.escapeShellArg cfg.primaryDomain} \
+            '.data.items[] | select(.name == $domain)' >/dev/null; then
+            curl_api \
+              -H 'Content-Type: application/json' \
+              --data-binary '{"type":"domain","name":'"$(printf '%s' ${lib.escapeShellArg cfg.primaryDomain} | jq -Rs .)"'}' \
+              "$api/principal" >/dev/null
           fi
-          accounts=$(jmap '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Account/query",{filter:{}},"q"],["x:Account/get",{ids:{"#ids":{resultOf:"q",name:"x:Account/query",path:"/ids"}}},"g"]]}' \
-            | jq -c '.methodResponses[] | select(.[0] | endswith("Account/get")) | .[1].list[]')
+          accounts=$(curl_api "$api/principal?type=individual&fields=name&limit=1000" | jq -c '.data.items[]')
           ${lib.concatStringsSep "\n" (
-            lib.mapAttrsToList (
-              email: account:
-              let
-                localPart = lib.removeSuffix "@${cfg.primaryDomain}" email;
-              in
-              ''
-                if ! printf '%s\n' "$accounts" | jq -e --arg email ${lib.escapeShellArg email} 'select(.emailAddress == $email)' >/dev/null; then
-                  jq -n \
-                    --arg name ${lib.escapeShellArg localPart} \
-                    --arg domainId "$domain_id" \
-                    --arg secret "$(cat ${lib.escapeShellArg account.passwordFile})" \
-                    '{using:["urn:ietf:params:jmap:core","urn:stalwart:jmap"],methodCalls:[["x:Account/set",{create:{new:{"@type":"User",name:$name,domainId:$domainId,credentials:{"0":{"@type":"Password",secret:$secret}},memberGroupIds:{},roles:{"@type":"User"},permissions:{"@type":"Inherit"},quotas:{},aliases:{},encryptionAtRest:{"@type":"Disabled"}}}},"c"]]}' \
-                    | { read -r payload; jmap "$payload"; } >/dev/null
-                fi
-              ''
-            ) cfg.accounts
+            lib.mapAttrsToList (email: account: ''
+              if ! printf '%s\n' "$accounts" | jq -e --arg email ${lib.escapeShellArg email} 'select(.name == $email)' >/dev/null; then
+                jq -n \
+                  --arg name ${lib.escapeShellArg email} \
+                  --arg secret "$(cat ${lib.escapeShellArg account.passwordFile})" \
+                  '{type:"individual",name:$name,emails:[$name],secrets:[$secret],roles:["user"]}' \
+                  | curl_api -H 'Content-Type: application/json' --data-binary @- "$api/principal" >/dev/null
+              fi
+            '') cfg.accounts
           )}
         '';
       };
