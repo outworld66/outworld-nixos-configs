@@ -2,6 +2,7 @@
   config,
   inputs,
   lib,
+  pkgs,
   system,
   ...
 }:
@@ -16,7 +17,7 @@ in
       package = inputs.llama-cpp-nixpkgs.legacyPackages.${system}.immich;
       host = "127.0.0.1";
       port = 2283;
-      mediaLocation = "/var/lib/immich";
+      mediaLocation = "/srv/immich";
       settings = {
         server.externalDomain = "https://immich.outworld66.ru";
         oauth = {
@@ -32,9 +33,35 @@ in
       };
     };
 
+    systemd.services.immich-storage-migration = {
+      before = [ "immich-server.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = pkgs.writeShellScript "immich-storage-migration" ''
+          install -d -m 0750 -o immich -g immich /srv/immich
+          if [ ! -e /srv/immich/.migrated-from-var-lib-immich ]; then
+            find /var/lib/immich -mindepth 1 -maxdepth 1 \
+              ! -name oidc-client-secret \
+              ! -name .migrated-from-var-lib-immich \
+              -exec mv -t /srv/immich -- {} +
+            touch /srv/immich/.migrated-from-var-lib-immich
+          fi
+          chown -R immich:immich /srv/immich
+        '';
+      };
+    };
+
     systemd.services.immich-server = {
-      after = [ "pocket-id-oidc-provision.service" ];
-      requires = [ "pocket-id-oidc-provision.service" ];
+      after = [
+        "immich-storage-migration.service"
+        "pocket-id-oidc-provision.service"
+      ];
+      requires = [
+        "immich-storage-migration.service"
+        "pocket-id-oidc-provision.service"
+      ];
     };
   };
 }
