@@ -191,6 +191,7 @@ in
           "admins"
           "media"
         ];
+        code-challenge-method = "S256";
         oidc-groups-claim = "groups";
       };
     };
