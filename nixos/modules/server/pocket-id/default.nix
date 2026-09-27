@@ -84,154 +84,154 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "pocket-id-oidc-provision" ''
-          set -eu
-          api_key=$(cat /var/lib/pocket-id/static-api-key)
-          api="http://127.0.0.1:1411/api"
-          curl_api() {
-            curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 "$@"
-          }
+            set -eu
+            api_key=$(cat /var/lib/pocket-id/static-api-key)
+            api="http://127.0.0.1:1411/api"
+            curl_api() {
+              curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 "$@"
+            }
 
-          media_group_id=$(curl_api \
-            -H "X-API-KEY: $api_key" \
-            "$api/user-groups?pagination%5Blimit%5D=100" \
-            | jq -r '.data[] | select(.name == "media") | .id' | head -n1)
-          if [ -z "$media_group_id" ]; then
-            curl_api \
+            media_group_id=$(curl_api \
               -H "X-API-KEY: $api_key" \
-              -H 'Content-Type: application/json' \
-              -d '{"friendlyName":"Media","name":"media"}' \
-              "$api/user-groups" >/dev/null
-          fi
+              "$api/user-groups?pagination%5Blimit%5D=100" \
+              | jq -r '.data[] | select(.name == "media") | .id' | head -n1)
+            if [ -z "$media_group_id" ]; then
+              curl_api \
+                -H "X-API-KEY: $api_key" \
+                -H 'Content-Type: application/json' \
+                -d '{"friendlyName":"Media","name":"media"}' \
+                "$api/user-groups" >/dev/null
+            fi
 
-          group_id=$(curl_api \
-            -H "X-API-KEY: $api_key" \
-            "$api/user-groups?pagination%5Blimit%5D=100" \
-            | jq -r '.data[] | select(.name == "nogroup") | .id' | head -n1)
-          if [ -z "$group_id" ]; then
-            group_id=$(curl_api \
-              -H "X-API-KEY: $api_key" \
-              -H 'Content-Type: application/json' \
-              -d '{"friendlyName":"No access","name":"nogroup"}' \
-              "$api/user-groups" | jq -er .id)
-          fi
-          default_groups=$(jq -cn --arg id "$group_id" '[ $id ]')
-          if ! grep -qxF "SIGNUP_DEFAULT_USER_GROUP_IDS=$default_groups" /var/lib/pocket-id/environment; then
-            sed '/^SIGNUP_DEFAULT_USER_GROUP_IDS=/d' /var/lib/pocket-id/environment > /var/lib/pocket-id/environment.new
-            printf 'SIGNUP_DEFAULT_USER_GROUP_IDS=%s\n' "$default_groups" >> /var/lib/pocket-id/environment.new
-            chown pocket-id:pocket-id /var/lib/pocket-id/environment.new
-            chmod 0400 /var/lib/pocket-id/environment.new
-            mv /var/lib/pocket-id/environment.new /var/lib/pocket-id/environment
-            systemctl restart pocket-id.service
-          fi
-
-          ensure_group() {
-            group_name=$1
             group_id=$(curl_api \
               -H "X-API-KEY: $api_key" \
               "$api/user-groups?pagination%5Blimit%5D=100" \
-              | jq -r --arg name "$group_name" '.data[] | select(.name == $name) | .id' | head -n1)
+              | jq -r '.data[] | select(.name == "nogroup") | .id' | head -n1)
             if [ -z "$group_id" ]; then
               group_id=$(curl_api \
                 -H "X-API-KEY: $api_key" \
                 -H 'Content-Type: application/json' \
-                -d "{\"friendlyName\":\"$group_name\",\"name\":\"$group_name\"}" \
+                -d '{"friendlyName":"No access","name":"nogroup"}' \
                 "$api/user-groups" | jq -er .id)
             fi
-            printf '%s' "$group_id"
-          }
-
-          apply_user_group_mapping() {
-            mapping=$1
-            email=$(printf '%s' "$mapping" | jq -er .email)
-            target_group_id=$(ensure_group "$(printf '%s' "$mapping" | jq -er .group)")
-            user_id=$(curl_api \
-              -H "X-API-KEY: $api_key" \
-              "$api/users?pagination%5Blimit%5D=100" \
-              | jq -r --arg email "$email" \
-                '.data[] | select(.emailVerified == true and (.email | ascii_downcase) == ($email | ascii_downcase)) | .id' \
-              | head -n1)
-            if [ -n "$user_id" ]; then
-              user_groups=$(curl_api \
-                -H "X-API-KEY: $api_key" \
-                "$api/users/$user_id/groups" | jq -c 'map(.id)')
-              updated_groups=$(jq -cn \
-                --arg group_id "$target_group_id" \
-                --argjson user_groups "$user_groups" \
-                '$user_groups + [$group_id] | unique')
-              curl_api \
-                -H "X-API-KEY: $api_key" \
-                -H 'Content-Type: application/json' \
-                -X PUT \
-                -d "{\"userGroupIds\":$updated_groups}" \
-                "$api/users/$user_id/user-groups" >/dev/null
-            fi
-          }
-
-          mappings='${builtins.toJSON cfg.userGroupMappings}'
-          printf '%s' "$mappings" | jq -c '.[]' | while IFS= read -r mapping; do
-            apply_user_group_mapping "$mapping"
-          done
-
-          provision_client() {
-            client_id=$1
-            name=$2
-            callbacks=$3
-            client_secret_file=$4
-            payload=$(printf '{"id":"%s","name":"%s","description":"%s","callbackURLs":%s,"logoutCallbackURLs":[],"isPublic":false,"pkceEnabled":true,"skipConsent":true}' \
-              "$client_id" "$name" "$name" "$callbacks")
-
-            mkdir -p "$(dirname "$client_secret_file")"
-            chmod 0750 "$(dirname "$client_secret_file")"
-            if ! curl_api \
-              -H "X-API-KEY: $api_key" \
-              "$api/oidc/clients/$client_id" >/dev/null; then
-              curl_api \
-                -H "X-API-KEY: $api_key" \
-                -H 'Content-Type: application/json' \
-                -d "$payload" \
-                "$api/oidc/clients" >/dev/null
+            default_groups=$(jq -cn --arg id "$group_id" '[ $id ]')
+            if ! grep -qxF "SIGNUP_DEFAULT_USER_GROUP_IDS=$default_groups" /var/lib/pocket-id/environment; then
+              sed '/^SIGNUP_DEFAULT_USER_GROUP_IDS=/d' /var/lib/pocket-id/environment > /var/lib/pocket-id/environment.new
+              printf 'SIGNUP_DEFAULT_USER_GROUP_IDS=%s\n' "$default_groups" >> /var/lib/pocket-id/environment.new
+              chown pocket-id:pocket-id /var/lib/pocket-id/environment.new
+              chmod 0400 /var/lib/pocket-id/environment.new
+              mv /var/lib/pocket-id/environment.new /var/lib/pocket-id/environment
+              systemctl restart pocket-id.service
             fi
 
-            if [ -s "$client_secret_file" ]; then
-              tr -d '\r\n' < "$client_secret_file" > "$client_secret_file.new"
-              chmod 0400 "$client_secret_file.new"
-              mv "$client_secret_file.new" "$client_secret_file"
-            else
-              curl_api \
+            ensure_group() {
+              group_name=$1
+              group_id=$(curl_api \
                 -H "X-API-KEY: $api_key" \
-                -H 'Content-Type: application/json' \
-                -d '{}' \
-                "$api/oidc/clients/$client_id/secrets" \
-                | jq -er .secret | tr -d '\r\n' > "$client_secret_file"
-              chmod 0400 "$client_secret_file"
-            fi
-          }
+                "$api/user-groups?pagination%5Blimit%5D=100" \
+                | jq -r --arg name "$group_name" '.data[] | select(.name == $name) | .id' | head -n1)
+              if [ -z "$group_id" ]; then
+                group_id=$(curl_api \
+                  -H "X-API-KEY: $api_key" \
+                  -H 'Content-Type: application/json' \
+                  -d "{\"friendlyName\":\"$group_name\",\"name\":\"$group_name\"}" \
+                  "$api/user-groups" | jq -er .id)
+              fi
+              printf '%s' "$group_id"
+            }
 
-          provision_client gotify Gotify \
-            '["https://gotify.outworld66.ru/auth/oidc/callback","gotify://oidc/callback"]' \
-            /var/lib/gotify/oidc-client-secret
-          provision_client immich Immich \
-            '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","app.immich:///oauth-callback"]' \
-            /var/lib/immich/oidc-client-secret
-          provision_client oauth2-proxy 'OAuth2 Proxy' \
-            '["https://auth.outworld66.ru/oauth2/callback"]' \
-            /var/lib/oauth2-proxy/client-secret
+            apply_user_group_mapping() {
+              mapping=$1
+              email=$(printf '%s' "$mapping" | jq -er .email)
+              target_group_id=$(ensure_group "$(printf '%s' "$mapping" | jq -er .group)")
+              user_id=$(curl_api \
+                -H "X-API-KEY: $api_key" \
+                "$api/users?pagination%5Blimit%5D=100" \
+                | jq -r --arg email "$email" \
+                  '.data[] | select(.emailVerified == true and (.email | ascii_downcase) == ($email | ascii_downcase)) | .id' \
+                | head -n1)
+              if [ -n "$user_id" ]; then
+                user_groups=$(curl_api \
+                  -H "X-API-KEY: $api_key" \
+                  "$api/users/$user_id/groups" | jq -c 'map(.id)')
+                updated_groups=$(jq -cn \
+                  --arg group_id "$target_group_id" \
+                  --argjson user_groups "$user_groups" \
+                  '$user_groups + [$group_id] | unique')
+                curl_api \
+                  -H "X-API-KEY: $api_key" \
+                  -H 'Content-Type: application/json' \
+                  -X PUT \
+                  -d "{\"userGroupIds\":$updated_groups}" \
+                  "$api/users/$user_id/user-groups" >/dev/null
+              fi
+            }
 
-          umask 077
-          cat > /var/lib/gotify/oidc.env <<EOF
-          GOTIFY_OIDC_ENABLED=true
-          GOTIFY_OIDC_ISSUER=https://id.outworld66.ru
-          GOTIFY_OIDC_CLIENTID=gotify
-          GOTIFY_OIDC_CLIENTSECRET=$(cat /var/lib/gotify/oidc-client-secret)
-          GOTIFY_OIDC_REDIRECTURL=https://gotify.outworld66.ru/auth/oidc/callback
-          GOTIFY_OIDC_AUTOREGISTER=true
-          GOTIFY_OIDC_USERNAMECLAIM=preferred_username
-          GOTIFY_OIDC_SCOPES=openid,profile,email,groups
-          GOTIFY_OIDC_GROUPS_CLAIM=groups
-          GOTIFY_OIDC_GROUPS_USER=media
-          GOTIFY_OIDC_GROUPS_ADMIN=admins
-          EOF
-          chmod 0400 /var/lib/gotify/oidc.env
+            mappings='${builtins.toJSON cfg.userGroupMappings}'
+            printf '%s' "$mappings" | jq -c '.[]' | while IFS= read -r mapping; do
+              apply_user_group_mapping "$mapping"
+            done
+
+            provision_client() {
+              client_id=$1
+              name=$2
+              callbacks=$3
+              client_secret_file=$4
+              payload=$(printf '{"id":"%s","name":"%s","description":"%s","callbackURLs":%s,"logoutCallbackURLs":[],"isPublic":false,"pkceEnabled":true,"skipConsent":true}' \
+                "$client_id" "$name" "$name" "$callbacks")
+
+              mkdir -p "$(dirname "$client_secret_file")"
+              chmod 0750 "$(dirname "$client_secret_file")"
+              if ! curl_api \
+                -H "X-API-KEY: $api_key" \
+                "$api/oidc/clients/$client_id" >/dev/null; then
+                curl_api \
+                  -H "X-API-KEY: $api_key" \
+                  -H 'Content-Type: application/json' \
+                  -d "$payload" \
+                  "$api/oidc/clients" >/dev/null
+              fi
+
+              if [ -s "$client_secret_file" ]; then
+                tr -d '\r\n' < "$client_secret_file" > "$client_secret_file.new"
+                chmod 0400 "$client_secret_file.new"
+                mv "$client_secret_file.new" "$client_secret_file"
+              else
+                curl_api \
+                  -H "X-API-KEY: $api_key" \
+                  -H 'Content-Type: application/json' \
+                  -d '{}' \
+                  "$api/oidc/clients/$client_id/secrets" \
+                  | jq -er .secret | tr -d '\r\n' > "$client_secret_file"
+                chmod 0400 "$client_secret_file"
+              fi
+            }
+
+            provision_client gotify Gotify \
+              '["https://gotify.outworld66.ru/auth/oidc/callback","gotify://oidc/callback"]' \
+              /var/lib/gotify/oidc-client-secret
+            provision_client immich Immich \
+              '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","app.immich:///oauth-callback"]' \
+              /var/lib/immich/oidc-client-secret
+            provision_client oauth2-proxy 'OAuth2 Proxy' \
+              '["https://auth.outworld66.ru/oauth2/callback"]' \
+              /var/lib/oauth2-proxy/client-secret
+
+            umask 077
+            cat > /var/lib/gotify/oidc.env <<EOF
+            GOTIFY_OIDC_ENABLED=true
+            GOTIFY_OIDC_ISSUER=https://id.outworld66.ru
+            GOTIFY_OIDC_CLIENTID=gotify
+            GOTIFY_OIDC_CLIENTSECRET=$(cat /var/lib/gotify/oidc-client-secret)
+            GOTIFY_OIDC_REDIRECTURL=https://gotify.outworld66.ru/auth/oidc/callback
+            GOTIFY_OIDC_AUTOREGISTER=true
+            GOTIFY_OIDC_USERNAMECLAIM=preferred_username
+            GOTIFY_OIDC_SCOPES=openid,profile,email,groups
+            GOTIFY_OIDC_GROUPS_CLAIM=groups
+          GOTIFY_OIDC_GROUPS_USER=admins
+            GOTIFY_OIDC_GROUPS_ADMIN=admins
+            EOF
+            chmod 0400 /var/lib/gotify/oidc.env
         '';
       };
     };
