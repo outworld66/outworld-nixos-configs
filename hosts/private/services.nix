@@ -259,19 +259,21 @@ in
           output file /var/log/caddy/access.log
         }
 
-        ${oauth2ForwardAuth}
+        route {
+          ${oauth2ForwardAuth}
 
-        @statsNonAdmin not header_regexp X-Auth-Request-Groups "(?i)(^|, ?)(admins)(, ?|$)"
-        respond @statsNonAdmin "Forbidden" 403
+          @statsNonAdmin not header_regexp X-Auth-Request-Groups "(?i)(^|, ?)(admins)(, ?|$)"
+          respond @statsNonAdmin "Forbidden" 403
 
-        @websocket header Connection *Upgrade
-        handle @websocket {
-          reverse_proxy 127.0.0.1:7890
-        }
+          @websocket header Connection *Upgrade
+          handle @websocket {
+            reverse_proxy 127.0.0.1:7890
+          }
 
-        handle_path / {
-          root * /srv/goaccess
-          file_server
+          handle_path / {
+            root * /srv/goaccess
+            file_server
+          }
         }
       '';
     };
