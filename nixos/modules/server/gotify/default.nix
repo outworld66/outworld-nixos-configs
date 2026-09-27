@@ -6,12 +6,33 @@
 }:
 let
   cfg = config.server.gotify;
+  gotifySrc = pkgs.fetchFromGitHub {
+    owner = "gotify";
+    repo = "server";
+    tag = "v3.1.0";
+    hash = "sha256-s3oU6mEvhbguLHcLUaavDlR44EX7sDnd0SxrtbMCeyI=";
+  };
+  gotifyUi = pkgs.gotify-server.ui.overrideAttrs (_: {
+    version = "3.1.0";
+    src = "${gotifySrc}/ui";
+    yarnOfflineCache = pkgs.fetchYarnDeps {
+      yarnLock = "${gotifySrc}/ui/yarn.lock";
+      hash = "sha256-PUO8HWTjtZfzWtLkDa827HoRx0LBxxO11My3mhito+I=";
+    };
+  });
+  gotifyPackage = pkgs.gotify-server.overrideAttrs (_: {
+    version = "3.1.0";
+    src = gotifySrc;
+    ui = gotifyUi;
+    vendorHash = "sha256-ERRPIRZFhJN+QKEwBbZVUKTaTOLrlC+cb8yQNGHgMxg=";
+  });
 in
 {
   options.server.gotify.enable = lib.mkEnableOption "gotify service";
   config = lib.mkIf cfg.enable {
     services.gotify = {
       enable = true;
+      package = gotifyPackage;
       environment = {
         GOTIFY_SERVER_PORT = 8090;
         GOTIFY_DATABASE_DIALECT = "sqlite3";
