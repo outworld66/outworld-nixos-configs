@@ -236,7 +236,13 @@ tasks:
           esac
         fi
 
-        uv run --locked octodns-sync --config-file=.octodns/config.yaml
+        force_args=""
+        if test -n "${OCTODNS_FORCE:-}"; then
+          force_args="--force"
+        fi
+        uv run --locked octodns-sync \
+          --config-file=.octodns/config.yaml \
+          $force_args
 
         printf 'Apply this DNS plan to Selectel? [y/N] '
         read -r answer
@@ -244,6 +250,7 @@ tasks:
           y|Y|yes|YES)
             uv run --locked octodns-sync \
               --config-file=.octodns/config.yaml \
+              $force_args \
               --doit
             ;;
           *)
