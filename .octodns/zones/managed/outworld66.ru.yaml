@@ -1,4 +1,13 @@
 # Keep the imported Selectel zone in .octodns/zones/imported.
+"":
+  - ttl: 300
+    type: MX
+    value:
+      exchange: mail.outworld66.ru.
+      preference: 10
+  - ttl: 300
+    type: TXT
+    value: v=spf1 mx ~all
 # Public address of the server.
 "*":
   - ttl: 300
@@ -16,12 +25,3 @@ mail:
   - ttl: 300
     type: A
     value: 85.142.172.131
-"":
-  - ttl: 300
-    type: MX
-    value:
-      exchange: mail.outworld66.ru.
-      preference: 10
-  - ttl: 300
-    type: TXT
-    value: v=spf1 mx ~all
