@@ -193,6 +193,7 @@ in
         ];
         code-challenge-method = "S256";
         oidc-groups-claim = "groups";
+        whitelist-domain = [ ".outworld66.ru" ];
       };
     };
 

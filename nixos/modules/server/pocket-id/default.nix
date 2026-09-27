@@ -122,13 +122,17 @@
               "$api/oidc/clients" >/dev/null
           fi
 
-          if [ ! -s "$client_secret_file" ]; then
+          if [ -s "$client_secret_file" ]; then
+            tr -d '\r\n' < "$client_secret_file" > "$client_secret_file.new"
+            chmod 0400 "$client_secret_file.new"
+            mv "$client_secret_file.new" "$client_secret_file"
+          else
             curl_api \
               -H "X-API-KEY: $api_key" \
               -H 'Content-Type: application/json' \
               -d '{}' \
               "$api/oidc/clients/$client_id/secrets" \
-              | jq -er .secret > "$client_secret_file"
+              | jq -er .secret | tr -d '\r\n' > "$client_secret_file"
             chmod 0400 "$client_secret_file"
           fi
         }
