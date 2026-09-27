@@ -93,6 +93,7 @@ in
         DynamicUser = lib.mkForce false;
         User = "gotify";
         Group = "gotify";
+        ExecStartPre = "+${pkgs.coreutils}/bin/chown -R gotify:gotify /var/lib/gotify-server";
       };
     };
 
