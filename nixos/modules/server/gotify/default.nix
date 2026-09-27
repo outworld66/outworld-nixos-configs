@@ -30,6 +30,12 @@ in
 {
   options.server.gotify.enable = lib.mkEnableOption "gotify service";
   config = lib.mkIf cfg.enable {
+    users.groups.gotify = { };
+    users.users.gotify = {
+      isSystemUser = true;
+      group = "gotify";
+    };
+
     services.gotify = {
       enable = true;
       package = gotifyPackage;
@@ -81,6 +87,11 @@ in
         "gotify-default-password.service"
         "pocket-id-oidc-provision.service"
       ];
+      serviceConfig = {
+        DynamicUser = lib.mkForce false;
+        User = "gotify";
+        Group = "gotify";
+      };
     };
 
     systemd.services.gotify-password-migrate = {

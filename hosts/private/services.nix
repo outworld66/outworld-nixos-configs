@@ -71,7 +71,7 @@ in
           {
             "Pocket ID" = {
               href = "https://${pocketIdDomain}";
-              icon = "https://github.com/pocket-id/pocket-id.png?size=64";
+              icon = "pocket-id.png";
               description = "OIDC identity provider";
             };
           }
@@ -152,7 +152,7 @@ in
           {
             "Webmail" = {
               href = "https://${webmailDomain}";
-              icon = "https://roundcube.net/images/logo.svg";
+              icon = "roundcube.png";
               description = "Private email";
             };
           }
