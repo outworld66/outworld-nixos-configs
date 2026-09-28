@@ -43,7 +43,7 @@ in
       routes = [
         {
           from = "https://stats.outworld66.ru";
-          to = "http://127.0.0.1:7890";
+          to = "http://127.0.0.1:7891";
           policy = [
             {
               allow = {
@@ -254,6 +254,10 @@ in
   server.gotify.enable = true;
   server.immich.enable = true;
 
+  systemd.services.elengrab.serviceConfig.Environment = [
+    "ELENGRAB_BASE_URL=https://${elengrabDomain}"
+  ];
+
   server.mail = {
     enable = true;
     hostname = mailHostname;
@@ -302,6 +306,19 @@ in
   };
 
   services.caddy.virtualHosts = {
+    "http://127.0.0.1:7891" = {
+      extraConfig = ''
+        root * /srv/goaccess
+        @websocket header Connection *Upgrade
+        handle @websocket {
+          reverse_proxy 127.0.0.1:7890
+        }
+        handle {
+          file_server
+        }
+      '';
+    };
+
     "*.outworld66.ru" = {
       extraConfig = ''
         abort
