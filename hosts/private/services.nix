@@ -134,6 +134,19 @@ in
     }
   '';
 
+  services.caddy.extraConfig = ''
+    http://127.0.0.1:7891 {
+      root * /srv/goaccess
+      @websocket header Connection *Upgrade
+      handle @websocket {
+        reverse_proxy 127.0.0.1:7890
+      }
+      handle {
+        file_server
+      }
+    }
+  '';
+
   services.homepage-dashboard = {
     enable = true;
     allowedHosts = homepageDomain;
@@ -254,9 +267,7 @@ in
   server.gotify.enable = true;
   server.immich.enable = true;
 
-  systemd.services.elengrab.serviceConfig.Environment = [
-    "ELENGRAB_BASE_URL=https://${elengrabDomain}"
-  ];
+  systemd.services.elengrab.environment.ELENGRAB_BASE_URL = "https://${elengrabDomain}";
 
   server.mail = {
     enable = true;
@@ -306,19 +317,6 @@ in
   };
 
   services.caddy.virtualHosts = {
-    "http://127.0.0.1:7891" = {
-      extraConfig = ''
-        root * /srv/goaccess
-        @websocket header Connection *Upgrade
-        handle @websocket {
-          reverse_proxy 127.0.0.1:7890
-        }
-        handle {
-          file_server
-        }
-      '';
-    };
-
     "*.outworld66.ru" = {
       extraConfig = ''
         abort
