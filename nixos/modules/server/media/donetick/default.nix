@@ -49,6 +49,7 @@ in
 
     systemd.services.donetick = {
       wantedBy = [ "multi-user.target" ];
+      before = [ "pomerium.service" ];
       after = [
         "network-online.target"
         "donetick-secret.service"
