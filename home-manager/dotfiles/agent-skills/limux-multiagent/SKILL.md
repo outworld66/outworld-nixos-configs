@@ -41,6 +41,39 @@ waits for each artifact, and supports both pi and codex through AGENT_COMMAND:
 For pi, AGENT_SKILLS supplies comma-separated --skill values and defaults to
 ponytail. For Codex, the task file is passed as the initial prompt.
 
+## Completion and supervision protocol
+
+Every agent task must define a unique artifact path and a status path, for
+example `/tmp/<task>.done` and `/tmp/<task>.status`.
+
+The agent must update the status path at start, during long work, and at
+completion with `running`, `blocked`, `failed`, or `done`, then write the
+artifact and run:
+
+    limux notify --surface <orchestrator-surface> --subtitle <status> --body <task-and-artifact>
+
+The orchestrator must still poll independently: inspect the status files,
+artifacts, pane output, and git status at least every 30 seconds while work is
+active. A notification is advisory and never replaces polling.
+
+For tasks that may need follow-up instructions, launch an interactive Codex
+session in its own pane, then send the prompt with `limux send`:
+
+    limux new-pane --direction right --command 'codex --dangerously-bypass-approvals-and-sandbox --no-daemon -C <workdir>'
+    limux send --surface <agent-surface> <prompt>
+
+Interactive sessions are the default because they can receive follow-up
+messages from the orchestrator or user. Use an explicit peer surface and never
+send to a guessed identifier.
+
+For fully autonomous artifact-gated tasks only, launch non-interactively with:
+
+    codex --dangerously-bypass-approvals-and-sandbox --no-daemon exec -C <workdir> -- <prompt>
+
+Do not use the obsolete `codex exec --full-auto` flag. If an agent exits
+without a status update, mark the task as `failed` only after checking its pane
+output and process state, then restart it with the same artifact path.
+
 ## Communication and targeting
 
 Use limux identify --json and limux list-panels to inspect the current

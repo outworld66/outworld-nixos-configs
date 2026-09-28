@@ -431,6 +431,23 @@
         "type": "github"
       }
     },
+    "pocket-id": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790560101,
+        "narHash": "sha256-8GCdA6J+4XJj0BU0brV1M8mZVCzTsaPg6hv/70T2Ot0=",
+        "owner": "outworld66",
+        "repo": "pocket-id",
+        "rev": "a0f7d72f024038f2273ec20f2f6c04410c59f9ab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "outworld66",
+        "ref": "a0f7d72",
+        "repo": "pocket-id",
+        "type": "github"
+      }
+    },
     "private": {
       "locked": {
         "path": "./defaults/private",
@@ -455,6 +472,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "noctalia": "noctalia",
         "outworld-packages": "outworld-packages",
+        "pocket-id": "pocket-id",
         "private": "private",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix_2",

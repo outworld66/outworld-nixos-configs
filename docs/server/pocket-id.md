@@ -1,9 +1,9 @@
 # Pocket ID
 
 The server uses Pocket ID at `https://id.outworld66.ru` as its OIDC identity
-provider. Browser-based services are protected by OAuth2 Proxy at
-`https://auth.outworld66.ru`; the OAuth2 client is created automatically during
-activation.
+provider. Browser-based services are protected by Pomerium at
+`https://auth.outworld66.ru`; the Pomerium OIDC client and persistent session
+secrets are created automatically during activation.
 
 ## Android passkeys with KeePassDX
 
@@ -48,7 +48,7 @@ signup still starts in `nogroup` until it is explicitly assigned another group.
 
 ## Service access
 
-The service ACL is separate from the Pocket ID group mapping. OAuth2 Proxy
+The service ACL is separate from the Pocket ID group mapping. Pomerium
 allows users in `admins` or `media` for the common browser-protected services:
 
 - `home.outworld66.ru` — Homepage;
@@ -56,15 +56,13 @@ allows users in `admins` or `media` for the common browser-protected services:
 - `elengrab.outworld66.ru` — Elengrab;
 - `donetick.outworld66.ru` — Donetick;
 - `cloudreve.outworld66.ru` — Cloudreve;
-- `mail.outworld66.ru` — Stalwart Mail Server.
 
-`stats.outworld66.ru` is an exception: Caddy performs the common OIDC check
-and then permits only the `admins` group before serving GoAccess or its
-websocket.
+`stats.outworld66.ru` is an exception: Pomerium permits only the `admins`
+group before proxying GoAccess and its websocket.
 
 Gotify uses its native OIDC integration and accepts only `admins`. Immich uses
 its native Pocket ID OIDC login for both the web and mobile clients; it is not
-wrapped in the common OAuth2 Proxy. Immich does not auto-register OAuth users,
+wrapped in Pomerium. Immich does not auto-register OAuth users,
 so an administrator must create an Immich account before its owner can log in.
 Users who only have `nogroup` cannot create or use an Immich account. WebDAV
 keeps its own Basic Authentication because desktop WebDAV clients do not
@@ -78,13 +76,13 @@ Immich application roles, not additional Pocket ID groups.
 The relevant access rules live in `hosts/private/services.nix`; Pocket ID's
 group creation, email mapping application, and OIDC client provisioning live
 in `nixos/modules/server/pocket-id/default.nix`. Adding a user to a Pocket ID
-group does not by itself grant access to every service: the service's Caddy,
-OAuth2 Proxy, or native OIDC configuration must also allow that group.
+group does not by itself grant access to every service: the service's Pomerium,
+Caddy, or native OIDC configuration must also allow that group.
 
 ## Apply order
 
 1. Verify the Pocket ID OIDC client is provisioned after deployment.
-2. Open `https://auth.outworld66.ru/oauth2/start` and sign in with Pocket ID.
+2. Open `https://auth.outworld66.ru` and sign in with Pocket ID.
 3. Open the requested service.
 
 New users can register in Pocket ID, but remain in `nogroup` until explicitly

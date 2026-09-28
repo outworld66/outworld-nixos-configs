@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -30,6 +31,10 @@ in
         STATIC_API_KEY = "/var/lib/pocket-id/static-api-key";
       };
       package = pkgs.pocket-id.overrideAttrs (old: {
+        src = pkgs.runCommand "pocket-id-source" { } ''
+          cp -r ${inputs.pocket-id} "$out"
+        '';
+        version = "2.16.0-global-logout";
         preBuild = (old.preBuild or "") + ''
           webauthn_login=$(find ./vendor -path '*/github.com/go-webauthn/webauthn/webauthn/login.go' -print -quit)
           if [ -z "$webauthn_login" ]; then
@@ -207,8 +212,15 @@ in
             name=$2
             callbacks=$3
             client_secret_file=$4
-            payload=$(printf '{"id":"%s","name":"%s","description":"%s","callbackURLs":%s,"logoutCallbackURLs":[],"isPublic":false,"pkceEnabled":true,"skipConsent":true}' \
-              "$client_id" "$name" "$name" "$callbacks")
+            frontchannel_logout_url=''${5:-}
+            backchannel_logout_url=''${6:-}
+            payload=$(jq -cn \
+              --arg id "$client_id" \
+              --arg name "$name" \
+              --arg frontchannel_logout_url "$frontchannel_logout_url" \
+              --arg backchannel_logout_url "$backchannel_logout_url" \
+              --argjson callbacks "$callbacks" \
+              '{id: $id, name: $name, description: $name, callbackURLs: $callbacks, logoutCallbackURLs: [], frontchannelLogoutURL: $frontchannel_logout_url, backchannelLogoutURL: $backchannel_logout_url, isPublic: false, pkceEnabled: true, skipConsent: true}')
 
             mkdir -p "$(dirname "$client_secret_file")"
             chmod 0750 "$(dirname "$client_secret_file")"
@@ -249,10 +261,31 @@ in
             /var/lib/gotify/oidc-client-secret
           provision_client immich Immich \
             '["https://immich.outworld66.ru/auth/login","https://immich.outworld66.ru/user-settings","https://immich.outworld66.ru/api/oauth/mobile-redirect","app.immich:///oauth-callback"]' \
-            /var/lib/immich/oidc-client-secret
-          provision_client oauth2-proxy 'OAuth2 Proxy' \
+            /var/lib/immich/oidc-client-secret \
+            "" \
+            https://immich.outworld66.ru/api/oauth/backchannel-logout
+          provision_client pomerium Pomerium \
             '["https://auth.outworld66.ru/oauth2/callback"]' \
-            /var/lib/oauth2-proxy/client-secret
+            /var/lib/pomerium/client-secret \
+            https://auth.outworld66.ru/.pomerium/sign_out
+
+          install -d -m 0750 /var/lib/pomerium
+          if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 32 ]; then
+            umask 077
+            head -c 32 /dev/urandom > /var/lib/pomerium/cookie-secret
+          fi
+          if [ ! -s /var/lib/pomerium/shared-secret ] || [ "$(wc -c < /var/lib/pomerium/shared-secret)" -ne 32 ]; then
+            umask 077
+            head -c 32 /dev/urandom > /var/lib/pomerium/shared-secret
+          fi
+          chmod 0400 /var/lib/pomerium/cookie-secret /var/lib/pomerium/shared-secret
+          umask 077
+          printf '%s\n' \
+            "IDP_CLIENT_SECRET=$(cat /var/lib/pomerium/client-secret)" \
+            "COOKIE_SECRET=$(cat /var/lib/pomerium/cookie-secret)" \
+            "SHARED_SECRET=$(cat /var/lib/pomerium/shared-secret)" \
+            > /var/lib/pomerium/environment
+          chmod 0400 /var/lib/pomerium/environment
 
           umask 077
           printf '%s\n' \
@@ -282,61 +315,9 @@ in
       };
     };
 
-    services.oauth2-proxy = {
-      enable = true;
-      provider = "oidc";
-      approvalPrompt = "auto";
-      oidcIssuerUrl = "https://id.outworld66.ru";
-      clientID = "oauth2-proxy";
-      clientSecretFile = "/var/lib/oauth2-proxy/client-secret";
-      cookie.domain = ".outworld66.ru";
-      cookie.secretFile = "/var/lib/oauth2-proxy/cookie-secret";
-      redirectURL = "https://auth.outworld66.ru/oauth2/callback";
-      httpAddress = "http://127.0.0.1:4180";
-      upstream = [ "static://200" ];
-      scope = "openid profile email groups";
-      reverseProxy = true;
-      trustedProxyIP = [ "127.0.0.1" ];
-      setXauthrequest = true;
-      email.domains = [ "*" ];
-      extraConfig = {
-        allowed-group = [
-          "admins"
-          "media"
-        ];
-        code-challenge-method = "S256";
-        oidc-groups-claim = "groups";
-        whitelist-domain = [ ".outworld66.ru" ];
-      };
-    };
-
-    systemd.services.oauth2-proxy-secret = {
-      description = "Generate OAuth2 Proxy cookie secret";
-      before = [ "oauth2-proxy.service" ];
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = pkgs.writeShellScript "oauth2-proxy-secret" ''
-          install -d -m 0750 -o oauth2-proxy -g oauth2-proxy /var/lib/oauth2-proxy
-          if [ ! -s /var/lib/oauth2-proxy/cookie-secret ] || [ "$(wc -c < /var/lib/oauth2-proxy/cookie-secret)" -ne 32 ]; then
-            umask 077
-            head -c 32 /dev/urandom > /var/lib/oauth2-proxy/cookie-secret
-          fi
-          chown oauth2-proxy:oauth2-proxy /var/lib/oauth2-proxy/cookie-secret
-          chmod 0400 /var/lib/oauth2-proxy/cookie-secret
-        '';
-      };
-    };
-
-    systemd.services.oauth2-proxy = {
-      after = [
-        "oauth2-proxy-secret.service"
-        "pocket-id-oidc-provision.service"
-      ];
-      requires = [
-        "oauth2-proxy-secret.service"
-        "pocket-id-oidc-provision.service"
-      ];
+    systemd.services.pomerium = {
+      after = [ "pocket-id-oidc-provision.service" ];
+      requires = [ "pocket-id-oidc-provision.service" ];
     };
   };
 }

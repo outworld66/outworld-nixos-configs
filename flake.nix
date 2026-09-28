@@ -46,6 +46,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    pocket-id = {
+      url = "github:outworld66/pocket-id/a0f7d72";
+      flake = false;
+    };
+
     drawio-skill = {
       url = "github:Agents365-ai/drawio-skill";
       flake = false;

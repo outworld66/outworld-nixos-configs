@@ -17,22 +17,108 @@ let
   mailHostname = "mail.outworld66.ru";
   mailDomain = "outworld66.ru";
   authDomain = "auth.outworld66.ru";
-  oauth2ForwardAuth = ''
-    forward_auth 127.0.0.1:4180 {
-      uri /oauth2/auth
-      copy_headers X-Auth-Request-User X-Auth-Request-Email X-Auth-Request-Groups
-      @unauthorized status 401
-      handle_response @unauthorized {
-        redir https://${authDomain}/oauth2/start?rd=https://{host}{uri} 302
-      }
-    }
-  '';
   portfolioSource = inputs.self + "/portfolio";
   portfolioSite = pkgs.runCommand "portfolio-site" { nativeBuildInputs = [ pkgs.hugo ]; } ''
     hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
   '';
 in
 {
+  services.pomerium = {
+    enable = true;
+    secretsFile = "/var/lib/pomerium/environment";
+    settings = {
+      address = "127.0.0.1:8443";
+      insecure_server = true;
+      authenticate_service_url = "https://${authDomain}";
+      idp_provider = "oidc";
+      idp_provider_url = "https://id.outworld66.ru";
+      idp_client_id = "pomerium";
+      routes = [
+        {
+          from = "https://stats.outworld66.ru";
+          to = "http://127.0.0.1:7890";
+          policy = [
+            {
+              allow = {
+                "claim/groups" = "admins";
+              };
+            }
+          ];
+        }
+        {
+          from = "https://${bitmagnetDomain}";
+          to = "http://127.0.0.1:3333";
+          policy = [
+            {
+              allow = {
+                or = [
+                  { "claim/groups" = "admins"; }
+                  { "claim/groups" = "media"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
+          from = "https://${homepageDomain}";
+          to = "http://127.0.0.1:8082";
+          policy = [
+            {
+              allow = {
+                or = [
+                  { "claim/groups" = "admins"; }
+                  { "claim/groups" = "media"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
+          from = "https://${elengrabDomain}";
+          to = "http://127.0.0.1:8084";
+          policy = [
+            {
+              allow = {
+                or = [
+                  { "claim/groups" = "admins"; }
+                  { "claim/groups" = "media"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
+          from = "https://${donetickDomain}";
+          to = "http://127.0.0.1:2021";
+          policy = [
+            {
+              allow = {
+                or = [
+                  { "claim/groups" = "admins"; }
+                  { "claim/groups" = "media"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
+          from = "https://${cloudreveDomain}";
+          to = "http://127.0.0.1:5212";
+          policy = [
+            {
+              allow = {
+                or = [
+                  { "claim/groups" = "admins"; }
+                  { "claim/groups" = "media"; }
+                ];
+              };
+            }
+          ];
+        }
+      ];
+    };
+  };
+
   services.caddy.globalConfig = ''
     servers {
       protocols h1 h2
@@ -218,8 +304,7 @@ in
         log {
           output file /var/log/caddy/access.log
         }
-        redir / /oauth2/start 302
-        reverse_proxy 127.0.0.1:4180
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
@@ -250,23 +335,7 @@ in
         log {
           output file /var/log/caddy/access.log
         }
-
-        route {
-          ${oauth2ForwardAuth}
-
-          @statsNonAdmin not header_regexp X-Auth-Request-Groups admins
-          respond @statsNonAdmin "Forbidden" 403
-
-          @websocket header Connection *Upgrade
-          handle @websocket {
-            reverse_proxy 127.0.0.1:7890
-          }
-
-          handle_path / {
-            root * /srv/goaccess
-            file_server
-          }
-        }
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
@@ -276,9 +345,7 @@ in
           output file /var/log/caddy/access.log
         }
 
-        ${oauth2ForwardAuth}
-
-        reverse_proxy 127.0.0.1:3333
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
@@ -288,9 +355,7 @@ in
           output file /var/log/caddy/access.log
         }
 
-        ${oauth2ForwardAuth}
-
-        reverse_proxy 127.0.0.1:8082
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
@@ -305,22 +370,19 @@ in
 
     ${elengrabDomain} = {
       extraConfig = ''
-        ${oauth2ForwardAuth}
-        reverse_proxy 127.0.0.1:8084
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
     ${donetickDomain} = {
       extraConfig = ''
-        ${oauth2ForwardAuth}
-        reverse_proxy 127.0.0.1:2021
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
     ${cloudreveDomain} = {
       extraConfig = ''
-        ${oauth2ForwardAuth}
-        reverse_proxy 127.0.0.1:5212
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
