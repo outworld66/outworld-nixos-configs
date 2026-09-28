@@ -353,6 +353,7 @@ in
         <iframe hidden src="https://${elengrabDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${donetickDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${cloudreveDomain}/.pomerium/sign_out"></iframe>
+        <script>setTimeout(() => location.replace("/"), 1500);</script>
         </body></html>
         HTML 200
         }

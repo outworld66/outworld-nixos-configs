@@ -47,7 +47,7 @@
     };
 
     pocket-id = {
-      url = "github:outworld66/pocket-id/a0f7d72";
+      url = "github:outworld66/pocket-id/b84ceb6";
       flake = false;
     };
 
