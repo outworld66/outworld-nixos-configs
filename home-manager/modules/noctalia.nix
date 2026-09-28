@@ -3,6 +3,7 @@
   inputs,
   lib,
   pkgs,
+  user,
   ...
 }:
 
@@ -111,6 +112,8 @@ in
       ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan";
 
       plugin_settings."rylos/syncthing" = {
+        url = "http://127.0.0.1:8384/";
+        config_path = "/home/${user}/.syncthing/.config/syncthing/config.xml";
         panel_placement = "attached";
         panel_open_near_click = true;
         poll_interval = 10;
