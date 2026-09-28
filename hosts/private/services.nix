@@ -33,6 +33,13 @@ in
       idp_provider = "oidc";
       idp_provider_url = "https://id.outworld66.ru";
       idp_client_id = "pomerium";
+      idp_scopes = [
+        "openid"
+        "profile"
+        "email"
+        "groups"
+        "offline_access"
+      ];
       routes = [
         {
           from = "https://stats.outworld66.ru";
