@@ -16,3 +16,17 @@ logging:
   level: info
   encoding: json
   development: false
+oauth2:
+  auth_url: https://id.outworld66.ru/authorize
+  token_url: https://id.outworld66.ru/api/oidc/token
+  user_info_url: https://id.outworld66.ru/api/oidc/userinfo
+  redirect_url: https://donetick.outworld66.ru/auth/oauth2
+  scopes:
+    - openid
+    - profile
+    - email
+    - groups
+  name: Pocket ID
+  admin_groups:
+    - admins
+disable_password_auth: true

@@ -271,6 +271,12 @@ in
             https://id.outworld66.ru/pomerium-global-logout \
             "" \
             false
+          provision_client donetick Donetick \
+            '["https://donetick.outworld66.ru/auth/oauth2"]' \
+            /var/lib/donetick/oidc-client-secret \
+            "" \
+            "" \
+            false
 
           install -d -m 0750 /var/lib/pomerium
           if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 44 ]; then
@@ -305,6 +311,15 @@ in
             GOTIFY_OIDC_GROUPS_ADMIN=admins \
             > /var/lib/gotify/oidc.env
           chmod 0400 /var/lib/gotify/oidc.env
+
+          install -d -m 0750 /var/lib/donetick
+          umask 077
+          printf '%s\n' \
+            DT_OAUTH2_CLIENT_ID=donetick \
+            "DT_OAUTH2_CLIENT_SECRET=$(cat /var/lib/donetick/oidc-client-secret)" \
+            > /var/lib/donetick/oidc.env
+          chown donetick:donetick /var/lib/donetick/oidc.env
+          chmod 0400 /var/lib/donetick/oidc.env
         '';
       };
     };
