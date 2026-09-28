@@ -140,25 +140,6 @@ in
               "$api/user-groups" >/dev/null
           fi
 
-          if grep -q '^SIGNUP_DEFAULT_USER_GROUP_IDS=' /var/lib/pocket-id/environment; then
-            sed '/^SIGNUP_DEFAULT_USER_GROUP_IDS=/d' /var/lib/pocket-id/environment > /var/lib/pocket-id/environment.new
-            chown pocket-id:pocket-id /var/lib/pocket-id/environment.new
-            chmod 0400 /var/lib/pocket-id/environment.new
-            mv /var/lib/pocket-id/environment.new /var/lib/pocket-id/environment
-            systemctl restart pocket-id.service
-          fi
-
-          nogroup_id=$(curl_api \
-            -H "X-API-KEY: $api_key" \
-            "$api/user-groups?pagination%5Blimit%5D=100" \
-            | jq -r '.data[] | select(.name == "nogroup") | .id' | head -n1)
-          if [ -n "$nogroup_id" ]; then
-            curl_api \
-              -H "X-API-KEY: $api_key" \
-              -X DELETE \
-              "$api/user-groups/$nogroup_id"
-          fi
-
           ensure_group() {
             group_name=$1
             group_id=$(curl_api \
