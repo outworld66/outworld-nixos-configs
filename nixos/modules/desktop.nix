@@ -49,7 +49,15 @@
     enable = true;
     settings = {
       session.default = "niri";
-      appearance.theme_mode = "dark";
+      cursor = {
+        theme = "Adwaita";
+        size = 32;
+        path = "${pkgs.adwaita-icon-theme}/share/icons";
+      };
+      appearance = {
+        theme_mode = "dark";
+        scheme = "Synced";
+      };
       keyboard = {
         layout = "us,ru";
         options = "grp:lalt_lshift_toggle,compose:ralt,ctrl:nocaps";
