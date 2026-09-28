@@ -6,16 +6,22 @@
 }:
 let
   cfg = config.server.donetick;
-  donetick = pkgs.stdenvNoCC.mkDerivation {
+  donetick = pkgs.buildGoModule {
     pname = "donetick";
-    version = "0.1.79";
-    src = pkgs.fetchurl {
-      url = "https://github.com/donetick/donetick/releases/download/v0.1.79/donetick_Linux_x86_64.tar.gz";
-      hash = "sha256-6b9k0vsgqUZyzkxHn3q32XGzwwIDE/2y50GssQA2LFE=";
+    version = "0.1.79-pinned";
+    src = pkgs.fetchFromGitHub {
+      owner = "outworld66";
+      repo = "donetick";
+      rev = "da28eea";
+      hash = "sha256-3IqDovwESaNjZBLz1mJAll9GSZLNKrcpFOEy3KMoGuU=";
     };
-    sourceRoot = ".";
-    dontBuild = true;
-    installPhase = "install -Dm755 donetick $out/bin/donetick";
+    vendorHash = "sha256-abI5330bLKF+eBqgPcIadhOp5xDfqL+LmCb4oqn0qgw=";
+    ldflags = [
+      "-s"
+      "-w"
+      "-X donetick.com/core/config.Version=0.1.79-pinned"
+      "-X donetick.com/core/config.Commit=da28eea"
+    ];
   };
 in
 {
