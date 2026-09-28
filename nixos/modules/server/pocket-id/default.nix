@@ -276,6 +276,11 @@ in
             /var/lib/immich/oidc-client-secret \
             "" \
             https://immich.outworld66.ru/api/oauth/backchannel-logout
+          provision_client cloudreve Cloudreve \
+            '["https://cloudreve.outworld66.ru/api/v4/session/oidc/callback"]' \
+            /var/lib/cloudreve/oidc-client-secret \
+            "" \
+            https://cloudreve.outworld66.ru/api/v4/session/oidc/backchannel-logout
           provision_client pomerium Pomerium \
             '["https://auth.outworld66.ru/oauth2/callback"]' \
             /var/lib/pomerium/client-secret \

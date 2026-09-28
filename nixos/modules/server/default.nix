@@ -20,9 +20,9 @@
     ./goaccess
     ./mail
     ./webdav
-    ./media/cloudreve
     ./media/donetick
     ./media/elengrab
+    ./media/cloudreve
     ./gotify
     ./media/immich
     ./pocket-id

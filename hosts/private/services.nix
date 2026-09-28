@@ -115,20 +115,6 @@ in
             }
           ];
         }
-        {
-          from = "https://${cloudreveDomain}";
-          to = "http://127.0.0.1:5212";
-          policy = [
-            {
-              allow = {
-                or = [
-                  { "claim/groups" = "media-admin"; }
-                  { "claim/groups" = "media-user"; }
-                ];
-              };
-            }
-          ];
-        }
       ];
     };
   };
@@ -244,7 +230,7 @@ in
           {
             "Cloudreve" = {
               href = "https://${cloudreveDomain}";
-              icon = "https://github.com/cloudreve.png?size=64";
+              icon = "cloudreve.png";
               description = "Cloud file storage";
             };
           }
@@ -352,7 +338,6 @@ in
         <iframe hidden src="https://${homepageDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${elengrabDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${donetickDomain}/.pomerium/sign_out"></iframe>
-        <iframe hidden src="https://${cloudreveDomain}/.pomerium/sign_out"></iframe>
         <script>setTimeout(() => location.replace("/"), 1500);</script>
         </body></html>
         HTML 200
@@ -428,11 +413,6 @@ in
 
     ${cloudreveDomain} = {
       extraConfig = ''
-        @cloudrevePasswordLogin {
-          method POST
-          path /api/v4/session/token
-        }
-        respond @cloudrevePasswordLogin 404
         reverse_proxy 127.0.0.1:5212
       '';
     };
