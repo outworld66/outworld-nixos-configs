@@ -234,13 +234,15 @@ in
             client_secret_file=$4
             frontchannel_logout_url=''${5:-}
             backchannel_logout_url=''${6:-}
+            pkce_enabled=''${7:-true}
             payload=$(jq -cn \
               --arg id "$client_id" \
               --arg name "$name" \
               --arg frontchannel_logout_url "$frontchannel_logout_url" \
               --arg backchannel_logout_url "$backchannel_logout_url" \
+              --argjson pkceEnabled "$pkce_enabled" \
               --argjson callbacks "$callbacks" \
-              '{id: $id, name: $name, description: $name, callbackURLs: $callbacks, logoutCallbackURLs: [], frontchannelLogoutURL: $frontchannel_logout_url, backchannelLogoutURL: $backchannel_logout_url, isPublic: false, pkceEnabled: true, skipConsent: true}')
+              '{id: $id, name: $name, description: $name, callbackURLs: $callbacks, logoutCallbackURLs: [], frontchannelLogoutURL: $frontchannel_logout_url, backchannelLogoutURL: $backchannel_logout_url, isPublic: false, pkceEnabled: $pkceEnabled, skipConsent: true}')
 
             mkdir -p "$(dirname "$client_secret_file")"
             chmod 0750 "$(dirname "$client_secret_file")"
@@ -287,7 +289,9 @@ in
           provision_client pomerium Pomerium \
             '["https://auth.outworld66.ru/oauth2/callback"]' \
             /var/lib/pomerium/client-secret \
-            https://auth.outworld66.ru/.pomerium/sign_out
+            https://auth.outworld66.ru/.pomerium/sign_out \
+            "" \
+            false
 
           install -d -m 0750 /var/lib/pomerium
           if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 44 ]; then
