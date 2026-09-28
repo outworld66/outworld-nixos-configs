@@ -289,7 +289,7 @@ in
           provision_client pomerium Pomerium \
             '["https://auth.outworld66.ru/oauth2/callback"]' \
             /var/lib/pomerium/client-secret \
-            https://auth.outworld66.ru/.pomerium/sign_out \
+            https://id.outworld66.ru/pomerium-global-logout \
             "" \
             false
 

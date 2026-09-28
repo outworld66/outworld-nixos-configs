@@ -342,7 +342,23 @@ in
         log {
           output file /var/log/caddy/access.log
         }
-        reverse_proxy 127.0.0.1:1411
+        handle /pomerium-global-logout {
+          header Content-Type text/html
+          respond <<HTML
+        <!doctype html>
+        <html><body>
+        <iframe hidden src="https://stats.outworld66.ru/.pomerium/sign_out"></iframe>
+        <iframe hidden src="https://${bitmagnetDomain}/.pomerium/sign_out"></iframe>
+        <iframe hidden src="https://${homepageDomain}/.pomerium/sign_out"></iframe>
+        <iframe hidden src="https://${elengrabDomain}/.pomerium/sign_out"></iframe>
+        <iframe hidden src="https://${donetickDomain}/.pomerium/sign_out"></iframe>
+        <iframe hidden src="https://${cloudreveDomain}/.pomerium/sign_out"></iframe>
+        </body></html>
+        HTML 200
+        }
+        handle {
+          reverse_proxy 127.0.0.1:1411
+        }
       '';
     };
 
