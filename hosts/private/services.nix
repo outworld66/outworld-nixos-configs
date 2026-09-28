@@ -223,7 +223,7 @@ in
           {
             "Donetick" = {
               href = "https://${donetickDomain}";
-              icon = "vikunja.png";
+              icon = "donetick.png";
               description = "Tasks and reminders";
             };
           }
