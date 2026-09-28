@@ -40,7 +40,9 @@ in
           policy = [
             {
               allow = {
-                "claim/groups" = "admins";
+                and = [
+                  { "claim/groups" = "admins"; }
+                ];
               };
             }
           ];
