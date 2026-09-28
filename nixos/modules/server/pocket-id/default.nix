@@ -150,11 +150,26 @@ in
             printf '%s' "$group_id"
           }
 
+          remove_group() {
+            group_id=$(curl_api \
+              -H "X-API-KEY: $api_key" \
+              "$api/user-groups?pagination%5Blimit%5D=100" \
+              | jq -r --arg name "$1" '.data[] | select(.name == $name) | .id' | head -n1)
+            if [ -n "$group_id" ]; then
+              curl_api \
+                -H "X-API-KEY: $api_key" \
+                -X DELETE \
+                "$api/user-groups/$group_id" >/dev/null
+            fi
+          }
+
           apply_user_group_mapping() {
             mapping=$1
             email=$(printf '%s' "$mapping" | jq -er .email)
             target_group_names=$(printf '%s' "$mapping" | jq -r --argjson group_mappings '${builtins.toJSON cfg.groupMappings}' \
               '.groups as $groups | [ $groups[] as $group | ($group_mappings[$group] // [$group])[] ] | unique[]')
+            is_admin=$(printf '%s\n' "$target_group_names" | jq -Rsc 'split("\n") | any(. == "pocket-admin")')
+            target_group_names=$(printf '%s\n' "$target_group_names" | jq -Rr 'select(. != "pocket-admin")')
             target_group_ids=$(printf '%s\n' "$target_group_names" \
               | while IFS= read -r group_name; do
                   ensure_group "$group_name"
@@ -183,7 +198,6 @@ in
                 -X PUT \
                 -d "{\"userGroupIds\":$updated_groups}" \
                 "$api/users/$user_id/user-groups" >/dev/null
-              is_admin=$(printf '%s\n' "$target_group_names" | jq -Rsc 'split("\n") | any(. == "pocket-admin")')
               printf '%s' "$user" | jq -c \
                 --argjson isAdmin "$is_admin" \
                 --argjson userGroupIds "$updated_groups" \
@@ -197,6 +211,7 @@ in
             fi
           }
 
+          remove_group pocket-admin
           mappings='${builtins.toJSON cfg.userGroupMappings}'
           printf '%s' "$mappings" | jq -c '.[]' | while IFS= read -r mapping; do
             apply_user_group_mapping "$mapping"
