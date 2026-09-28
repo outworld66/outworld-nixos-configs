@@ -85,6 +85,7 @@ in
         {
           from = "https://${elengrabDomain}";
           to = "http://127.0.0.1:8084";
+          preserve_host_header = true;
           policy = [
             {
               allow = {
