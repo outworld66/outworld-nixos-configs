@@ -6,21 +6,38 @@
 }:
 let
   cfg = config.server.donetick;
-  donetick = pkgs.buildGoModule {
-    pname = "donetick";
-    version = "0.1.79-pinned";
+  donetickFrontend = pkgs.buildNpmPackage {
+    pname = "donetick-frontend";
+    version = "1.2.55-pinned";
     src = pkgs.fetchFromGitHub {
       owner = "outworld66";
+      repo = "donetick-frontend";
+      rev = "cde86f3";
+      hash = "sha256-3hRe7jRhpt1F5yCLkqi+eNVWspfJNzBqopl0GmCeN5k=";
+    };
+    npmDepsHash = "sha256-M6MRE2Kk3FncGvsMv5AQsB/mxYF+y5jVxtrRvQR1y/I=";
+    npmDepsFetcherVersion = 2;
+    npmFlags = [ "--ignore-scripts" ];
+    dontNpmBuild = true;
+    buildPhase = "npm run build -- --mode selfhosted";
+    installPhase = "cp -r dist $out";
+  };
+  donetick = pkgs.buildGoModule {
+    pname = "donetick";
+    version = "0.1.80-beta.2";
+    src = pkgs.fetchFromGitHub {
+      owner = "Donetick";
       repo = "donetick";
-      rev = "da28eea";
-      hash = "sha256-3IqDovwESaNjZBLz1mJAll9GSZLNKrcpFOEy3KMoGuU=";
+      rev = "3875c21";
+      hash = "sha256-RHT4B9+eEZ1NrzgETzKvdzgwsPvKSOWHpdY6FS0yxbs=";
     };
     vendorHash = "sha256-abI5330bLKF+eBqgPcIadhOp5xDfqL+LmCb4oqn0qgw=";
+    postPatch = "rm -rf frontend/dist; cp -r ${donetickFrontend} frontend/dist";
     ldflags = [
       "-s"
       "-w"
-      "-X donetick.com/core/config.Version=0.1.79-pinned"
-      "-X donetick.com/core/config.Commit=da28eea"
+      "-X donetick.com/core/config.Version=0.1.80-beta.2"
+      "-X donetick.com/core/config.Commit=3875c21"
     ];
     postInstall = "mv $out/bin/core $out/bin/donetick";
   };
