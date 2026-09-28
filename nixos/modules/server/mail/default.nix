@@ -112,6 +112,7 @@ in
     };
     adminPasswordFile = lib.mkOption {
       type = lib.types.path;
+      default = "/var/lib/stalwart/admin-password";
       description = "File containing the Stalwart administrator password.";
     };
     accounts = lib.mkOption {
