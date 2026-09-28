@@ -428,7 +428,12 @@ in
 
     ${cloudreveDomain} = {
       extraConfig = ''
-        reverse_proxy 127.0.0.1:8443
+        @cloudrevePasswordLogin {
+          method POST
+          path /api/v4/session/token
+        }
+        respond @cloudrevePasswordLogin 404
+        reverse_proxy 127.0.0.1:5212
       '';
     };
 
