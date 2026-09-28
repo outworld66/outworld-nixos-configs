@@ -35,6 +35,26 @@ in
           cp -r ${inputs.pocket-id} "$out"
         '';
         version = "2.16.0-global-logout";
+        goModules = old.goModules.overrideAttrs (_: {
+          outputHash = "sha256-12YSxG2dqa/Bik+DefyEGpGtlJBpqArbhzi9rmiy1cs=";
+          preBuild = "";
+        });
+        frontend = old.frontend.overrideAttrs (_frontendOld: {
+          src = pkgs.runCommand "pocket-id-frontend-source" { } ''
+            cp -r ${inputs.pocket-id} "$out"
+          '';
+          version = "2.16.0-global-logout";
+          pnpmDeps = pkgs.fetchPnpmDeps {
+            pname = "pocket-id-frontend";
+            version = "2.16.0-global-logout";
+            src = pkgs.runCommand "pocket-id-frontend-source" { } ''
+              cp -r ${inputs.pocket-id} "$out"
+            '';
+            pnpm = pkgs.pnpm_10;
+            fetcherVersion = 4;
+            hash = "sha256-UmQDpQywsr1e6G/qF2WYbjd4u0ZLhI4vIKuaGPNk+ZE=";
+          };
+        });
         preBuild = (old.preBuild or "") + ''
           webauthn_login=$(find ./vendor -path '*/github.com/go-webauthn/webauthn/webauthn/login.go' -print -quit)
           if [ -z "$webauthn_login" ]; then
