@@ -13,13 +13,16 @@ let
     : "''${POCKET_ID_API_KEY_FILE:?set POCKET_ID_API_KEY_FILE}"
     : "''${STALWART_URL:?set STALWART_URL}"
     : "''${STALWART_USER:?set STALWART_USER}"
-    : "''${STALWART_PASSWORD:?set STALWART_PASSWORD}"
+    if [ -n "''${STALWART_PASSWORD_FILE:-}" ]; then
+      STALWART_PASSWORD=$(cat "$STALWART_PASSWORD_FILE")
+      export STALWART_PASSWORD
+    fi
+    : "''${STALWART_PASSWORD:?set STALWART_PASSWORD or STALWART_PASSWORD_FILE}"
 
     api_key=$(cat "$POCKET_ID_API_KEY_FILE")
     api="$STALWART_URL/api"
     pocket_api="''${POCKET_ID_URL:-http://127.0.0.1:1411}/api"
-    domain="''${STALWART_DOMAIN:-${cfg.primaryDomain}}"
-    allowed_groups="''${STALWART_ALLOWED_GROUPS:-admins,media}"
+    allowed_groups="''${STALWART_ALLOWED_GROUPS:-mail-admin,mail-user}"
 
     curl_api() {
       ${pkgs.curl}/bin/curl --fail --silent --show-error "$@"
@@ -28,12 +31,12 @@ let
     domains=$(curl_api \
       --user "$STALWART_USER:$STALWART_PASSWORD" \
       "$api/principal?type=domain&fields=name&limit=1000")
-    if ! printf '%s' "$domains" | ${pkgs.jq}/bin/jq -e --arg domain "$domain" \
+    if ! printf '%s' "$domains" | ${pkgs.jq}/bin/jq -e --arg domain "${cfg.primaryDomain}" \
       '.data.items[] | select(.name == $domain)' >/dev/null; then
       curl_api \
         --user "$STALWART_USER:$STALWART_PASSWORD" \
         -H 'Content-Type: application/json' \
-        --data-binary "$(printf '%s' "$domain" | ${pkgs.jq}/bin/jq -Rs '{type:"domain",name:(rtrimstr("\\n"))}')" \
+        --data-binary "$(printf '%s' '${cfg.primaryDomain}' | ${pkgs.jq}/bin/jq -Rs '{type:"domain",name:(rtrimstr("\\n"))}')" \
         "$api/principal" >/dev/null
     fi
 
@@ -42,8 +45,8 @@ let
     : > "$tmp_dir/desired"
     curl_api -H "X-API-KEY: $api_key" \
       "$pocket_api/users?pagination%5Blimit%5D=1000" \
-      | ${pkgs.jq}/bin/jq -c --arg domain "$domain" \
-        '.data[] | select(.emailVerified == true and (.email | endswith("@" + $domain))) | {email, id}' \
+      | ${pkgs.jq}/bin/jq -c \
+        '.data[] | select(.emailVerified == true) | {email, id}' \
       | while IFS= read -r user; do
         email=$(printf '%s' "$user" | ${pkgs.jq}/bin/jq -er .email)
         user_id=$(printf '%s' "$user" | ${pkgs.jq}/bin/jq -er .id)
@@ -81,7 +84,7 @@ let
 
     printf '%s\n' "$accounts" | ${pkgs.jq}/bin/jq -r '.name' \
       | while IFS= read -r email; do
-        [ "$email" = "pocket-id@$domain" ] && continue
+        [ "$email" = "pocket-id@${cfg.primaryDomain}" ] && continue
         if ! ${pkgs.coreutils}/bin/grep -Fqx "$email" "$tmp_dir/desired"; then
           principal_url=$(printf '%s' "$email" | ${pkgs.jq}/bin/jq -sRr @uri)
           curl_api \
@@ -193,6 +196,37 @@ in
     ];
 
     environment.systemPackages = [ provisionScript ];
+
+    systemd.services.stalwart-provision-pocket-users = {
+      description = "Provision verified Pocket ID users in Stalwart";
+      after = [
+        "stalwart.service"
+        "pocket-id.service"
+      ];
+      requires = [
+        "stalwart.service"
+        "pocket-id.service"
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        Environment = [
+          "POCKET_ID_API_KEY_FILE=/var/lib/pocket-id/static-api-key"
+          "STALWART_URL=http://127.0.0.1:8080"
+          "STALWART_USER=admin"
+          "STALWART_PASSWORD_FILE=${cfg.adminPasswordFile}"
+        ];
+        ExecStart = "${provisionScript}/bin/stalwart-provision-pocket-users";
+      };
+    };
+
+    systemd.timers.stalwart-provision-pocket-users = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "5min";
+        Persistent = true;
+      };
+    };
 
     systemd.services.stalwart-certs = {
       description = "Install the Stalwart TLS certificate";

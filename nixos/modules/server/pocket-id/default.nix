@@ -22,6 +22,12 @@ in
     description = "Verified Pocket ID email addresses and groups to assign automatically.";
   };
 
+  options.services.pocket-id.groupMappings = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+    default = { };
+    description = "Expand declarative Pocket ID groups into OIDC role groups.";
+  };
+
   config = {
     services.pocket-id = {
       enable = true;
@@ -128,18 +134,6 @@ in
             curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 "$@"
           }
 
-          media_group_id=$(curl_api \
-            -H "X-API-KEY: $api_key" \
-            "$api/user-groups?pagination%5Blimit%5D=100" \
-            | jq -r '.data[] | select(.name == "media") | .id' | head -n1)
-          if [ -z "$media_group_id" ]; then
-            curl_api \
-              -H "X-API-KEY: $api_key" \
-              -H 'Content-Type: application/json' \
-              -d '{"friendlyName":"Media","name":"media"}' \
-              "$api/user-groups" >/dev/null
-          fi
-
           ensure_group() {
             group_name=$1
             group_id=$(curl_api \
@@ -159,7 +153,9 @@ in
           apply_user_group_mapping() {
             mapping=$1
             email=$(printf '%s' "$mapping" | jq -er .email)
-            target_group_ids=$(printf '%s' "$mapping" | jq -r '.groups[]' \
+            target_group_names=$(printf '%s' "$mapping" | jq -r --argjson group_mappings '${builtins.toJSON cfg.groupMappings}' \
+              '.groups as $groups | [ $groups[] as $group | ($group_mappings[$group] // [$group])[] ] | unique[]')
+            target_group_ids=$(printf '%s\n' "$target_group_names" \
               | while IFS= read -r group_name; do
                   ensure_group "$group_name"
                   printf '\n'
@@ -187,7 +183,7 @@ in
                 -X PUT \
                 -d "{\"userGroupIds\":$updated_groups}" \
                 "$api/users/$user_id/user-groups" >/dev/null
-              is_admin=$(printf '%s' "$mapping" | jq -r '(.groups // []) | any(. == "admins")')
+              is_admin=$(printf '%s\n' "$target_group_names" | jq -Rsc 'split("\n") | any(. == "pocket-admin")')
               printf '%s' "$user" | jq -c \
                 --argjson isAdmin "$is_admin" \
                 --argjson userGroupIds "$updated_groups" \
@@ -307,8 +303,8 @@ in
             GOTIFY_OIDC_USERNAMECLAIM=preferred_username \
             GOTIFY_OIDC_SCOPES=openid,profile,email,groups \
             GOTIFY_OIDC_GROUPS_CLAIM=groups \
-            GOTIFY_OIDC_GROUPS_USER=admins \
-            GOTIFY_OIDC_GROUPS_ADMIN=admins \
+            GOTIFY_OIDC_GROUPS_USER=gotify-user \
+            GOTIFY_OIDC_GROUPS_ADMIN=gotify-admin \
             > /var/lib/gotify/oidc.env
           chmod 0400 /var/lib/gotify/oidc.env
 

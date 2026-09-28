@@ -4,6 +4,8 @@ is_user_creation_disabled: false
 database:
   type: sqlite
   migration: true
+storage:
+  max_file_size: 10485760
 jwt:
   session_time: 168h
   max_refresh: 1440h
@@ -30,5 +32,5 @@ oauth2:
     - groups
   name: Pocket ID
   admin_groups:
-    - admins
+    - donetick-admin
 disable_password_auth: true

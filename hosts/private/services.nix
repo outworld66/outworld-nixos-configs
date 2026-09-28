@@ -49,7 +49,7 @@ in
             {
               allow = {
                 and = [
-                  { "claim/groups" = "admins"; }
+                  { "claim/groups" = "stats-user"; }
                 ];
               };
             }
@@ -62,8 +62,8 @@ in
             {
               allow = {
                 or = [
-                  { "claim/groups" = "admins"; }
-                  { "claim/groups" = "media"; }
+                  { "claim/groups" = "media-admin"; }
+                  { "claim/groups" = "media-user"; }
                 ];
               };
             }
@@ -76,8 +76,8 @@ in
             {
               allow = {
                 or = [
-                  { "claim/groups" = "admins"; }
-                  { "claim/groups" = "media"; }
+                  { "claim/groups" = "media-admin"; }
+                  { "claim/groups" = "media-user"; }
                 ];
               };
             }
@@ -94,8 +94,8 @@ in
             {
               allow = {
                 or = [
-                  { "claim/groups" = "admins"; }
-                  { "claim/groups" = "media"; }
+                  { "claim/groups" = "media-admin"; }
+                  { "claim/groups" = "media-user"; }
                 ];
               };
             }
@@ -108,9 +108,8 @@ in
             {
               allow = {
                 or = [
-                  { "claim/groups" = "admins"; }
-                  { "claim/groups" = "media"; }
-                  { "claim/groups" = "donetick"; }
+                  { "claim/groups" = "donetick-admin"; }
+                  { "claim/groups" = "donetick-user"; }
                 ];
               };
             }
@@ -123,8 +122,8 @@ in
             {
               allow = {
                 or = [
-                  { "claim/groups" = "admins"; }
-                  { "claim/groups" = "media"; }
+                  { "claim/groups" = "media-admin"; }
+                  { "claim/groups" = "media-user"; }
                 ];
               };
             }
