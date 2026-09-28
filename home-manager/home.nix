@@ -16,4 +16,6 @@
     homeDirectory = "/home/${user}";
     stateVersion = homeStateVersion;
   };
+
+  programs.nix-search-tv.enable = true;
 }

@@ -84,6 +84,7 @@
       atuin # Searchable shell history backed by SQLite
       bat # Syntax-highlighted alternative to cat
       bottom # Interactive terminal system monitor
+      nvtopPackages.full # GPU monitor used by the Noctalia NVTOP panel
       brightnessctl # Controls display and keyboard backlight brightness
       htop # Interactive process and resource monitor
       pwgen # Generates random passwords
@@ -151,6 +152,7 @@
       vlc # Media player and Streaming server
       mpv # Video and audio player
       obs-studio # Screen recording and live-streaming application
+      gpu-screen-recorder # Backend for the Noctalia screen-recorder plugin
       yt-dlp # Downloads video and audio from supported websites
 
       # Music

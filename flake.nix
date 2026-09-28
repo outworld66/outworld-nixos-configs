@@ -32,6 +32,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    noctalia-greeter = {
+      url = "github:noctalia-dev/noctalia-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Upstream builds against nixos-unstable; it stays unfollowed on purpose.
     helium-browser = {
       url = "github:oxcl/nix-flake-helium-browser";

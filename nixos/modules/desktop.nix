@@ -1,9 +1,28 @@
 {
+  hostname,
+  inputs,
+  lib,
   pkgs,
+  user,
   ...
 }:
 {
+  imports = [
+    inputs.noctalia-greeter.nixosModules.default
+  ];
+
   programs.niri.enable = true;
+
+  boot.extraModprobeConfig = lib.mkIf (hostname == "tpx13") ''
+    options thinkpad_acpi fan_control=1
+  '';
+
+  users.groups.fan_ctl = lib.mkIf (hostname == "tpx13") { };
+  users.users.${user}.extraGroups = lib.mkIf (hostname == "tpx13") [ "fan_ctl" ];
+
+  services.udev.extraRules = lib.mkIf (hostname == "tpx13") ''
+    ACTION=="add|bind", SUBSYSTEM=="platform", DRIVER=="thinkpad_acpi", RUN+="${pkgs.coreutils}/bin/chgrp fan_ctl /proc/acpi/ibm/fan", RUN+="${pkgs.coreutils}/bin/chmod 0664 /proc/acpi/ibm/fan"
+  '';
 
   # Keep the keyboard layout consistent in the greeter and desktop session.
   # Niri repeats these settings in its user configuration because it owns
@@ -24,16 +43,15 @@
   # create a new authenticated session on another VT.
   services.displayManager.autoLogin.enable = false;
 
-  # ReGreet greeter: greetd + cage, sessions (incl. niri) are picked up from
-  # the display-manager session registry. Keeps the greetd PAM stack, so
-  # fingerprint unlock at the greeter continues to work. Newer nixpkgs
-  # renames this option to services.displayManager.regreet.
-  programs.regreet = {
+  services.displayManager.noctalia-greeter = {
     enable = true;
-    settings.GTK.application_prefer_dark_theme = true;
-    theme = {
-      package = pkgs.adw-gtk3;
-      name = "adw-gtk3-dark";
+    settings = {
+      session.default = "niri";
+      appearance.theme_mode = "dark";
+      keyboard = {
+        layout = "us,ru";
+        options = "grp:lalt_lshift_toggle,compose:ralt,ctrl:nocaps";
+      };
     };
   };
 

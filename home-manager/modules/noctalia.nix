@@ -86,10 +86,31 @@ in
             "gtk3"
             "gtk4"
             "qt"
-            "ghostty"
           ];
         };
       };
+
+      location = {
+        auto_locate = false;
+        address = "Saint Petersburg, Russia";
+      };
+
+      shell.panel = {
+        control_center_placement = "attached";
+        open_near_click_control_center = true;
+      };
+
+      plugins.enabled = [
+        "raycursive/niri-displays"
+        "noctalia/screen_recorder"
+        "tordex/nvtop"
+        "fel/ocr"
+        "rylos/syncthing"
+        "setyvii/niri-rules-studio"
+      ]
+      ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan";
+
+      widget.media.actions.left = "panel-toggle control-center media";
 
       bar.order = [ "main" ];
       bar.main = {
@@ -115,6 +136,13 @@ in
         ];
         end = [
           "tray"
+          "noctalia/screen_recorder:recorder"
+          "fel/ocr:ocr"
+          "rylos/syncthing:bar"
+          "gpu_nvtop"
+        ]
+        ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan:widget"
+        ++ [
           "keyboard_layout"
           "volume"
           "network"
@@ -134,6 +162,12 @@ in
 
       widget.keyboard_layout = {
         type = "keyboard_layout";
+      };
+
+      widget.gpu_nvtop = {
+        type = "sysmon";
+        stat = "gpu_usage";
+        actions.left = "panel-toggle tordex/nvtop:panel gpu";
       };
     }
     // lib.optionalAttrs (hostname == "tpx13") {
