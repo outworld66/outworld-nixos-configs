@@ -22,6 +22,7 @@ let
       "-X donetick.com/core/config.Version=0.1.79-pinned"
       "-X donetick.com/core/config.Commit=da28eea"
     ];
+    postInstall = "mv $out/bin/core $out/bin/donetick";
   };
 in
 {
