@@ -140,25 +140,23 @@ in
               "$api/user-groups" >/dev/null
           fi
 
-          group_id=$(curl_api \
-            -H "X-API-KEY: $api_key" \
-            "$api/user-groups?pagination%5Blimit%5D=100" \
-            | jq -r '.data[] | select(.name == "nogroup") | .id' | head -n1)
-          if [ -z "$group_id" ]; then
-            group_id=$(curl_api \
-              -H "X-API-KEY: $api_key" \
-              -H 'Content-Type: application/json' \
-              -d '{"friendlyName":"No access","name":"nogroup"}' \
-              "$api/user-groups" | jq -er .id)
-          fi
-          default_groups=$(jq -cn --arg id "$group_id" '[ $id ]')
-          if ! grep -qxF "SIGNUP_DEFAULT_USER_GROUP_IDS=$default_groups" /var/lib/pocket-id/environment; then
+          if grep -q '^SIGNUP_DEFAULT_USER_GROUP_IDS=' /var/lib/pocket-id/environment; then
             sed '/^SIGNUP_DEFAULT_USER_GROUP_IDS=/d' /var/lib/pocket-id/environment > /var/lib/pocket-id/environment.new
-            printf 'SIGNUP_DEFAULT_USER_GROUP_IDS=%s\n' "$default_groups" >> /var/lib/pocket-id/environment.new
             chown pocket-id:pocket-id /var/lib/pocket-id/environment.new
             chmod 0400 /var/lib/pocket-id/environment.new
             mv /var/lib/pocket-id/environment.new /var/lib/pocket-id/environment
             systemctl restart pocket-id.service
+          fi
+
+          nogroup_id=$(curl_api \
+            -H "X-API-KEY: $api_key" \
+            "$api/user-groups?pagination%5Blimit%5D=100" \
+            | jq -r '.data[] | select(.name == "nogroup") | .id' | head -n1)
+          if [ -n "$nogroup_id" ]; then
+            curl_api \
+              -H "X-API-KEY: $api_key" \
+              -X DELETE \
+              "$api/user-groups/$nogroup_id"
           fi
 
           ensure_group() {

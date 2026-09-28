@@ -26,15 +26,13 @@ email mappings; those are defined in the companion private repository at
 
 The server creates these groups automatically:
 
-- `nogroup` — the default group for newly registered users; it grants no
-  service access;
 - `media` — access to the media and general user services;
 - `admins` — administrative access to protected services and to the Pocket ID
   administration UI.
 
 The `admins` group is also synchronized to Pocket ID's built-in administrator
 flag. It is therefore the only group that grants access to the Pocket ID admin
-UI; `media` and `nogroup` remain regular user groups.
+UI; `media` remains a regular user group.
 
 Email mappings are applied only to verified Pocket ID users. The provisioning
 job adds all groups listed for the email to the user's existing groups; it does
@@ -43,8 +41,9 @@ email and put all assigned groups in its `groups` list. The job runs
 automatically after activation and periodically from its systemd timer.
 
 For example, the private configuration maps the administrator's verified
-address to `admins` and the media user's verified address to `media`. A new
-signup still starts in `nogroup` until it is explicitly assigned another group.
+address to `admins` and the media user's verified address to `media`. New users
+without a configured mapping have no service groups and therefore do not match
+the protected service policies.
 
 ## Service access
 
@@ -64,7 +63,7 @@ Gotify uses its native OIDC integration and accepts only `admins`. Immich uses
 its native Pocket ID OIDC login for both the web and mobile clients; it is not
 wrapped in Pomerium. Immich does not auto-register OAuth users,
 so an administrator must create an Immich account before its owner can log in.
-Users who only have `nogroup` cannot create or use an Immich account. WebDAV
+Users without an allowed group cannot create or use an Immich account. WebDAV
 keeps its own Basic Authentication because desktop WebDAV clients do not
 reliably support browser-based OIDC redirects.
 
@@ -85,5 +84,5 @@ Caddy, or native OIDC configuration must also allow that group.
 2. Open `https://auth.outworld66.ru` and sign in with Pocket ID.
 3. Open the requested service.
 
-New users can register in Pocket ID, but remain in `nogroup` until explicitly
-granted access.
+New users can register in Pocket ID, but remain without service access until
+explicitly granted an allowed group.
