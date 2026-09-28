@@ -1,5 +1,6 @@
 {
   inputs,
+  pkgs,
   stateVersion,
   hostname,
   ...
@@ -19,6 +20,8 @@
   security.sudo.extraConfig = "Defaults@majesty timestamp_timeout=1440";
 
   hardware.enableRedistributableFirmware = true;
+
+  boot.kernelPackages = pkgs.linuxPackages_zen;
 
   hardware.graphics = {
     enable = true;

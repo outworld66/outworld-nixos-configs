@@ -89,6 +89,7 @@
       htop # Interactive process and resource monitor
       pwgen # Generates random passwords
       silicon # Renders source code as styled images
+      television # Fast general-purpose fuzzy finder
       tree # Displays directory contents as a tree
       unzip # Extracts ZIP archives
       p7zip # Archive utility
