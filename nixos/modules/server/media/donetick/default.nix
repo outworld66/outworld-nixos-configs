@@ -67,6 +67,8 @@ in
           "DT_ENV=selfhosted"
           "DT_SQLITE_PATH=/var/lib/donetick/donetick.db"
           "DT_SERVER_PUBLIC_HOST=https://donetick.outworld66.ru"
+          "DT_IS_USER_CREATION_DISABLED=true"
+          "DT_DISABLE_PASSWORD_AUTH=true"
         ];
         EnvironmentFile = [
           "/var/lib/donetick/environment"

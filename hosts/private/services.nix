@@ -101,20 +101,6 @@ in
             }
           ];
         }
-        {
-          from = "https://${donetickDomain}";
-          to = "http://127.0.0.1:2021";
-          policy = [
-            {
-              allow = {
-                or = [
-                  { "claim/groups" = "donetick-admin"; }
-                  { "claim/groups" = "donetick-user"; }
-                ];
-              };
-            }
-          ];
-        }
       ];
     };
   };
@@ -407,7 +393,7 @@ in
 
     ${donetickDomain} = {
       extraConfig = ''
-        reverse_proxy 127.0.0.1:8443
+        reverse_proxy 127.0.0.1:2021
       '';
     };
 
