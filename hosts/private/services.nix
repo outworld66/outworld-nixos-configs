@@ -110,6 +110,7 @@ in
                 or = [
                   { "claim/groups" = "admins"; }
                   { "claim/groups" = "media"; }
+                  { "claim/groups" = "donetick"; }
                 ];
               };
             }

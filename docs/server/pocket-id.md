@@ -27,6 +27,7 @@ email mappings; those are defined in the companion private repository at
 The server creates these groups automatically:
 
 - `media` — access to the media and general user services;
+- `donetick` — access to Donetick;
 - `admins` — administrative access to protected services and to the Pocket ID
   administration UI.
 
@@ -41,7 +42,8 @@ email and put all assigned groups in its `groups` list. The job runs
 automatically after activation and periodically from its systemd timer.
 
 For example, the private configuration maps the administrator's verified
-address to `admins` and the media user's verified address to `media`. New users
+address to `admins` and the media user's verified address to `media` and
+`donetick`. New users
 without a configured mapping have no service groups and therefore do not match
 the protected service policies.
 
@@ -56,6 +58,7 @@ allows users in `admins` or `media` for the common browser-protected services:
 - `donetick.outworld66.ru` — Donetick;
 - `cloudreve.outworld66.ru` — Cloudreve;
 
+`donetick.outworld66.ru` also permits the dedicated `donetick` group.
 `stats.outworld66.ru` is an exception: Pomerium permits only the `admins`
 group before proxying GoAccess and its websocket.
 
