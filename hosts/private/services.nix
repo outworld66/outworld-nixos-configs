@@ -44,6 +44,7 @@ in
         {
           from = "https://stats.outworld66.ru";
           to = "http://127.0.0.1:7891";
+          allow_websockets = true;
           policy = [
             {
               allow = {
@@ -85,6 +86,9 @@ in
         {
           from = "https://${elengrabDomain}";
           to = "http://127.0.0.1:8084";
+          set_request_headers = {
+            "X-Forwarded-Proto" = "https";
+          };
           preserve_host_header = true;
           policy = [
             {
