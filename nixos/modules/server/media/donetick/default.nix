@@ -66,6 +66,7 @@ in
           "DT_ENV=selfhosted"
           "DT_SQLITE_PATH=/var/lib/donetick/donetick.db"
           "DT_SERVER_PUBLIC_HOST=https://donetick.outworld66.ru"
+          "DT_SERVER_CORS_ALLOW_ORIGINS=https://localhost, http://localhost, capacitor://localhost"
         ];
         EnvironmentFile = [
           "/var/lib/donetick/environment"
