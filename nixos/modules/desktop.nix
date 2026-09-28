@@ -9,9 +9,11 @@
 {
   imports = [
     inputs.noctalia-greeter.nixosModules.default
+    inputs.umbriel.nixosModules.default
   ];
 
   programs.niri.enable = true;
+  programs.umbriel.enable = true;
 
   boot.extraModprobeConfig = lib.mkIf (hostname == "tpx13") ''
     options thinkpad_acpi fan_control=1

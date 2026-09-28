@@ -4,6 +4,7 @@
     ./dotfiles.nix
     ./codex.nix
     ./niri.nix
+    ./umbriel.nix
     ./themes.nix
     ./noctalia.nix
     ./alacritty.nix
