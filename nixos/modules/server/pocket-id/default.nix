@@ -290,13 +290,13 @@ in
             https://auth.outworld66.ru/.pomerium/sign_out
 
           install -d -m 0750 /var/lib/pomerium
-          if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 32 ]; then
+          if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 44 ]; then
             umask 077
-            head -c 32 /dev/urandom > /var/lib/pomerium/cookie-secret
+            head -c 32 /dev/urandom | base64 -w0 > /var/lib/pomerium/cookie-secret
           fi
-          if [ ! -s /var/lib/pomerium/shared-secret ] || [ "$(wc -c < /var/lib/pomerium/shared-secret)" -ne 32 ]; then
+          if [ ! -s /var/lib/pomerium/shared-secret ] || [ "$(wc -c < /var/lib/pomerium/shared-secret)" -ne 44 ]; then
             umask 077
-            head -c 32 /dev/urandom > /var/lib/pomerium/shared-secret
+            head -c 32 /dev/urandom | base64 -w0 > /var/lib/pomerium/shared-secret
           fi
           chmod 0400 /var/lib/pomerium/cookie-secret /var/lib/pomerium/shared-secret
           umask 077
