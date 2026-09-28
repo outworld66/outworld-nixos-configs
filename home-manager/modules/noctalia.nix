@@ -139,6 +139,7 @@ in
           "noctalia/screen_recorder:recorder"
           "fel/ocr:ocr"
           "rylos/syncthing:bar"
+          "system_cpu"
           "gpu_nvtop"
         ]
         ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan:widget"
@@ -168,6 +169,12 @@ in
         type = "sysmon";
         stat = "gpu_usage";
         actions.left = "panel-toggle tordex/nvtop:panel gpu";
+      };
+
+      widget.system_cpu = {
+        type = "sysmon";
+        stat = "cpu_usage";
+        actions.left = "panel-toggle control-center system";
       };
     }
     // lib.optionalAttrs (hostname == "tpx13") {
