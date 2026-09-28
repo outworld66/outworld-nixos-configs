@@ -288,7 +288,7 @@ in
             "" \
             false
           provision_client donetick Donetick \
-            '["https://donetick.outworld66.ru/auth/oauth2"]' \
+            '["https://donetick.outworld66.ru/auth/oauth2","donetick://auth/oauth2"]' \
             /var/lib/donetick/oidc-client-secret \
             "" \
             "" \
