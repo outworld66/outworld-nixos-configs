@@ -110,6 +110,14 @@ in
       ]
       ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan";
 
+      plugin_settings."rylos/syncthing" = {
+        panel_placement = "attached";
+        panel_open_near_click = true;
+        poll_interval = 10;
+        notify_events = true;
+        show_pending = true;
+      };
+
       widget.media.actions.left = "panel-toggle control-center media";
 
       bar.order = [ "main" ];

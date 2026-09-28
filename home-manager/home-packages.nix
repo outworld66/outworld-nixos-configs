@@ -89,6 +89,7 @@
       htop # Interactive process and resource monitor
       pwgen # Generates random passwords
       silicon # Renders source code as styled images
+      syncthing # File synchronization daemon used by the Noctalia plugin
       television # Fast general-purpose fuzzy finder
       nix-search-tv # Search nixpkgs from the terminal
       tree # Displays directory contents as a tree
