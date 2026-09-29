@@ -70,10 +70,10 @@ let
       ${pkgs.jq}/bin/jq -cn \
         --arg hostname ${lib.escapeShellArg cfg.hostname} \
         --arg domain ${lib.escapeShellArg cfg.primaryDomain} \
-        --arg tlsKey ${lib.escapeShellArg (toString cfg.keySource)} \
+        --arg tlsKey ${lib.escapeShellArg "${dataDir}/tls/key.pem"} \
         --arg dkimKey ${lib.escapeShellArg "${dataDir}/dkim.key"} \
         --slurpfile accounts "$tmp/accounts.json" \
-        --rawfile certificate ${lib.escapeShellArg (toString cfg.certificateSource)} \
+        --rawfile certificate ${lib.escapeShellArg "${dataDir}/tls/cert.pem"} \
         '[
           {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"domain":{"name":$domain,"isEnabled":true}}},
           {"@type":"create","object":"Certificate","value":{"cert":{"certificate":{"@type":"Text","value":$certificate},"privateKey":{"@type":"File","filePath":$tlsKey}}}},
