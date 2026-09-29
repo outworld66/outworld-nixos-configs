@@ -75,7 +75,7 @@ let
         --slurpfile accounts "$tmp/accounts.json" \
         --rawfile certificate ${lib.escapeShellArg "${dataDir}/tls/cert.pem"} \
         '[
-          {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"domain":{"name":$domain,"isEnabled":true}}},
+          {"@type":"upsert","object":"Domain","matchOn":["name"],"value":{"domain":{"name":$domain,"isEnabled":true,"dkimManagement":{"@type":"Manual"}}}},
           {"@type":"create","object":"Certificate","value":{"cert":{"certificate":{"@type":"Text","value":$certificate},"privateKey":{"@type":"File","filePath":$tlsKey}}}},
           {"@type":"upsert","object":"NetworkListener","matchOn":["name"],"value":{
             "smtp":{"name":"smtp","protocol":"smtp","bind":{"[::]:25":true}},
@@ -113,6 +113,7 @@ let
     allowed_groups="''${STALWART_ALLOWED_GROUPS:-mail-admin,mail-user}"
     tmp=$(${pkgs.coreutils}/bin/mktemp -d)
     trap '${pkgs.coreutils}/bin/rm -rf "$tmp"' EXIT
+    : > "$tmp/desired"
     ${pkgs.curl}/bin/curl --fail --silent --show-error -H "X-API-KEY: $api_key" \
       "$pocket_api/users?pagination%5Blimit%5D=1000" \
       | ${pkgs.jq}/bin/jq -c '.data[] | select(.emailVerified == true) | {email,id}' \
