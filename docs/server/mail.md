@@ -47,6 +47,13 @@ managed Stalwart administrator password from their configured files:
 ssh root@192.168.0.4 stalwart-provision-pocket-users
 ```
 
+The `outworld66@outworld66.ru` mailbox password is stored in the private
+repository's SOPS file. To display it locally when needed:
+
+```bash
+nix run nixpkgs#sops -- --decrypt --extract '["mail"]["outworld66-password"]' ../outworld-nixos-private/secrets/private.yaml
+```
+
 The helper is the free replacement for the SCIM lifecycle part. OIDC
 authentication for those accounts still requires configuring Stalwart's OIDC
 directory; the current deployment keeps the internal directory so Pocket ID

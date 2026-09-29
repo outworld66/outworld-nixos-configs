@@ -28,6 +28,13 @@ let
         >> "$tmp/accounts.ndjson"
     '') cfg.accounts
   );
+  accountPasswordCases = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (email: account: ''
+      if [ "$mailbox" = ${lib.escapeShellArg email} ]; then
+        password_file=${lib.escapeShellArg (toString account.passwordFile)}
+      fi
+    '') cfg.accounts
+  );
   launcher = pkgs.writeShellScript "stalwart-launch" ''
     set -euo pipefail
 
@@ -111,6 +118,9 @@ let
     api_key=$(${pkgs.coreutils}/bin/cat "$POCKET_ID_API_KEY_FILE")
     pocket_api="''${POCKET_ID_URL:-http://127.0.0.1:1411}/api"
     allowed_groups="''${STALWART_ALLOWED_GROUPS:-mail-admin,mail-user}"
+    domain="''${STALWART_DOMAIN:-${cfg.primaryDomain}}"
+    domain_id=$(${cli}/bin/stalwart-cli query Domain --json --fields id,name \
+      | ${pkgs.jq}/bin/jq -er --arg domain "$domain" 'select(.name==$domain)|.id')
     tmp=$(${pkgs.coreutils}/bin/mktemp -d)
     trap '${pkgs.coreutils}/bin/rm -rf "$tmp"' EXIT
     : > "$tmp/desired"
@@ -123,26 +133,38 @@ let
         groups=$(${pkgs.curl}/bin/curl --fail --silent --show-error -H "X-API-KEY: $api_key" "$pocket_api/users/$user_id/groups")
         if printf '%s' "$groups" | ${pkgs.jq}/bin/jq -e --arg allowed "$allowed_groups" \
           '($allowed | split(",")) as $names | any(.[]; .name as $name | $names | index($name))' >/dev/null; then
-          printf '%s\n' "$email" >> "$tmp/desired"
+          printf '%s\n' "''${email%%@*}@$domain" >> "$tmp/desired"
         fi
       done
 
-    domain="''${STALWART_DOMAIN:-${cfg.primaryDomain}}"
-    domain_id=$(${cli}/bin/stalwart-cli query Domain --json --fields id,name \
-      | ${pkgs.jq}/bin/jq -er --arg domain "$domain" 'select(.name==$domain)|.id')
     current=$(${cli}/bin/stalwart-cli query Account --json --fields id,emailAddress,permissions)
-    while IFS= read -r email; do
-      [ -n "$email" ] || continue
-      localpart=''${email%%@*}
-      account=$(printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -c --arg email "$email" 'select(.emailAddress==$email)')
+    while IFS= read -r mailbox; do
+      [ -n "$mailbox" ] || continue
+      localpart=''${mailbox%%@*}
+      password_file=
+      ${accountPasswordCases}
+      account=$(printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -c --arg email "$mailbox" 'select(.emailAddress==$email)')
       if [ -z "$account" ]; then
-        ${pkgs.jq}/bin/jq -cn --arg name "$localpart" --arg domain "$domain_id" \
-          '{"@type":"User",name:$name,domainId:$domain,credentials:{},roles:{"@type":"User"},permissions:{"@type":"Inherit"},quotas:{},aliases:{},memberGroupIds:{},encryptionAtRest:{"@type":"Disabled"}}' \
-          | ${cli}/bin/stalwart-cli create Account/User --stdin >/dev/null
-      elif printf '%s' "$account" | ${pkgs.jq}/bin/jq -e '.permissions.disabledPermissions.authenticate == true' >/dev/null; then
+        if [ -n "$password_file" ]; then
+          ${pkgs.jq}/bin/jq -cn --arg name "$localpart" --arg domain "$domain_id" --rawfile password "$password_file" \
+            '{"@type":"User",name:$name,domainId:$domain,credentials:{"0":{"@type":"Password",secret:($password|rtrimstr("\n"))}},roles:{"@type":"User"},permissions:{"@type":"Inherit"},quotas:{},aliases:{},memberGroupIds:{},encryptionAtRest:{"@type":"Disabled"}}' \
+            | ${cli}/bin/stalwart-cli create Account/User --stdin >/dev/null
+        else
+          ${pkgs.jq}/bin/jq -cn --arg name "$localpart" --arg domain "$domain_id" \
+            '{"@type":"User",name:$name,domainId:$domain,credentials:{},roles:{"@type":"User"},permissions:{"@type":"Inherit"},quotas:{},aliases:{},memberGroupIds:{},encryptionAtRest:{"@type":"Disabled"}}' \
+            | ${cli}/bin/stalwart-cli create Account/User --stdin >/dev/null
+        fi
+      else
         id=$(printf '%s' "$account" | ${pkgs.jq}/bin/jq -er .id)
-        ${cli}/bin/stalwart-cli update Account "$id" --json \
-          '{"permissions":{"@type":"Inherit"}}' >/dev/null
+        if [ -n "$password_file" ]; then
+          ${pkgs.jq}/bin/jq -cn --rawfile password "$password_file" \
+            '{"credentials":{"0":{"@type":"Password","secret":($password|rtrimstr("\n"))}}}' \
+            | ${cli}/bin/stalwart-cli update Account "$id" --stdin >/dev/null
+        fi
+        if printf '%s' "$account" | ${pkgs.jq}/bin/jq -e '.permissions.disabledPermissions.authenticate == true' >/dev/null; then
+          ${cli}/bin/stalwart-cli update Account "$id" --json \
+            '{"permissions":{"@type":"Inherit"}}' >/dev/null
+        fi
       fi
     done < "$tmp/desired"
 
