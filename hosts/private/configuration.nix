@@ -25,9 +25,5 @@
     interface = "eno1";
   };
   networking.nameservers = [ "192.168.0.1" ];
-  networking.firewall.allowedTCPPorts = [
-    443
-  ];
-  server.goaccess.wsUrl = "wss://stats.outworld66.ru:443";
   system.stateVersion = stateVersion;
 }

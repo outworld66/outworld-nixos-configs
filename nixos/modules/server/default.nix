@@ -15,17 +15,6 @@
     ../nh.nix
     ../timezone.nix
     ../zram.nix
-    ./caddy
-    ./gobackup
-    ./goaccess
-    ./mail
-    ./webdav
-    ./media/donetick
-    ./media/elengrab
-    ./media/cloudreve
-    ./gotify
-    ./media/immich
-    ./pocket-id
   ];
 
   boot.loader = {
