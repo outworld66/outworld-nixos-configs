@@ -28,7 +28,7 @@ in
     description = "Expand declarative Pocket ID groups into OIDC role groups.";
   };
 
-  config = {
+  config = lib.mkIf (config.server.secrets.enable or false) {
     services.pocket-id = {
       enable = true;
       environmentFile = "/var/lib/pocket-id/environment";
