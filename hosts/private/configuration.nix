@@ -9,6 +9,7 @@
   imports = [
     inputs.disko.nixosModules.disko
     ./disko.nix
+    ../../nixos/modules/zapret.nix
   ];
 
   networking.hostName = hostname;

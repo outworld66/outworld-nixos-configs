@@ -34,6 +34,11 @@ in
   options.server.cloudreve.enable = lib.mkEnableOption "Cloudreve service";
 
   config = lib.mkIf cfg.enable {
+    systemd.tmpfiles.rules = [
+      "d /srv/cloudreve 0750 cloudreve cloudreve -"
+      "d /srv/cloudreve/data 0750 cloudreve cloudreve -"
+    ];
+
     users.groups.cloudreve = { };
     users.users.cloudreve = {
       isSystemUser = true;
@@ -87,12 +92,15 @@ in
         EnvironmentFile = "/var/lib/cloudreve/oidc.env";
         User = "cloudreve";
         Group = "cloudreve";
-        WorkingDirectory = "/var/lib/cloudreve";
+        WorkingDirectory = "/srv/cloudreve";
         Restart = "on-failure";
         NoNewPrivileges = true;
         PrivateTmp = true;
         ProtectSystem = "strict";
-        ReadWritePaths = [ "/var/lib/cloudreve" ];
+        ReadWritePaths = [
+          "/var/lib/cloudreve"
+          "/srv/cloudreve"
+        ];
       };
     };
   };

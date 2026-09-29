@@ -91,6 +91,11 @@ arguments.
 
 ## Safety boundaries
 
+- Before operational work, read the relevant documentation and follow its
+  documented workflow. For server deployments, read `docs/server/deployment.md`
+  and use `task server-update -- <host>` after bootstrap; do not substitute a
+  hand-built activation command.
+
 - Never run `task switch`, `nh os switch`, `nixos-rebuild switch`, Disko,
   installation commands or other system-activating commands unless the user
   explicitly requests activation.

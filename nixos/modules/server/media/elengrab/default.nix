@@ -27,7 +27,10 @@ in
       home = "/var/lib/elengrab";
     };
     users.groups.elengrab = { };
-    systemd.tmpfiles.rules = [ "d /var/lib/elengrab 0750 elengrab elengrab -" ];
+    systemd.tmpfiles.rules = [
+      "d /var/lib/elengrab 0750 elengrab elengrab -"
+      "d /var/lib/elengrab/cookies 0700 elengrab elengrab -"
+    ];
 
     systemd.services.elengrab = {
       wantedBy = [ "multi-user.target" ];
@@ -37,13 +40,16 @@ in
         ExecStart = "${elengrab}/bin/elengrab";
         Environment = [
           "ELENGRAB_ROOT_DIR=/var/lib/elengrab"
-          "ELENGRAB_MODE=authenticated"
+          "ELENGRAB_COOKIES_DIR=/var/lib/elengrab/cookies"
+          "ELENGRAB_ALLOW_COOKIES=true"
+          "ELENGRAB_MODE=public"
           "ELENGRAB_HTTP_SERVER_PORT=8084"
           "ELENGRAB_DOWNLOAD_WORKERS=1"
           "PATH=${
             lib.makeBinPath [
               pkgs.yt-dlp
               pkgs.ffmpeg
+              pkgs.deno
             ]
           }"
         ];
