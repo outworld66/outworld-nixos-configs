@@ -64,11 +64,10 @@ group before proxying GoAccess and its websocket.
 
 Gotify uses its native OIDC integration and accepts only `admins`. Immich uses
 its native Pocket ID OIDC login for both the web and mobile clients; it is not
-wrapped in Pomerium. Immich does not auto-register OAuth users,
-so an administrator must create an Immich account before its owner can log in.
-Users without an allowed group cannot create or use an Immich account. WebDAV
-keeps its own Basic Authentication because desktop WebDAV clients do not
-reliably support browser-based OIDC redirects.
+wrapped in Pomerium. Immich does not auto-register OAuth users, so an existing
+Immich account must use the same email as the verified Pocket ID account before
+its owner can log in. WebDAV keeps its own Basic Authentication because desktop
+WebDAV clients do not reliably support browser-based OIDC redirects.
 
 Immich role mapping is declared separately in
 `server.immich.oauthRoleMappings`: Pocket ID `admins` maps to the Immich

@@ -18,6 +18,12 @@ let
     npmDepsHash = "sha256-M6MRE2Kk3FncGvsMv5AQsB/mxYF+y5jVxtrRvQR1y/I=";
     npmDepsFetcherVersion = 2;
     npmFlags = [ "--ignore-scripts" ];
+    postPatch = ''
+      substituteInPlace src/views/Authorization/LoginView.jsx \
+        --replace-fail \
+          "      ) : (" \
+          "      ) : import.meta.env.VITE_IS_SELF_HOSTED === 'true' ? null : ("
+    '';
     dontNpmBuild = true;
     buildPhase = "npm run build -- --mode selfhosted";
     installPhase = "cp -r dist $out";
