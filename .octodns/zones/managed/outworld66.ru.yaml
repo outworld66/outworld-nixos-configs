@@ -17,11 +17,11 @@ _dmarc:
   - ttl: 300
     type: TXT
     value: "v=DMARC1\\; p=quarantine\\; rua=mailto:postmaster@outworld66.ru"
-default._domainkey:
-  - ttl: 300
-    type: TXT
-    value: "v=DKIM1\\; k=rsa\\; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAweunmuOwFMtc0itjU9kIxePXnh5aQkh6shL0KwxQSeOqgV7OI22jEyMhbytgxif7m6Z7RMLwSpmKCtW9XIF22ayXe31e80B2ExoxBIzEl0Q6U1Zy+EGl5WnOM4S22adMptmZevEpFGzGbMXfhQ7sav353SKK2GkroTk5V/MvMNXq7dnON151T02+pfRsTO1msnPRdsguAuYWUT9qcQrI0pEKRS2PD5cBaFFaaH4oD5Wfblv0tzVjzyPSysWz0qM+mlkjo9QQ+UkRk6ia3b+FB3RR/Tu8X9AuFF49W26DWaJ4RlC9huyY6lADzjfdiJX/mFIXSyx8it08iE2gr6I0jQIDAQAB"
 mail:
   - ttl: 300
     type: A
     value: 85.142.172.131
+rico._domainkey:
+  - ttl: 300
+    type: TXT
+    value: "v=DKIM1\\; k=rsa\\; p=MIIBCgKCAQEArTGUuEaxa7I8Ip6f6Ci56/ldZGHcCAr1ggDGgP+4NDnQ7XsJS0Vr/QR1VBOkPZ6gI7RiNk8J0/pFkdC3IdIcL+7Ac8hWNVHtELEYtfdGcZb7XludF/TyHuij5+1Uy0BjwRKl6KIv9vkmzunJ/9iDj5BYk8zF9p4NbOb5m4aujhPJR3v+cTM+NVxFfAfBWByLo+bn9fWQZJWpmxaAik0WY/s7RD9raBp6uA6rLlkwT6mzWNscgKFC5tgH0bPfY5mBzPBhPnbKO5c9VcBh58J9u/hsuBZWxjirsIvLNcSXYMhRutsSaT+zIPcU8NzoN5D04dg209l3/dGl2U9ZAOcaFQIDAQAB"
