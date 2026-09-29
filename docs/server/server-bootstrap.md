@@ -5,17 +5,19 @@ NixOS system and generates a machine-specific age identity. The second phase
 adds that identity to the private SOPS file and enables the services that need
 secrets.
 
-The two post-install phases can be run with Task:
+The two post-install phases can be run with Task. Select both the host and its
+SSH target; Rico uses:
 
 ```bash
-task server-bootstrap-key
-task server-bootstrap-finish
+task server-bootstrap-key SERVER_HOST=rico SERVER_TARGET=root@192.168.0.4
+task server-bootstrap-finish SERVER_HOST=rico SERVER_TARGET=root@192.168.0.4
 ```
 
 The second task asks for confirmation before changing `.sops.yaml`, updating
-the encrypted file, switching the private flake to `enable`, and deploying.
-Use `SERVER_TARGET` and `PRIVATE_FLAKE` to override the defaults. To review the
-recipient before the final task, run the first task by itself.
+the encrypted file, switching that host's private flake entry to `enable`, and
+deploying. `SERVER_HOST` selects the flake host, `SERVER_TARGET` selects its
+SSH endpoint, and `PRIVATE_FLAKE` overrides the private checkout. To review
+the recipient before the final task, run the first task by itself.
 
 Before running the tasks, update both repositories:
 
@@ -27,37 +29,31 @@ git pull --ff-only
 cd ../outworld-nixos-configs
 ```
 
-`server-bootstrap-key` performs the bootstrap activation and prints the
-server's public recipient:
+`server-bootstrap-key` deploys the selected host's bootstrap profile and
+prints the server's public recipient:
 
 ```bash
-task server-bootstrap-key
+task server-bootstrap-key SERVER_HOST=rico SERVER_TARGET=root@192.168.0.4
 ```
 
 `server-bootstrap-finish` obtains the recipient again, verifies its `age1...`
-format, asks for confirmation, updates `.sops.yaml`, re-encrypts
-`secrets/private.yaml`, switches the private flake from `bootstrap` to
-`enable`, validates the flake, and performs the final activation:
+format, asks for confirmation, adds a host-specific recipient to `.sops.yaml`,
+re-encrypts `secrets/private.yaml`, switches that host from `bootstrap` to
+`enable`, validates the flake, and deploys through `task server-update`:
 
 ```bash
-task server-bootstrap-finish
+task server-bootstrap-finish SERVER_HOST=rico SERVER_TARGET=root@192.168.0.4
 ```
 
-The default target is `root@192.168.0.3`. Override it, and the private checkout
-path when necessary:
+For the original private server, select its host and target explicitly:
 
 ```bash
-task server-bootstrap-key \
-  SERVER_TARGET=root@192.168.0.10 \
-  PRIVATE_FLAKE=/path/to/outworld-nixos-private
-
-task server-bootstrap-finish \
-  SERVER_TARGET=root@192.168.0.10 \
-  PRIVATE_FLAKE=/path/to/outworld-nixos-private
+task server-bootstrap-key SERVER_HOST=private SERVER_TARGET=root@192.168.0.3
+task server-bootstrap-finish SERVER_HOST=private SERVER_TARGET=root@192.168.0.3
 ```
 
 The tasks do not commit or push changes in the private repository. Review and
-publish the generated recipient and mode change explicitly:
+publish the generated recipient and mode change:
 
 ```bash
 cd ../outworld-nixos-private
@@ -95,7 +91,7 @@ The private flake starts the server in bootstrap mode:
 ```
 
 Deploy that bootstrap configuration from the workstation, or run
-`task server-bootstrap-key`:
+`task server-bootstrap-key SERVER_HOST=private SERVER_TARGET=root@192.168.0.3`:
 
 ```bash
 cd ~/nix/outworld-nixos-configs
@@ -127,6 +123,7 @@ Add the returned `age1...` value to the private repository's `.sops.yaml`:
 keys:
   - &admin age1...
   - &private age1...
+  - &rico age1...
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
@@ -134,6 +131,7 @@ creation_rules:
       - age:
           - *admin
           - *private
+          - *rico
 ```
 
 Then re-encrypt the existing secret file, or let

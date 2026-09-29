@@ -1,4 +1,6 @@
 {
+  config,
+  lib,
   inputs,
   pkgs,
   user,
@@ -23,7 +25,7 @@ let
     hugo --source ${portfolioSource} --destination "$out" --minify --noBuildLock --baseURL=https://${portfolioDomain}/
   '';
 in
-{
+lib.mkIf (config.server.secrets.enable or false) {
   services.pomerium = {
     enable = true;
     secretsFile = "/var/lib/pomerium/environment";

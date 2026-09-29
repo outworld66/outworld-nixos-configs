@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   inputs,
   pkgs,
@@ -15,6 +16,7 @@
   ];
 
   networking.hostName = hostname;
+  services.caddy.enable = lib.mkForce (config.server.secrets.enable or false);
   networking.useDHCP = lib.mkForce false;
   networking.interfaces.eno1.ipv4.addresses = [
     {

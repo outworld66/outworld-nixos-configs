@@ -3,7 +3,8 @@ version: "3"
 vars:
   PRIVATE_FLAKE_DIR: '{{.PRIVATE_FLAKE | default "../outworld-nixos-private"}}'
   PACKAGES_FLAKE_DIR: '{{.PACKAGES_FLAKE | default "../outworld-nixos-packages"}}'
-  SERVER_TARGET: '{{.SERVER_TARGET | default "root@192.168.0.3"}}'
+  SERVER_HOST: '{{.SERVER_HOST | default ""}}'
+  SERVER_TARGET: '{{.SERVER_TARGET | default "root@192.168.0.4"}}'
   SERVER_AGE_KEY: '{{.SERVER_AGE_KEY | default "/var/lib/sops-nix/key.txt"}}'
 
 tasks:
@@ -67,31 +68,41 @@ tasks:
         nh os switch . "$@"
 
   server-bootstrap-key:
-    desc: Deploy bootstrap mode and print the server age recipient
+    desc: Bootstrap a host age key (set SERVER_HOST and SERVER_TARGET)
     cmds:
       - |
         set -eu
         private_flake="{{.PRIVATE_FLAKE_DIR}}/flake.nix"
+        host="{{.SERVER_HOST}}"
         test -f "$private_flake"
+        test -n "$host"
+        case "$host" in
+          *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;
+        esac
         count="$(grep -F -c '{ server.secrets.bootstrap = true; }' "$private_flake" || true)"
         test "$count" = 1
-        nixos-rebuild switch --flake .#private \
+        nixos-rebuild switch --flake ".#$host" \
           --target-host "{{.SERVER_TARGET}}" \
           --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
         ssh "{{.SERVER_TARGET}}" \
           /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}"
 
   server-bootstrap-finish:
-    desc: Add the server recipient, enable SOPS secrets, and deploy
+    desc: Add a host recipient, enable SOPS secrets, and deploy
     cmds:
       - |
         set -eu
         private_dir="{{.PRIVATE_FLAKE_DIR}}"
+        host="{{.SERVER_HOST}}"
         sops_file="$private_dir/secrets/private.yaml"
         sops_config="$private_dir/.sops.yaml"
         private_flake="$private_dir/flake.nix"
         key_file="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
 
+        test -n "$host"
+        case "$host" in
+          *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;
+        esac
         test -f "$sops_file"
         test -f "$sops_config"
         test -f "$private_flake"
@@ -108,25 +119,25 @@ tasks:
         read answer
         test "$answer" = y || test "$answer" = Y
 
-        if grep -Fq "&private $recipient" "$sops_config"; then
+        if grep -Fq "&$host $recipient" "$sops_config"; then
           :
-        elif grep -Eq '^  - &private ' "$sops_config"; then
-          echo "The private recipient already exists but does not match $recipient" >&2
+        elif grep -Eq "^  - &$host " "$sops_config"; then
+          echo "The $host recipient already exists but does not match $recipient" >&2
           exit 1
         else
           tmp="$(mktemp)"
           trap 'rm -f "$tmp"' EXIT
-          awk -v recipient="$recipient" '
-            /^  - &admin / { print; print "  - &private " recipient; next }
-            /^          - \*admin$/ { print; print "          - *private"; next }
+          awk -v host="$host" -v recipient="$recipient" '
+            /^  - &admin / { print; printf "  - &%s %s\n", host, recipient; next }
+            /^          - \*admin$/ { print; printf "          - *%s\n", host; next }
             { print }
           ' "$sops_config" > "$tmp"
           mv "$tmp" "$sops_config"
           trap - EXIT
         fi
 
-        if ! grep -Fq "          - *private" "$sops_config"; then
-          echo "The private recipient is not referenced by the creation rule" >&2
+        if ! grep -Fq "          - *$host" "$sops_config"; then
+          echo "The $host recipient is not referenced by the creation rule" >&2
           exit 1
         fi
 
@@ -139,9 +150,7 @@ tasks:
 
         nix flake check --no-build --no-write-lock-file \
           --override-input private "path:$private_dir"
-        nixos-rebuild switch --flake .#private \
-          --target-host "{{.SERVER_TARGET}}" \
-          --override-input private "path:$private_dir"
+        PRIVATE_FLAKE="$private_dir" SERVER_TARGET="{{.SERVER_TARGET}}" task server-update -- "$host"
 
   server-update:
     desc: Pull repositories, check, and deploy a selected host (use -- <host>)
