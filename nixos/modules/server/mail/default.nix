@@ -92,6 +92,7 @@ let
       STALWART_URL=http://127.0.0.1:18080 \
       STALWART_USER=admin \
       STALWART_PASSWORD="$admin_password" \
+      XDG_CACHE_HOME=/var/cache/stalwart \
         ${cli}/bin/stalwart-cli apply --file "$tmp/plan.ndjson"
 
       kill -INT "$recovery_pid"
@@ -294,6 +295,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         Environment = [
+          "XDG_CACHE_HOME=/var/cache/stalwart"
           "POCKET_ID_API_KEY_FILE=/var/lib/pocket-id/static-api-key"
           "STALWART_URL=http://127.0.0.1:8080"
           "STALWART_USER=admin@${cfg.primaryDomain}"
