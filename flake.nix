@@ -141,6 +141,12 @@
           hostModule = ./hosts/private/configuration.nix;
           hardwareModule = ./hosts/private/hardware-configuration.nix;
         }
+        {
+          hostname = "rico";
+          stateVersion = "26.05";
+          moduleSet = ./nixos/modules/server;
+          hostModule = ./hosts/rico/configuration.nix;
+        }
       ];
 
       # Package set used by formatter, checks, apps and the development shell.
@@ -260,10 +266,11 @@
         server = ./nixos/modules/server;
         tpx13 = ./hosts/tpx13/configuration.nix;
         majesty = ./hosts/majesty/configuration.nix;
+        rico = ./hosts/rico/configuration.nix;
       };
       homeModules.default = ./home-manager/modules;
 
-      # Generate tpx13 and majesty from the declarative host list.
+      # Generate systems from the declarative host list.
       nixosConfigurations = nixpkgs.lib.foldl' (
         configs: host:
         configs
@@ -283,7 +290,7 @@
               configDirectory
               activationFlake
               ;
-            inherit (host) hardwareModule;
+            hardwareModule = host.hardwareModule or null;
             extraModules = (privateHosts.${host.hostname} or { }).extraModules or [ ];
             extraHomeModules = (privateHosts.${host.hostname} or { }).extraHomeModules or [ ];
             extraSpecialArgs =

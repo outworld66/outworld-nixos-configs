@@ -12,6 +12,7 @@ let
   elengrabDomain = "elengrab.outworld66.ru";
   donetickDomain = "donetick.outworld66.ru";
   cloudreveDomain = "cloudreve.outworld66.ru";
+  nocodbDomain = "nocodb.outworld66.ru";
   pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
   mailHostname = "mail.outworld66.ru";
@@ -96,6 +97,21 @@ in
                 or = [
                   { "claim/groups" = "media-admin"; }
                   { "claim/groups" = "media-user"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
+          from = "https://${nocodbDomain}";
+          to = "http://127.0.0.1:8085";
+          allow_websockets = true;
+          preserve_host_header = true;
+          policy = [
+            {
+              allow = {
+                and = [
+                  { "claim/groups" = "media-admin"; }
                 ];
               };
             }
@@ -221,6 +237,13 @@ in
             };
           }
           {
+            "NocoDB" = {
+              href = "https://${nocodbDomain}";
+              icon = "nocodb.png";
+              description = "Personal database and spreadsheet";
+            };
+          }
+          {
             "Mail" = {
               href = "https://${mailHostname}";
               icon = "mdi-email-outline";
@@ -243,6 +266,22 @@ in
   server.elengrab.enable = true;
   server.gotify.enable = true;
   server.immich.enable = true;
+
+  virtualisation.docker.enable = true;
+  virtualisation.oci-containers = {
+    backend = "docker";
+    containers.nocodb = {
+      image = "nocodb/nocodb:2026.09.0@sha256:5c9296e0b554b9dce431d62fda224388a3ce33c06215cec04bc4ec5c67a76295";
+      ports = [ "127.0.0.1:8085:8080" ];
+      volumes = [ "/srv/nocodb:/usr/app/data" ];
+      environment = {
+        NC_APP_DATA_DIR = "/usr/app/data";
+        NC_SITE_URL = "https://${nocodbDomain}";
+      };
+    };
+  };
+
+  systemd.tmpfiles.rules = [ "d /srv/nocodb 0750 root root -" ];
 
   systemd.services.elengrab.environment.ELENGRAB_BASE_URL = "https://${elengrabDomain}";
 
@@ -323,6 +362,7 @@ in
         <iframe hidden src="https://${bitmagnetDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${homepageDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${elengrabDomain}/.pomerium/sign_out"></iframe>
+        <iframe hidden src="https://${nocodbDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${donetickDomain}/.pomerium/sign_out"></iframe>
         <script>setTimeout(() => location.replace("/"), 1500);</script>
         </body></html>
@@ -400,6 +440,15 @@ in
     ${cloudreveDomain} = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:5212
+      '';
+    };
+
+    ${nocodbDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
