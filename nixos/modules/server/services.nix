@@ -13,4 +13,6 @@
     ./media/immich
     ./pocket-id
   ];
+
+  networking.firewall.allowedTCPPorts = [ 443 ];
 }
