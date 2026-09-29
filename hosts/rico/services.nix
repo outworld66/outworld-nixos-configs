@@ -268,6 +268,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   server.elengrab.enable = true;
   server.gotify.enable = true;
   server.immich.enable = true;
+  server.goaccess.wsUrl = "wss://stats.outworld66.ru";
 
   virtualisation.docker.enable = true;
   virtualisation.oci-containers = {
