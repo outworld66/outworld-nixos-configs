@@ -34,7 +34,7 @@
   programs.fuse.userAllowOther = true;
 
   fileSystems."/srv" = {
-    device = "/mnt/data1:/mnt/data2";
+    device = "/data1:/data2";
     fsType = "fuse.mergerfs";
     options = [
       "allow_other"

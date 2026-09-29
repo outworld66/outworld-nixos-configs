@@ -42,7 +42,7 @@
         content = {
           type = "filesystem";
           format = "ext4";
-          mountpoint = "/mnt/data1";
+          mountpoint = "/data1";
         };
       };
     };
@@ -58,7 +58,7 @@
         content = {
           type = "filesystem";
           format = "ext4";
-          mountpoint = "/mnt/data2";
+          mountpoint = "/data2";
         };
       };
     };
