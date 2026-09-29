@@ -273,7 +273,8 @@ in
         ExecStart = pkgs.writeShellScript "stalwart-ensure-accounts" ''
           set -eu
           while :; do
-            http_code=$(${pkgs.curl}/bin/curl --silent --output /dev/null --write-out '%{http_code}' \
+            http_code=$(${pkgs.curl}/bin/curl --retry 30 --retry-connrefused --retry-delay 1 --max-time 2 \
+              --silent --output /dev/null --write-out '%{http_code}' \
               --user "admin:$(cat ${lib.escapeShellArg cfg.adminPasswordFile})" \
               'http://127.0.0.1:8080/api/principal?type=domain')
             case "$http_code" in

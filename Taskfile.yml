@@ -4,7 +4,7 @@ vars:
   PRIVATE_FLAKE_DIR: '{{.PRIVATE_FLAKE | default "../outworld-nixos-private"}}'
   PACKAGES_FLAKE_DIR: '{{.PACKAGES_FLAKE | default "../outworld-nixos-packages"}}'
   SERVER_HOST: '{{.SERVER_HOST | default ""}}'
-  SERVER_TARGET: '{{.SERVER_TARGET | default "root@192.168.0.4"}}'
+  SERVER_TARGET: '{{.SERVER_TARGET | default ""}}'
   SERVER_AGE_KEY: '{{.SERVER_AGE_KEY | default "/var/lib/sops-nix/key.txt"}}'
 
 tasks:
@@ -68,23 +68,27 @@ tasks:
         nh os switch . "$@"
 
   server-bootstrap-key:
-    desc: Bootstrap a host age key (set SERVER_HOST and SERVER_TARGET)
+    desc: Bootstrap a host age key (set SERVER_HOST)
     cmds:
       - |
         set -eu
         private_flake="{{.PRIVATE_FLAKE_DIR}}/flake.nix"
         host="{{.SERVER_HOST}}"
+        target="{{.SERVER_TARGET}}"
         test -f "$private_flake"
         test -n "$host"
         case "$host" in
           *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;
         esac
+        if test -z "$target"; then
+          target="$(task --silent server-target -- "$host")"
+        fi
         count="$(grep -F -c '{ server.secrets.bootstrap = true; }' "$private_flake" || true)"
         test "$count" = 1
         nixos-rebuild switch --flake ".#$host" \
-          --target-host "{{.SERVER_TARGET}}" \
+          --target-host "$target" \
           --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
-        ssh "{{.SERVER_TARGET}}" \
+        ssh "$target" \
           /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}"
 
   server-bootstrap-finish:
@@ -94,6 +98,7 @@ tasks:
         set -eu
         private_dir="{{.PRIVATE_FLAKE_DIR}}"
         host="{{.SERVER_HOST}}"
+        target="{{.SERVER_TARGET}}"
         sops_file="$private_dir/secrets/private.yaml"
         sops_config="$private_dir/.sops.yaml"
         private_flake="$private_dir/flake.nix"
@@ -103,12 +108,15 @@ tasks:
         case "$host" in
           *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;
         esac
+        if test -z "$target"; then
+          target="$(task --silent server-target -- "$host")"
+        fi
         test -f "$sops_file"
         test -f "$sops_config"
         test -f "$private_flake"
         test -r "$key_file"
 
-        recipient="${SERVER_AGE_RECIPIENT:-$(ssh "{{.SERVER_TARGET}}" \
+        recipient="${SERVER_AGE_RECIPIENT:-$(ssh "$target" \
           /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}")}"
         case "$recipient" in
           age1*) ;;
@@ -150,7 +158,20 @@ tasks:
 
         nix flake check --no-build --no-write-lock-file \
           --override-input private "path:$private_dir"
-        PRIVATE_FLAKE="$private_dir" SERVER_TARGET="{{.SERVER_TARGET}}" task server-update -- "$host"
+        PRIVATE_FLAKE="$private_dir" SERVER_TARGET="$target" task server-update -- "$host"
+
+  server-target:
+    desc: Resolve the configured IPv4 SSH target for a host
+    cmds:
+      - |
+        set -eu
+        host="{{.CLI_ARGS}}"
+        case "$host" in
+          *[!a-zA-Z0-9_-]*|'') echo "Invalid host name: $host" >&2; exit 2 ;;
+        esac
+        addresses="$(nix eval --json --no-write-lock-file ".#nixosConfigurations.$host.config.networking.interfaces.eno1.ipv4.addresses")"
+        address="$(printf '%s' "$addresses" | jq -er 'if length == 1 then .[0].address else error("expected exactly one eno1 IPv4 address") end')"
+        printf 'root@%s\n' "$address"
 
   server-update:
     desc: Pull repositories, check, and deploy a selected host (use -- <host>)
@@ -159,6 +180,7 @@ tasks:
         set -eu
         private_dir="{{.PRIVATE_FLAKE_DIR}}"
         host="{{.CLI_ARGS}}"
+        target="{{.SERVER_TARGET}}"
         server_hosts="$(nix eval --json .#lib.serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n')"
 
         if test -z "$host"; then
@@ -182,10 +204,14 @@ tasks:
         git pull --ff-only --autostash
         git -C "$private_dir" pull --ff-only --autostash
 
+        if test -z "$target"; then
+          target="$(task --silent server-target -- "$host")"
+        fi
+
         nix flake check --no-build --no-write-lock-file \
           --override-input private "path:$private_dir"
         nixos-rebuild switch --flake ".#$host" \
-          --target-host "{{.SERVER_TARGET}}" \
+          --target-host "$target" \
           --override-input private "path:$private_dir"
 
   server-list:
