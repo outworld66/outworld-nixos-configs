@@ -32,10 +32,6 @@ The firewall and router continue to need the same mail ports:
 No new public port is required. Stalwart's HTTP listener is bound to
 `127.0.0.1:8080` and is published through Caddy on `443`.
 
-Stalwart uses Rico's router (`192.168.0.1`) as a custom DNS resolver over TCP
-so it can validate DNSSEC for DANE lookups. Its system resolver is UDP-only
-from Stalwart's perspective and does not satisfy the DNSSEC capability check.
-
 ## Pocket ID account provisioning
 
 `stalwart-provision-pocket-users` reconciles local Stalwart accounts with

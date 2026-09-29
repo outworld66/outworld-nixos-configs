@@ -18,22 +18,6 @@ let
       path = "${dataDir}/db";
     }
   );
-  resolverConfig = pkgs.writeText "stalwart-dns-resolver.json" (
-    builtins.toJSON {
-      "@type" = "Custom";
-      servers."0" = {
-        address = "192.168.0.1";
-        port = 53;
-        protocol = "tcp";
-      };
-      attempts = 2;
-      concurrency = 2;
-      enableEdns = true;
-      preserveIntermediates = true;
-      tcpOnError = true;
-      timeout = 5000;
-    }
-  );
   accountEntries = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (email: account: ''
       ${pkgs.jq}/bin/jq -cn \
@@ -266,36 +250,6 @@ in
           "AF_UNIX"
         ];
         UMask = "0077";
-      };
-    };
-
-    systemd.services.stalwart-dns-resolver = {
-      description = "Configure Stalwart DNSSEC-capable resolver";
-      wantedBy = [ "stalwart.service" ];
-      after = [ "stalwart.service" ];
-      requires = [ "stalwart.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        User = "stalwart";
-        Group = "stalwart";
-        LoadCredential = [ "admin-password:${cfg.adminPasswordFile}" ];
-        Environment = [
-          "STALWART_URL=http://127.0.0.1:8080"
-          "STALWART_USER=admin@${cfg.primaryDomain}"
-          "XDG_CACHE_HOME=/var/cache/stalwart"
-        ];
-        ExecStart = pkgs.writeShellScript "stalwart-dns-resolver" ''
-          set -euo pipefail
-          export STALWART_PASSWORD=$(${pkgs.coreutils}/bin/cat "$CREDENTIALS_DIRECTORY/admin-password")
-          for _ in $(${pkgs.coreutils}/bin/seq 1 60); do
-            if ${pkgs.curl}/bin/curl --fail --silent http://127.0.0.1:8080/jmap/session >/dev/null; then
-              exec ${cli}/bin/stalwart-cli update DnsResolver --file ${resolverConfig}
-            fi
-            ${pkgs.coreutils}/bin/sleep 1
-          done
-          echo "Stalwart HTTP listener did not become ready" >&2
-          exit 1
-        '';
       };
     };
 
