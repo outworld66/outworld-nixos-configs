@@ -1,14 +1,15 @@
 # Mail server
 
-The private host uses Stalwart Mail Server. The old Maddy and Roundcube
-services are no longer enabled. No mailbox data is migrated; the new Stalwart
-store starts empty.
+Rico runs Stalwart 0.16.22. Its NixOS module stores the database at
+`/var/lib/stalwart/db`, keeps the administrator and Pocket ID account passwords
+in SOPS, and applies the initial server configuration through `stalwart-cli`.
+The 0.15 database is not migrated during the 0.16 upgrade.
 
 ## Access
 
 The Stalwart web interface is available at `https://mail.outworld66.ru`.
-The recovery administrator is `admin`; its generated password is stored only
-on the server in `/var/lib/stalwart/admin-password`.
+The administrator account is `admin@outworld66.ru`. Its password comes from
+the private SOPS secret `mail/stalwart-admin-password`.
 
 The Pocket ID mail account remains:
 
@@ -31,28 +32,33 @@ The firewall and router continue to need the same mail ports:
 No new public port is required. Stalwart's HTTP listener is bound to
 `127.0.0.1:8080` and is published through Caddy on `443`.
 
-## Free provisioning helper
+## Pocket ID account provisioning
 
 `stalwart-provision-pocket-users` reconciles local Stalwart accounts with
-verified Pocket ID users in the `admins` or `media` groups. It creates missing
+verified Pocket ID users in the `mail-admin` or `mail-user` groups. It creates missing
 accounts, re-enables matching accounts, and disables SMTP/IMAP authentication
 for accounts that leave the allowed set. It never deletes mailboxes, so the
 script is safe to run manually without Stalwart Enterprise/SCIM.
 
-The helper expects a Pocket ID API key file and Stalwart administrator
-credentials:
+Run the helper on Rico as root. It reads the Pocket ID API key and the SOPS
+managed Stalwart administrator password from their configured files:
 
 ```bash
-ssh root@192.168.0.3 \
-  'export POCKET_ID_API_KEY_FILE=/var/lib/pocket-id/static-api-key
-   export STALWART_URL=http://127.0.0.1:8080
-   export STALWART_USER=admin
-   export STALWART_PASSWORD="$(cat /var/lib/stalwart/admin-password)"
-   export STALWART_ALLOWED_GROUPS=admins,media
-   stalwart-provision-pocket-users'
+ssh root@192.168.0.4 stalwart-provision-pocket-users
 ```
 
 The helper is the free replacement for the SCIM lifecycle part. OIDC
 authentication for those accounts still requires configuring Stalwart's OIDC
 directory; the current deployment keeps the internal directory so Pocket ID
 can continue using its password-authenticated SMTP account.
+
+## DKIM DNS record
+
+The current active DKIM public key can be printed as a DNS TXT record with:
+
+```bash
+ssh root@192.168.0.4 stalwart-dkim-dns
+```
+
+Copy both the DNS name and TXT value into the `outworld66.ru` DNS zone. The
+command only reads the public key from Stalwart; it does not change DNS.
