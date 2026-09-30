@@ -81,6 +81,31 @@ let
         --jinja
     '';
   };
+  qwen38DavidAU = pkgs.writeShellApplication {
+    name = "qwen38davidau";
+    runtimeInputs = [ llama ];
+    text = ''
+      exec llama-server \
+        --hf-repo DavidAU/Qwen3.8-27B-TURBO-Fable-Cold-Fusion-735-882-Heretic-Uncensored-NEO-CODER-MAX-MTP-GGUF \
+        --hf-file Qwen3.8-27B-TurboFCFusion-735-882-Here-Uncen-NEO-CODER-MAX-MTP-IQ3_M.gguf \
+        --alias qwen3.8-27b-davidau \
+        --host 127.0.0.1 \
+        --port 8082 \
+        --ctx-size 262144 \
+        --n-gpu-layers 999 \
+        --device ROCm0 \
+        --cache-type-k q4_0 \
+        --cache-type-v q4_0 \
+        --spec-draft-type-k q4_0 \
+        --spec-draft-type-v q4_0 \
+        --flash-attn on \
+        --parallel 1 \
+        --spec-type draft-mtp \
+        --spec-draft-n-max 2 \
+        --no-mmproj \
+        --jinja
+    '';
+  };
 in
 {
   environment.systemPackages = [
@@ -88,5 +113,6 @@ in
     qwen38
     qwen38Speculative
     qwen38Solstice
+    qwen38DavidAU
   ];
 }
