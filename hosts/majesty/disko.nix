@@ -1,7 +1,9 @@
 {
+  imports = [ ./disko-storage.nix ];
+
   disko.devices.disk.main = {
     type = "disk";
-    device = "/dev/nvme1n1";
+    device = "/dev/disk/by-id/nvme-Netac_NVMe_SSD_512GB_AA000000000000000936";
     content = {
       type = "gpt";
       partitions = {

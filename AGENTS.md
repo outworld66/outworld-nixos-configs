@@ -13,6 +13,11 @@ and add extra modules.
 
 ## Repository map
 
+The workspace may open one directory above this checkout. Before running
+repository commands, confirm the checkout with `git rev-parse --show-toplevel`
+and change to that directory; the flake root is the directory containing
+`flake.nix`.
+
 All repository documentation, including `README.md`, files under `docs/`, and
 documentation comments intended for users, must be written in English.
 

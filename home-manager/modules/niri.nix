@@ -1,4 +1,5 @@
 {
+  inputs,
   hostname,
   pkgs,
   ...
@@ -43,9 +44,7 @@ let
       '';
 in
 {
-  home.packages = with pkgs; [
-    xwayland-satellite
-  ];
+  home.packages = [ inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.xwayland-satellite ];
 
   # Output geometry is host-specific and should not be overwritten by the shell.
   xdg.configFile."niri-host/outputs.kdl".text = outputConfig;
