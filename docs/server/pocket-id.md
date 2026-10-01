@@ -41,7 +41,10 @@ can manage LiteLLM and future AI services. `ai-user` currently has no members.
 On LiteLLM, `ai-user` is limited to the Model Hub and its public metadata;
 `ai-admin` can access the full UI and Swagger. Model API requests under `/v1`
 continue to use LiteLLM Bearer keys. The Model Hub may also require a LiteLLM
-user API key to load its model list.
+user API key to load its model list. To grant `ai-user`, add that group to the
+user's private `userGroupMappings` entry. After deployment or a group change,
+sign out and back in through Pocket ID so Pomerium refreshes the session's
+group claims.
 
 Email mappings are applied only to verified Pocket ID users. The provisioning
 job adds all groups listed for the email to the user's existing groups; it does
