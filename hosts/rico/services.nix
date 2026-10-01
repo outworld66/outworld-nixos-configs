@@ -17,6 +17,9 @@ let
   nocodbDomain = "nocodb.outworld66.ru";
   pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
+  llmDomain = "llm.outworld66.ru";
+  llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
+  immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
   mailHostname = "mail.outworld66.ru";
   mailDomain = "outworld66.ru";
   authDomain = "auth.outworld66.ru";
@@ -270,6 +273,103 @@ lib.mkIf (config.server.secrets.enable or false) {
   server.immich.enable = true;
   server.goaccess.wsUrl = "wss://stats.outworld66.ru";
 
+  services.ollama = {
+    enable = true;
+    package = pkgs.ollama-cpu;
+    loadModels = [ "qwen3-vl:4b-instruct-q4_K_M" ];
+  };
+
+  services.litellm = {
+    enable = true;
+    host = "0.0.0.0";
+    port = 4000;
+    openFirewall = false;
+    environmentFile = llmCredentialsFile;
+    settings = {
+      model_list = [
+        {
+          model_name = "qwen3-vl";
+          litellm_params = {
+            model = "ollama_chat/qwen3-vl:4b-instruct-q4_K_M";
+            api_base = "http://127.0.0.1:11434";
+          };
+        }
+      ];
+      general_settings.master_key = builtins.concatStringsSep "" [
+        "os.environ/"
+        "LITELLM_MASTER_KEY"
+      ];
+    };
+  };
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/llm-gateway 0700 root root -"
+    "d /var/lib/immich-analyze 0700 root root -"
+    "d /srv/nocodb 0750 root root -"
+  ];
+
+  systemd.services.llm-gateway-credentials = {
+    description = "Create a persistent API key for the local LLM gateway";
+    before = [ "litellm.service" ];
+    requiredBy = [ "litellm.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      UMask = "0077";
+      ExecStart = pkgs.writeShellScript "create-llm-gateway-credentials" ''
+        set -eu
+        if [ ! -s ${llmCredentialsFile} ]; then
+          key="$(${pkgs.openssl}/bin/openssl rand -hex 32)"
+          printf 'LITELLM_MASTER_KEY=sk-%s\nIMMICH_ANALYZE_API_KEY=sk-%s\n' "$key" "$key" > ${llmCredentialsFile}
+        fi
+        chmod 0600 ${llmCredentialsFile}
+      '';
+    };
+  };
+
+  systemd.services.litellm = {
+    requires = [
+      "llm-gateway-credentials.service"
+      "ollama-model-loader.service"
+    ];
+    after = [
+      "llm-gateway-credentials.service"
+      "ollama-model-loader.service"
+    ];
+  };
+
+  virtualisation.oci-containers.containers.immich-analyze = {
+    image = "ghcr.io/timasoft/immich-analyze:v0.5.1";
+    extraOptions = [ "--network=host" ];
+    environmentFiles = [
+      llmCredentialsFile
+      immichAnalyzeApiKeyFile
+    ];
+    environment = {
+      IMMICH_API_URL = "http://127.0.0.1:2283";
+      IMMICH_ANALYZE_INTERFACE = "llamacpp";
+      IMMICH_ANALYZE_HOSTS = "http://127.0.0.1:4000/v1";
+      IMMICH_ANALYZE_MODEL_NAME = "qwen3-vl";
+      IMMICH_ANALYZE_LANG = "ru";
+      IMMICH_ANALYZE_OVERWRITE_POLICY = "missing-ai";
+      IMMICH_ANALYZE_PRESERVE_HUMAN = "true";
+      IMMICH_ANALYZE_MAX_IMAGE_SIZE = "1024";
+      IMMICH_ANALYZE_MAX_CONCURRENT = "1";
+    };
+  };
+
+  systemd.services.docker-immich-analyze = {
+    unitConfig.ConditionPathExists = immichAnalyzeApiKeyFile;
+    requires = [
+      "immich-server.service"
+      "litellm.service"
+    ];
+    after = [
+      "immich-server.service"
+      "litellm.service"
+    ];
+  };
+
   virtualisation.docker.enable = true;
   virtualisation.oci-containers = {
     backend = "docker";
@@ -283,8 +383,6 @@ lib.mkIf (config.server.secrets.enable or false) {
       };
     };
   };
-
-  systemd.tmpfiles.rules = [ "d /srv/nocodb 0750 root root -" ];
 
   systemd.services.elengrab.environment.ELENGRAB_BASE_URL = "https://${elengrabDomain}";
 
@@ -461,6 +559,15 @@ lib.mkIf (config.server.secrets.enable or false) {
           output file /var/log/caddy/access.log
         }
         reverse_proxy 127.0.0.1:2283
+      '';
+    };
+
+    ${llmDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        reverse_proxy 127.0.0.1:4000
       '';
     };
 
