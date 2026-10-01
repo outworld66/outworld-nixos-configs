@@ -195,6 +195,13 @@ lib.mkIf (config.server.secrets.enable or false) {
               description = "Web traffic statistics";
             };
           }
+          {
+            "LiteLLM" = {
+              href = "https://${llmDomain}/ui";
+              icon = "ollama.png";
+              description = "LLM gateway and model hub";
+            };
+          }
         ];
       }
       {
