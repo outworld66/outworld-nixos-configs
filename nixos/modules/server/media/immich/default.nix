@@ -41,6 +41,7 @@ in
       mediaLocation = "/srv/immich";
       settings = {
         server.externalDomain = "https://immich.outworld66.ru";
+        machineLearning.facialRecognition.maxDistance = 0.4;
         oauth = {
           enabled = true;
           issuerUrl = "https://id.outworld66.ru";
