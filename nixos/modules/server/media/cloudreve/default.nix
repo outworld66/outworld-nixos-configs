@@ -61,6 +61,7 @@ in
           CR_OIDC_ISSUER=https://id.outworld66.ru \
           CR_OIDC_CLIENT_ID=cloudreve \
           CR_OIDC_REDIRECT_URL=https://cloudreve.outworld66.ru/api/v4/session/oidc/callback \
+          CR_SETTING_DEFAULT_siteURL=https://cloudreve.outworld66.ru \
           CR_USERPASS_ENABLED=false \
           CR_PASSKEY_ENABLED=false \
           "CR_OIDC_CLIENT_SECRET=$(cat /var/lib/cloudreve/oidc-client-secret)" \
@@ -87,6 +88,10 @@ in
           Type = sqlite
           DBFile = /var/lib/cloudreve/cloudreve.db
           EOF
+          fi
+          if [ -f /var/lib/cloudreve/cloudreve.db ]; then
+            ${pkgs.sqlite}/bin/sqlite3 /var/lib/cloudreve/cloudreve.db \
+              "UPDATE settings SET value = 'https://cloudreve.outworld66.ru' WHERE name = 'siteURL';"
           fi
         '';
         EnvironmentFile = "/var/lib/cloudreve/oidc.env";

@@ -9,7 +9,7 @@
         content = {
           type = "filesystem";
           format = "btrfs";
-          mountpoint = "/storage";
+          mountpoint = "/mnt/storage";
           mountOptions = [
             "compress=zstd"
             "noatime"
