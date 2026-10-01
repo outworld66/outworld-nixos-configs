@@ -68,8 +68,22 @@ lib.mkIf (config.server.secrets.enable or false) {
       routes = [
         {
           from = "https://stats.outworld66.ru";
-          to = "http://127.0.0.1:7891";
+          path = "/ws";
+          to = "http://127.0.0.1:7890";
           allow_websockets = true;
+          policy = [
+            {
+              allow = {
+                and = [
+                  { "claim/groups" = "stats-user"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
+          from = "https://stats.outworld66.ru";
+          to = "http://127.0.0.1:7891";
           policy = [
             {
               allow = {
@@ -196,13 +210,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   services.caddy.extraConfig = ''
     http://127.0.0.1:7891 {
       root * /srv/goaccess
-      @websocket header Connection *Upgrade
-      handle @websocket {
-        reverse_proxy 127.0.0.1:7890
-      }
-      handle {
-        file_server
-      }
+      file_server
     }
   '';
 
@@ -339,7 +347,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   server.elengrab.enable = true;
   server.gotify.enable = true;
   server.immich.enable = true;
-  server.goaccess.wsUrl = "wss://stats.outworld66.ru";
+  server.goaccess.wsUrl = "wss://stats.outworld66.ru/ws";
 
   services.ollama = {
     enable = true;
