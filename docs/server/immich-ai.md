@@ -16,10 +16,18 @@ image descriptions.
 
 LiteLLM listens on all host interfaces on port `4000`. The firewall keeps that
 port private; external clients use the TLS endpoint
-`https://llm.outworld66.ru/v1`. LiteLLM requires a Bearer API key for model API
-requests. The key is created once at runtime and stored in
+`https://llm.outworld66.ru/v1`. Model API requests require a LiteLLM Bearer
+key. The key is created once at runtime and stored in
 `/var/lib/llm-gateway/credentials.env`, outside the Nix store and repository.
 The same generated key is passed to `immich-analyze` as its model API key.
+
+The public `/v1` API remains available to clients with a valid Bearer key.
+Every other LiteLLM route, including `/ui`, the Model Hub page
+(`/ui/model_hub_table`), Swagger (`/docs`), and the OpenAPI schema, passes
+through Pomerium and requires membership in the Pocket ID `admins` group.
+LiteLLM may also ask for its own admin UI password after Pocket ID login; this
+is the gateway master key in the root-owned credentials file. Do not expose or
+share that key.
 
 The local Ollama API is bound to localhost and is not exposed publicly.
 `immich-analyze` uses host networking to reach both Immich at

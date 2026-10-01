@@ -61,6 +61,8 @@ allows users in `admins` or `media` for the common browser-protected services:
 `donetick.outworld66.ru` also permits the dedicated `donetick` group.
 `stats.outworld66.ru` is an exception: Pomerium permits only the `admins`
 group before proxying GoAccess and its websocket.
+The LiteLLM web interface and non-API routes on `llm.outworld66.ru` also
+require `admins`; its `/v1` model API remains protected by LiteLLM Bearer keys.
 
 Gotify uses its native OIDC integration and accepts only `admins`. Immich uses
 its native Pocket ID OIDC login for both the web and mobile clients; it is not

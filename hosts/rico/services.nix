@@ -90,6 +90,20 @@ lib.mkIf (config.server.secrets.enable or false) {
           ];
         }
         {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
+          allow_websockets = true;
+          policy = [
+            {
+              allow = {
+                and = [
+                  { "claim/groups" = "admins"; }
+                ];
+              };
+            }
+          ];
+        }
+        {
           from = "https://${elengrabDomain}";
           to = "http://127.0.0.1:8084";
           set_request_headers = {
@@ -578,7 +592,13 @@ lib.mkIf (config.server.secrets.enable or false) {
         log {
           output file /var/log/caddy/access.log
         }
-        reverse_proxy 127.0.0.1:4000
+        @api path /v1 /v1/*
+        handle @api {
+          reverse_proxy 127.0.0.1:4000
+        }
+        handle {
+          reverse_proxy 127.0.0.1:8443
+        }
       '';
     };
 
