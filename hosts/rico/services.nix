@@ -599,6 +599,8 @@ lib.mkIf (config.server.secrets.enable or false) {
         log {
           output file /var/log/caddy/access.log
         }
+        @uiPage path_regexp uiPage ^/ui/(([^./]+/)*[^./]+)/*$
+        rewrite @uiPage /ui/{re.uiPage.1}.html
         @api path /v1 /v1/*
         handle @api {
           reverse_proxy 127.0.0.1:4000

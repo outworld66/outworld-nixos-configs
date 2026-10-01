@@ -29,6 +29,11 @@ LiteLLM may also ask for its own admin UI password after Pocket ID login; this
 is the gateway master key in the root-owned credentials file. Do not expose or
 share that key.
 
+The NixOS LiteLLM package serves dashboard pages as static `.html` files but
+does not provide the path fallback used by LiteLLM's container image. Caddy
+adds `.html` to extensionless `/ui/...` page requests before forwarding them,
+so documented URLs such as `/ui/login` and `/ui/model_hub_table` work.
+
 The local Ollama API is bound to localhost and is not exposed publicly.
 `immich-analyze` uses host networking to reach both Immich at
 `http://127.0.0.1:2283` and LiteLLM on the same machine.
