@@ -28,6 +28,12 @@ in
     description = "Expand declarative Pocket ID groups into OIDC role groups.";
   };
 
+  options.services.pocket-id.managedGroups = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [ ];
+    description = "Pocket ID groups to create even when no users are assigned.";
+  };
+
   config = lib.mkIf (config.server.secrets.enable or false) {
     services.pocket-id = {
       enable = true;
@@ -149,6 +155,9 @@ in
             fi
             printf '%s' "$group_id"
           }
+
+          printf '%s' '${builtins.toJSON cfg.managedGroups}' | jq -r '.[]' \
+            | while IFS= read -r group_name; do ensure_group "$group_name" >/dev/null; done
 
           remove_group() {
             group_id=$(curl_api \

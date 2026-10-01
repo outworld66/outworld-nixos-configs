@@ -20,6 +20,25 @@ let
   llmDomain = "llm.outworld66.ru";
   llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
   immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
+  aiPortalPolicy = [
+    {
+      allow = {
+        or = [
+          { "claim/groups" = "ai-admin"; }
+          { "claim/groups" = "ai-user"; }
+        ];
+      };
+    }
+  ];
+  aiAdminPolicy = [
+    {
+      allow = {
+        and = [
+          { "claim/groups" = "ai-admin"; }
+        ];
+      };
+    }
+  ];
   mailHostname = "mail.outworld66.ru";
   mailDomain = "outworld66.ru";
   authDomain = "auth.outworld66.ru";
@@ -92,16 +111,44 @@ lib.mkIf (config.server.secrets.enable or false) {
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
+          prefix = "/ui/model_hub_table.html";
+          policy = aiPortalPolicy;
+        }
+        {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
+          prefix = "/litellm-asset-prefix";
+          policy = aiPortalPolicy;
+        }
+        {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
+          prefix = "/public";
+          policy = aiPortalPolicy;
+        }
+        {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
+          path = "/openapi.json";
+          policy = aiPortalPolicy;
+        }
+        {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
+          path = "/favicon.ico";
+          policy = aiPortalPolicy;
+        }
+        {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
+          prefix = "/ui/favicon.ico";
+          policy = aiPortalPolicy;
+        }
+        {
+          from = "https://${llmDomain}";
+          to = "http://127.0.0.1:4000";
           allow_websockets = true;
-          policy = [
-            {
-              allow = {
-                and = [
-                  { "claim/groups" = "admins"; }
-                ];
-              };
-            }
-          ];
+          policy = aiAdminPolicy;
         }
         {
           from = "https://${elengrabDomain}";

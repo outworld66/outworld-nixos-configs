@@ -35,6 +35,14 @@ The `admins` group is also synchronized to Pocket ID's built-in administrator
 flag. It is therefore the only group that grants access to the Pocket ID admin
 UI; `media` remains a regular user group.
 
+The AI role groups `ai-admin` and `ai-user` are provisioned as managed groups.
+The private `admin` mapping also assigns `ai-admin`, so mapped administrators
+can manage LiteLLM and future AI services. `ai-user` currently has no members.
+On LiteLLM, `ai-user` is limited to the Model Hub and its public metadata;
+`ai-admin` can access the full UI and Swagger. Model API requests under `/v1`
+continue to use LiteLLM Bearer keys. The Model Hub may also require a LiteLLM
+user API key to load its model list.
+
 Email mappings are applied only to verified Pocket ID users. The provisioning
 job adds all groups listed for the email to the user's existing groups; it does
 not remove groups manually assigned in the Pocket ID UI. Keep one mapping per
@@ -76,11 +84,12 @@ Immich role mapping is declared separately in
 `admin` role, and Pocket ID `media` maps to the Immich `user` role. These are
 Immich application roles, not additional Pocket ID groups.
 
-The relevant access rules live in `hosts/private/services.nix`; Pocket ID's
-group creation, email mapping application, and OIDC client provisioning live
-in `nixos/modules/server/pocket-id/default.nix`. Adding a user to a Pocket ID
-group does not by itself grant access to every service: the service's Pomerium,
-Caddy, or native OIDC configuration must also allow that group.
+The relevant access rules live in `hosts/rico/services.nix`; Pocket ID's group
+creation, email mapping application, and OIDC client provisioning live in
+`nixos/modules/server/pocket-id/default.nix`, with organization-specific group
+mappings in the private flake. Adding a user to a Pocket ID group does not by
+itself grant access to every service: the service's Pomerium, Caddy, or native
+OIDC configuration must also allow that group.
 
 ## Apply order
 
