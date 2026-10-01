@@ -348,7 +348,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     environment = {
       IMMICH_API_URL = "http://127.0.0.1:2283";
       IMMICH_ANALYZE_INTERFACE = "llamacpp";
-      IMMICH_ANALYZE_HOSTS = "http://127.0.0.1:4000/v1";
+      IMMICH_ANALYZE_HOSTS = "http://127.0.0.1:4000";
       IMMICH_ANALYZE_MODEL_NAME = "qwen3-vl";
       IMMICH_ANALYZE_LANG = "ru";
       IMMICH_ANALYZE_PROMPT = ''
@@ -371,6 +371,14 @@ lib.mkIf (config.server.secrets.enable or false) {
       "immich-server.service"
       "litellm.service"
     ];
+  };
+
+  systemd.paths.immich-analyze-api-key = {
+    wantedBy = [ "multi-user.target" ];
+    pathConfig = {
+      PathChanged = immichAnalyzeApiKeyFile;
+      Unit = "docker-immich-analyze.service";
+    };
   };
 
   virtualisation.docker.enable = true;

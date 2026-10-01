@@ -138,6 +138,12 @@ arguments.
   repository; consume packages here through its overlay.
 - Keep comments focused on non-obvious constraints and reasons, not a
   line-by-line restatement of Nix syntax.
+- When a change adds or changes behavior that operators cannot infer from the
+  configuration, update the relevant documentation in the same change. Explain
+  the reason, prerequisites (including one-time manual steps), internal versus
+  public endpoints, authorization, and how to verify or recover the service as
+  relevant. Put user documentation in English under `docs/`, keep it in sync
+  with the configuration, and avoid restating self-explanatory settings.
 
 ## Commits and pushes
 
