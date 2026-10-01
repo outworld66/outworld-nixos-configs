@@ -351,6 +351,9 @@ lib.mkIf (config.server.secrets.enable or false) {
       IMMICH_ANALYZE_HOSTS = "http://127.0.0.1:4000/v1";
       IMMICH_ANALYZE_MODEL_NAME = "qwen3-vl";
       IMMICH_ANALYZE_LANG = "ru";
+      IMMICH_ANALYZE_PROMPT = ''
+        Describe the visible image content for search. Return exactly two concise lines: first "RU: ..." in Russian, then "EN: ..." in English. Mention concrete visible objects, actions, setting, and image type. Keep both descriptions factual and useful as search terms. Do not identify people or guess details that are not visible. Return no introduction or extra text.
+      '';
       IMMICH_ANALYZE_OVERWRITE_POLICY = "missing-ai";
       IMMICH_ANALYZE_PRESERVE_HUMAN = "true";
       IMMICH_ANALYZE_MAX_IMAGE_SIZE = "1024";
