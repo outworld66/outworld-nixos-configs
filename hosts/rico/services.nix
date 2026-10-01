@@ -347,7 +347,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   server.elengrab.enable = true;
   server.gotify.enable = true;
   server.immich.enable = true;
-  server.goaccess.wsUrl = "wss://stats.outworld66.ru/ws";
+  server.goaccess.wsUrl = "wss://stats.outworld66.ru:443/ws";
 
   services.ollama = {
     enable = true;
