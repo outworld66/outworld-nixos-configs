@@ -62,6 +62,12 @@ session in its own pane, then send the prompt with `limux send`:
     limux new-pane --direction right --command 'codex --dangerously-bypass-approvals-and-sandbox --no-daemon -C <workdir>'
     limux send --surface <agent-surface> <prompt>
 
+`limux send` enters text into the target pane but does not submit it. After
+sending an interactive agent's prompt, explicitly press Enter with
+`limux send-key --surface <agent-surface> Enter`, then inspect the pane to
+confirm the agent received and started the task. Do the same for follow-up
+messages that require submission.
+
 Interactive sessions are the default because they can receive follow-up
 messages from the orchestrator or user. Use an explicit peer surface and never
 send to a guessed identifier.

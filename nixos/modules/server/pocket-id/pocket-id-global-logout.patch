@@ -1,0 +1,333 @@
+diff --git c/backend/internal/backchannellogout/service.go w/backend/internal/backchannellogout/service.go
+index 9dab45b..2246562 100644
+--- c/backend/internal/backchannellogout/service.go
++++ w/backend/internal/backchannellogout/service.go
+@@ -77,6 +77,17 @@ type target struct {
+ 	LogoutURL string
+ }
+ 
++// FrontchannelLogoutURLs returns the registered front-channel endpoints for the user's authorized clients
++func (s *Service) FrontchannelLogoutURLs(ctx context.Context, userID string) ([]string, error) {
++	var urls []string
++	err := s.db.WithContext(ctx).
++		Model(&model.UserAuthorizedOidcClient{}).
++		Joins("JOIN oidc_clients ON oidc_clients.id = user_authorized_oidc_clients.client_id").
++		Where("user_authorized_oidc_clients.user_id = ? AND oidc_clients.frontchannel_logout_url <> ''", userID).
++		Pluck("oidc_clients.frontchannel_logout_url", &urls).Error
++	return urls, err
++}
++
+ // targetsQuery selects the authorizations of clients that are registered for back-channel logout
+ // Callers narrow it down to the users or the client whose access was revoked
+ func (s *Service) targetsQuery(ctx context.Context, tx *gorm.DB) *gorm.DB {
+diff --git c/backend/internal/backchannellogout/service_test.go w/backend/internal/backchannellogout/service_test.go
+index 4b98883..dad4ef6 100644
+--- c/backend/internal/backchannellogout/service_test.go
++++ w/backend/internal/backchannellogout/service_test.go
+@@ -40,6 +40,7 @@ func seedFixtures(t *testing.T, db *gorm.DB) {
+ 	require.NoError(t, db.Create(&model.OidcClient{
+ 		Base:                 model.Base{ID: "client-open"},
+ 		Name:                 "Open Client",
++		FrontchannelLogoutURL: "https://open.example.com/frontchannel-logout",
+ 		BackchannelLogoutURL: "https://open.example.com/logout",
+ 	}).Error)
+ 
+@@ -65,6 +66,16 @@ func seedFixtures(t *testing.T, db *gorm.DB) {
+ 	require.NoError(t, db.Create(&model.UserAuthorizedOidcClient{UserID: "user-2", ClientID: "client-restricted"}).Error)
+ }
+ 
++func TestService_FrontchannelLogoutURLs(t *testing.T) {
++	db := testutils.NewDatabaseForTest(t)
++	seedFixtures(t, db)
++	s := &Service{db: db}
++
++	urls, err := s.FrontchannelLogoutURLs(t.Context(), "user-1")
++	require.NoError(t, err)
++	assert.Equal(t, []string{"https://open.example.com/frontchannel-logout"}, urls)
++}
++
+ func TestService_TargetsForUsers(t *testing.T) {
+ 	db := testutils.NewDatabaseForTest(t)
+ 	seedFixtures(t, db)
+diff --git c/backend/internal/bootstrap/services_bootstrap.go w/backend/internal/bootstrap/services_bootstrap.go
+index 272c081..c617f59 100644
+--- c/backend/internal/bootstrap/services_bootstrap.go
++++ w/backend/internal/bootstrap/services_bootstrap.go
+@@ -110,13 +110,18 @@ func initServices(
+ 	}
+ 
+ 	svc.customClaimService = service.NewCustomClaimService(db)
++	backchannelLogoutService, err := backchannellogout.NewService(db, svc.jwtService, httpClient, actors)
++	if err != nil {
++		return nil, fmt.Errorf("failed to create back-channel logout service: %w", err)
++	}
+ 	svc.webauthnModule, err = webauthn.New(webauthn.Dependencies{
+-		DB:        db,
+-		Actors:    actors,
+-		AppURL:    common.EnvConfig.AppURL,
+-		Signer:    svc.jwtService,
+-		AuditLog:  svc.auditLogService,
+-		AppConfig: svc.appConfigService,
++		DB:             db,
++		Actors:         actors,
++		AppURL:         common.EnvConfig.AppURL,
++		Signer:         svc.jwtService,
++		AuditLog:       svc.auditLogService,
++		AppConfig:      svc.appConfigService,
++		LogoutNotifier: backchannelLogoutService,
+ 		// Disable in test environment
+ 		CleanupDisabled: common.EnvConfig.AppEnv.IsTest(),
+ 	})
+@@ -173,11 +178,6 @@ func initServices(
+ 		return nil, fmt.Errorf("failed to create OIDC module: %w", err)
+ 	}
+ 
+-	backchannelLogoutService, err := backchannellogout.NewService(db, svc.jwtService, httpClient, actors)
+-	if err != nil {
+-		return nil, fmt.Errorf("failed to create back-channel logout service: %w", err)
+-	}
+-
+ 	svc.oidcService, err = service.NewOidcService(db, svc.jwtService, svc.oidcModule.Preview, svc.oidcModule, svc.scimSyncModule, backchannelLogoutService, httpClient, fileStorage)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("failed to create OIDC service: %w", err)
+diff --git c/backend/internal/controller/well_known_controller.go w/backend/internal/controller/well_known_controller.go
+index 187847b..1662192 100644
+--- c/backend/internal/controller/well_known_controller.go
++++ w/backend/internal/controller/well_known_controller.go
+@@ -124,6 +124,8 @@ func (wkc *WellKnownController) computeServerMetadata() ([]byte, error) {
+ 		"require_pushed_authorization_requests":          false,
+ 		"backchannel_logout_supported":                   true,
+ 		"backchannel_logout_session_supported":           false,
++		"frontchannel_logout_supported":                  true,
++		"frontchannel_logout_session_supported":          false,
+ 		"client_id_metadata_document_supported":          cimdSupported,
+ 		"service_documentation":                          "https://pocket-id.org/docs",
+ 	}
+diff --git c/backend/internal/dto/oidc_dto.go w/backend/internal/dto/oidc_dto.go
+index 4272979..06f2534 100644
+--- c/backend/internal/dto/oidc_dto.go
++++ w/backend/internal/dto/oidc_dto.go
+@@ -21,6 +21,7 @@ type OidcClientDto struct {
+ 	OidcClientMetaDataDto
+ 	CallbackURLs                        []string                 `json:"callbackURLs"`
+ 	LogoutCallbackURLs                  []string                 `json:"logoutCallbackURLs"`
++	FrontchannelLogoutURL               string                   `json:"frontchannelLogoutURL"`
+ 	BackchannelLogoutURL                string                   `json:"backchannelLogoutURL"`
+ 	IsPublic                            bool                     `json:"isPublic"`
+ 	PkceEnabled                         bool                     `json:"pkceEnabled"`
+@@ -54,6 +55,7 @@ type OidcClientUpdateDto struct {
+ 	Description                         string                   `json:"description" binding:"omitempty,max=150" unorm:"nfc"`
+ 	CallbackURLs                        []string                 `json:"callbackURLs" binding:"omitempty,dive,callback_url_pattern"`
+ 	LogoutCallbackURLs                  []string                 `json:"logoutCallbackURLs" binding:"omitempty,dive,callback_url_pattern"`
++	FrontchannelLogoutURL               string                   `json:"frontchannelLogoutURL" binding:"omitempty,http_url,backchannel_logout_url"`
+ 	BackchannelLogoutURL                string                   `json:"backchannelLogoutURL" binding:"omitempty,http_url,backchannel_logout_url"`
+ 	IsPublic                            bool                     `json:"isPublic"`
+ 	PkceEnabled                         bool                     `json:"pkceEnabled"`
+diff --git c/backend/internal/model/oidc.go w/backend/internal/model/oidc.go
+index 58b2cfb..4833f26 100644
+--- c/backend/internal/model/oidc.go
++++ w/backend/internal/model/oidc.go
+@@ -50,6 +50,7 @@ type OidcClient struct {
+ 	Description                         string
+ 	CallbackURLs                        datatype.StringList
+ 	LogoutCallbackURLs                  datatype.StringList
++	FrontchannelLogoutURL               string
+ 	BackchannelLogoutURL                string
+ 	ImageType                           *string
+ 	DarkImageType                       *string
+diff --git c/backend/internal/oidc/refresh_token_test.go w/backend/internal/oidc/refresh_token_test.go
+index 0969949..faea08c 100644
+--- c/backend/internal/oidc/refresh_token_test.go
++++ w/backend/internal/oidc/refresh_token_test.go
+@@ -157,7 +157,7 @@ func TestRefreshTokenRotationGrace(t *testing.T) {
+ func TestRefreshTokenGraceMigrationPreservesExistingSessions(t *testing.T) {
+ 	const previousVersion = 20260923183637
+ 	db := testutils.NewDatabaseForTestWithMigrationSeed(t, previousVersion, func(t *testing.T, db *gorm.DB) {
+-		require.NoError(t, db.Create(&model.OidcClient{Base: model.Base{ID: "old-client"}, Name: "Old client"}).Error)
++		require.NoError(t, db.Exec("INSERT INTO oidc_clients (id, created_at, name) VALUES (?, 1, ?)", "old-client", "Old client").Error)
+ 		require.NoError(t, db.Exec(`INSERT INTO oauth2_sessions (id, created_at, kind, key, request_id, client_id, active, request_data) VALUES ('old-refresh', 1, 'refresh_token', 'old-signature', 'old-request', 'old-client', false, '{}')`).Error)
+ 	})
+ 	var session OAuth2Session
+diff --git c/backend/internal/service/oidc_service.go w/backend/internal/service/oidc_service.go
+index c3953a2..34dae8c 100644
+--- c/backend/internal/service/oidc_service.go
++++ w/backend/internal/service/oidc_service.go
+@@ -301,6 +301,7 @@ func updateOIDCClientModelFromDto(client *model.OidcClient, input *dto.OidcClien
+ 	client.Name = input.Name
+ 	client.CallbackURLs = input.CallbackURLs
+ 	client.LogoutCallbackURLs = input.LogoutCallbackURLs
++	client.FrontchannelLogoutURL = input.FrontchannelLogoutURL
+ 	client.BackchannelLogoutURL = input.BackchannelLogoutURL
+ 	client.IsPublic = input.IsPublic
+ 	// PKCE is required for public clients
+diff --git c/backend/internal/webauthn/handler.go w/backend/internal/webauthn/handler.go
+index c6a6304..c17c4ae 100644
+--- c/backend/internal/webauthn/handler.go
++++ w/backend/internal/webauthn/handler.go
+@@ -3,6 +3,7 @@ package webauthn
+ import (
+ 	"errors"
+ 	"fmt"
++	"log/slog"
+ 	"net/http"
+ 	"os"
+ 	"strconv"
+@@ -20,14 +21,16 @@ import (
+ )
+ 
+ type handler struct {
+-	service   *Service
+-	appConfig appconfig.AppConfigResolver
++	service        *Service
++	appConfig      appconfig.AppConfigResolver
++	logoutNotifier LogoutNotifier
+ }
+ 
+-func newHandler(service *Service, appConfig appconfig.AppConfigResolver) *handler {
++func newHandler(service *Service, appConfig appconfig.AppConfigResolver, logoutNotifier LogoutNotifier) *handler {
+ 	return &handler{
+-		service:   service,
+-		appConfig: appConfig,
++		service:        service,
++		appConfig:      appConfig,
++		logoutNotifier: logoutNotifier,
+ 	}
+ }
+ 
+@@ -178,8 +181,18 @@ func (h *handler) updateCredential(c *gin.Context) error {
+ }
+ 
+ func (h *handler) logout(c *gin.Context) error {
++	var frontchannelLogoutURLs []string
++	if h.logoutNotifier != nil {
++		var err error
++		frontchannelLogoutURLs, err = h.logoutNotifier.FrontchannelLogoutURLs(c.Request.Context(), c.GetString("userID"))
++		if err != nil {
++			slog.ErrorContext(c.Request.Context(), "Failed to find OIDC clients for logout notification", slog.Any("error", err))
++			frontchannelLogoutURLs = nil
++		}
++		h.logoutNotifier.NotifyUser(c.Request.Context(), c.GetString("userID"))
++	}
+ 	cookie.AddAccessTokenCookie(c, 0, "")
+-	c.Status(http.StatusNoContent)
++	c.JSON(http.StatusOK, gin.H{"frontchannelLogoutURLs": frontchannelLogoutURLs})
+ 	return nil
+ }
+ 
+diff --git c/backend/internal/webauthn/module.go w/backend/internal/webauthn/module.go
+index 24d8dfe..2535f7c 100644
+--- c/backend/internal/webauthn/module.go
++++ w/backend/internal/webauthn/module.go
+@@ -22,6 +22,11 @@ type TokenService interface {
+ 	GetAuthenticationMethod(token jwt.Token) (string, error)
+ }
+ 
++type LogoutNotifier interface {
++	NotifyUser(context.Context, string)
++	FrontchannelLogoutURLs(context.Context, string) ([]string, error)
++}
++
+ type AuditLogger interface {
+ 	Create(ctx context.Context, event model.AuditLogEvent, ipAddress, userAgent, userID string, data model.AuditLogData, tx *gorm.DB) (model.AuditLog, bool)
+ 	CreateNewSignInWithEmail(ctx context.Context, ipAddress, userAgent, userID string, tx *gorm.DB, emailLoginNotificationEnabled bool) model.AuditLog
+@@ -32,9 +37,10 @@ type Dependencies struct {
+ 	Actors francishost.Host
+ 	AppURL string
+ 
+-	Signer    TokenService
+-	AuditLog  AuditLogger
+-	AppConfig appconfig.AppConfigResolver
++	Signer         TokenService
++	AuditLog       AuditLogger
++	AppConfig      appconfig.AppConfigResolver
++	LogoutNotifier LogoutNotifier
+ 
+ 	// CleanupDisabled skips registering the cron jobs that delete expired rows from the database, for example in tests
+ 	CleanupDisabled bool
+@@ -72,7 +78,7 @@ func New(deps Dependencies) (*Module, error) {
+ 
+ 	return &Module{
+ 		service: service,
+-		handler: newHandler(service, deps.AppConfig),
++		handler: newHandler(service, deps.AppConfig, deps.LogoutNotifier),
+ 	}, nil
+ }
+ 
+diff --git c/backend/resources/migrations/postgres/20260928120000_add_oidc_client_frontchannel_logout_url.down.sql w/backend/resources/migrations/postgres/20260928120000_add_oidc_client_frontchannel_logout_url.down.sql
+new file mode 100644
+index 0000000..6fa4762
+--- /dev/null
++++ w/backend/resources/migrations/postgres/20260928120000_add_oidc_client_frontchannel_logout_url.down.sql
+@@ -0,0 +1 @@
++ALTER TABLE oidc_clients DROP COLUMN frontchannel_logout_url;
+diff --git c/backend/resources/migrations/postgres/20260928120000_add_oidc_client_frontchannel_logout_url.up.sql w/backend/resources/migrations/postgres/20260928120000_add_oidc_client_frontchannel_logout_url.up.sql
+new file mode 100644
+index 0000000..7031bed
+--- /dev/null
++++ w/backend/resources/migrations/postgres/20260928120000_add_oidc_client_frontchannel_logout_url.up.sql
+@@ -0,0 +1 @@
++ALTER TABLE oidc_clients ADD COLUMN frontchannel_logout_url TEXT NOT NULL DEFAULT '';
+diff --git c/backend/resources/migrations/sqlite/20260928120000_add_oidc_client_frontchannel_logout_url.down.sql w/backend/resources/migrations/sqlite/20260928120000_add_oidc_client_frontchannel_logout_url.down.sql
+new file mode 100644
+index 0000000..6fa4762
+--- /dev/null
++++ w/backend/resources/migrations/sqlite/20260928120000_add_oidc_client_frontchannel_logout_url.down.sql
+@@ -0,0 +1 @@
++ALTER TABLE oidc_clients DROP COLUMN frontchannel_logout_url;
+diff --git c/backend/resources/migrations/sqlite/20260928120000_add_oidc_client_frontchannel_logout_url.up.sql w/backend/resources/migrations/sqlite/20260928120000_add_oidc_client_frontchannel_logout_url.up.sql
+new file mode 100644
+index 0000000..7031bed
+--- /dev/null
++++ w/backend/resources/migrations/sqlite/20260928120000_add_oidc_client_frontchannel_logout_url.up.sql
+@@ -0,0 +1 @@
++ALTER TABLE oidc_clients ADD COLUMN frontchannel_logout_url TEXT NOT NULL DEFAULT '';
+diff --git c/frontend/src/lib/services/webauthn-service.ts w/frontend/src/lib/services/webauthn-service.ts
+index b7250ff..e95b2ec 100644
+--- c/frontend/src/lib/services/webauthn-service.ts
++++ w/frontend/src/lib/services/webauthn-service.ts
+@@ -16,7 +16,32 @@ class WebAuthnService extends APIService {
+ 		(await this.api.post(`/webauthn/login/finish`, body)).data as User;
+ 
+ 	logout = async () => {
+-		await this.api.post(`/webauthn/logout`);
++		const { frontchannelLogoutURLs } = (await this.api.post(`/webauthn/logout`)).data as {
++			frontchannelLogoutURLs: string[];
++		};
++		if (frontchannelLogoutURLs.length === 1) {
++			window.location.assign(frontchannelLogoutURLs[0]);
++			return;
++		}
++		await Promise.all(
++			frontchannelLogoutURLs.map(
++				(url) =>
++					new Promise<void>((resolve) => {
++						const iframe = document.createElement('iframe');
++						iframe.hidden = true;
++						iframe.onload = iframe.onerror = () => {
++							iframe.remove();
++							resolve();
++						};
++						document.body.append(iframe);
++						iframe.src = url;
++						setTimeout(() => {
++							iframe.remove();
++							resolve();
++						}, 5000);
++					})
++			)
++		);
+ 		userStore.clearUser();
+ 	};
+ 
+diff --git c/frontend/src/lib/types/oidc.type.ts w/frontend/src/lib/types/oidc.type.ts
+index 2dbcdd5..718f142 100644
+--- c/frontend/src/lib/types/oidc.type.ts
++++ w/frontend/src/lib/types/oidc.type.ts
+@@ -54,6 +54,7 @@ export type OidcDiscoveryConfiguration = {
+ export type OidcClient = OidcClientMetaData & {
+ 	callbackURLs: string[];
+ 	logoutCallbackURLs: string[];
++	frontchannelLogoutURL: string;
+ 	backchannelLogoutURL: string;
+ 	isPublic: boolean;
+ 	pkceEnabled: boolean;

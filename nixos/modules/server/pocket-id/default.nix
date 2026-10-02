@@ -7,6 +7,11 @@
 }:
 let
   cfg = config.services.pocket-id;
+  pocketIdSource = pkgs.applyPatches {
+    name = "pocket-id-2.17.0-outworld-patches";
+    src = inputs.pocket-id;
+    patches = [ ./pocket-id-global-logout.patch ];
+  };
 in
 {
   options.services.pocket-id.userGroupMappings = lib.mkOption {
@@ -43,25 +48,21 @@ in
         STATIC_API_KEY = "/var/lib/pocket-id/static-api-key";
       };
       package = pkgs.pocket-id.overrideAttrs (old: {
-        src = pkgs.runCommand "pocket-id-source" { } ''
-          cp -r ${inputs.pocket-id} "$out"
-        '';
-        version = "2.16.0-global-logout";
+        src = pocketIdSource;
+        version = "2.17.0";
         goModules = old.goModules.overrideAttrs (_: {
-          outputHash = "sha256-12YSxG2dqa/Bik+DefyEGpGtlJBpqArbhzi9rmiy1cs=";
+          src = pocketIdSource;
+          name = "pocket-id-2.17.0-go-modules";
+          outputHash = "sha256-7rgKhTVwTphjBL1UwLcffex1cZcB1fYFU8ST9H11FWA=";
           preBuild = "";
         });
         frontend = old.frontend.overrideAttrs (_frontendOld: {
-          src = pkgs.runCommand "pocket-id-frontend-source" { } ''
-            cp -r ${inputs.pocket-id} "$out"
-          '';
-          version = "2.16.0-global-logout";
+          src = pocketIdSource;
+          version = "2.17.0";
           pnpmDeps = pkgs.fetchPnpmDeps {
             pname = "pocket-id-frontend";
-            version = "2.16.0-global-logout";
-            src = pkgs.runCommand "pocket-id-frontend-source" { } ''
-              cp -r ${inputs.pocket-id} "$out"
-            '';
+            version = "2.17.0";
+            src = pocketIdSource;
             pnpm = pkgs.pnpm_10;
             fetcherVersion = 4;
             hash = "sha256-UmQDpQywsr1e6G/qF2WYbjd4u0ZLhI4vIKuaGPNk+ZE=";

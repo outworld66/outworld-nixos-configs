@@ -18,6 +18,13 @@ let
   speedtestDomain = "speedtest.outworld66.ru";
   pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
+  jellyfinDomain = "jellyfin.outworld66.ru";
+  torrentDomain = "torrent.outworld66.ru";
+  radarrDomain = "radarr.outworld66.ru";
+  jackettDomain = "jackett.outworld66.ru";
+  binderyDomain = "books.outworld66.ru";
+  sonarrDomain = "sonarr.outworld66.ru";
+  seerrDomain = "requests.outworld66.ru";
   llmDomain = "llm.outworld66.ru";
   llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
   immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
@@ -36,6 +43,23 @@ let
       allow = {
         and = [
           { "claim/groups" = "ai-admin"; }
+        ];
+      };
+    }
+  ];
+  mediaAdminPolicy = [
+    {
+      allow = {
+        and = [ { "claim/groups" = "media-admin"; } ];
+      };
+    }
+  ];
+  mediaUserPolicy = [
+    {
+      allow = {
+        or = [
+          { "claim/groups" = "media-admin"; }
+          { "claim/groups" = "media-user"; }
         ];
       };
     }
@@ -122,6 +146,36 @@ lib.mkIf (config.server.secrets.enable or false) {
               };
             }
           ];
+        }
+        {
+          from = "https://${torrentDomain}";
+          to = "http://127.0.0.1:8080";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${radarrDomain}";
+          to = "http://127.0.0.1:7878";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${jackettDomain}";
+          to = "http://127.0.0.1:9117";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${binderyDomain}";
+          to = "http://127.0.0.1:8787";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${sonarrDomain}";
+          to = "http://127.0.0.1:8989";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${seerrDomain}";
+          to = "http://127.0.0.1:5055";
+          policy = mediaUserPolicy;
         }
         {
           from = "https://${llmDomain}";
@@ -284,6 +338,55 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
+            "qBittorrent" = {
+              href = "https://${torrentDomain}";
+              icon = "qbittorrent.png";
+              description = "Torrent client (admins)";
+            };
+          }
+          {
+            "Radarr" = {
+              href = "https://${radarrDomain}";
+              icon = "radarr.png";
+              description = "Movie library manager (admins)";
+            };
+          }
+          {
+            "Jackett" = {
+              href = "https://${jackettDomain}";
+              icon = "jackett.png";
+              description = "Optional torrent indexers (admins)";
+            };
+          }
+          {
+            "Bindery" = {
+              href = "https://${binderyDomain}";
+              icon = "mdi-book-open-page-variant";
+              description = "Book and audiobook manager (admins)";
+            };
+          }
+          {
+            "Sonarr" = {
+              href = "https://${sonarrDomain}";
+              icon = "sonarr.png";
+              description = "TV library manager (admins)";
+            };
+          }
+          {
+            "Seerr" = {
+              href = "https://${seerrDomain}";
+              icon = "seerr.png";
+              description = "Media requests";
+            };
+          }
+          {
+            "Jellyfin" = {
+              href = "https://${jellyfinDomain}";
+              icon = "jellyfin.png";
+              description = "Movies and TV";
+            };
+          }
+          {
             "Gotify" = {
               href = "https://${gotifyDomain}";
               icon = "https://gotify.net/img/logo.png";
@@ -350,6 +453,84 @@ lib.mkIf (config.server.secrets.enable or false) {
     settings.http_server.port = "127.0.0.1:3333";
   };
 
+  users.groups.media.gid = 2000;
+  users.users.bindery = {
+    isSystemUser = true;
+    uid = 2001;
+    group = "media";
+  };
+
+  services.qbittorrent = {
+    enable = true;
+    group = "media";
+    webuiPort = 8080;
+    torrentingPort = 51413;
+    serverConfig = {
+      LegalNotice.Accepted = true;
+      Preferences.WebUI.Address = "127.0.0.1";
+      Downloads = {
+        SavePath = "/data1/media/downloads/complete";
+        TempPath = "/data1/media/downloads/incomplete";
+        TempPathEnabled = true;
+      };
+    };
+  };
+
+  systemd.services.qbittorrent.serviceConfig = {
+    ReadWritePaths = [ "/data1/media/downloads" ];
+    UMask = "0002";
+  };
+  systemd.services.radarr.serviceConfig.UMask = lib.mkForce "0002";
+  systemd.services.sonarr.serviceConfig.UMask = lib.mkForce "0002";
+
+  services.radarr = {
+    enable = true;
+    group = "media";
+    settings.server.bindaddress = "127.0.0.1";
+  };
+
+  services.sonarr = {
+    enable = true;
+    group = "media";
+    settings.server.bindaddress = "127.0.0.1";
+  };
+
+  services.jackett.enable = true;
+  services.seerr.enable = true;
+  services.jellyfin = {
+    enable = true;
+    group = "media";
+  };
+  systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "/data1/media/library" ];
+
+  virtualisation.oci-containers.containers.bindery = {
+    image = "ghcr.io/vavallee/bindery:1.39.0";
+    extraOptions = [
+      "--network=host"
+      "--user=2001:2000"
+    ];
+    volumes = [
+      "/var/lib/bindery:/config"
+      "/data1/media:/data1/media"
+    ];
+    environment = {
+      BINDERY_PORT = "8787";
+      BINDERY_DATA_DIR = "/config";
+      BINDERY_DOWNLOAD_DIR = "/data1/media/downloads/complete/books";
+      BINDERY_LIBRARY_DIR = "/data1/media/library/books";
+      BINDERY_AUDIOBOOK_DIR = "/data1/media/library/audiobooks";
+      BINDERY_PUID = "2001";
+      BINDERY_PGID = "2000";
+    };
+  };
+
+  systemd.services.docker-bindery.serviceConfig.UMask = "0002";
+
+  networking.firewall = {
+    allowedTCPPorts = [ 51413 ];
+    allowedUDPPorts = [ 51413 ];
+  };
+
   server.cloudreve.enable = true;
   server.donetick.enable = true;
   server.elengrab.enable = true;
@@ -406,6 +587,19 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   systemd.tmpfiles.rules = [
+    "d /data1/media 2770 root media -"
+    "d /data1/media/downloads 2770 root media -"
+    "d /data1/media/downloads/incomplete 2770 root media -"
+    "d /data1/media/downloads/complete 2770 root media -"
+    "d /data1/media/downloads/complete/movies 2770 root media -"
+    "d /data1/media/downloads/complete/tv 2770 root media -"
+    "d /data1/media/downloads/complete/books 2770 root media -"
+    "d /data1/media/library 2770 root media -"
+    "d /data1/media/library/movies 2770 root media -"
+    "d /data1/media/library/tv 2770 root media -"
+    "d /data1/media/library/books 2770 root media -"
+    "d /data1/media/library/audiobooks 2770 root media -"
+    "d /var/lib/bindery 0750 bindery media -"
     "d /var/lib/llm-gateway 0700 root root -"
     "d /var/lib/immich-analyze 0700 root root -"
     "d /srv/nocodb 0750 root root -"
@@ -619,6 +813,48 @@ lib.mkIf (config.server.secrets.enable or false) {
         }
 
         reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${torrentDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${radarrDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${jackettDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${binderyDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${sonarrDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${seerrDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${jellyfinDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8096
       '';
     };
 

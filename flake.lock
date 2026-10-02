@@ -467,16 +467,16 @@
     "pocket-id": {
       "flake": false,
       "locked": {
-        "lastModified": 1790564381,
-        "narHash": "sha256-Oin2l41NHzeXdmWj0ydOzv0AV32xAW4CYxQ0vsFElzs=",
-        "owner": "outworld66",
+        "lastModified": 1790884209,
+        "narHash": "sha256-FmLu6X/q+TDzcXLNRa3ut6MjjcXf6o8v0DW9Qc+ZKl0=",
+        "owner": "pocket-id",
         "repo": "pocket-id",
-        "rev": "b84ceb6971b76c067cbbe62c10cc824dd5c346dd",
+        "rev": "1abc0186fcbf0a31b51d90adb24f9b4c9cea1be6",
         "type": "github"
       },
       "original": {
-        "owner": "outworld66",
-        "ref": "b84ceb6",
+        "owner": "pocket-id",
+        "ref": "v2.17.0",
         "repo": "pocket-id",
         "type": "github"
       }

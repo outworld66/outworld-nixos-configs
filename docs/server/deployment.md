@@ -139,6 +139,9 @@ For the Immich search and description models on `rico`, see
 [`immich-ai.md`](immich-ai.md) for the API-key prerequisite, endpoints, and
 service recovery steps.
 
+For the Rico torrent, book, and media-request services, see
+[`rico-media.md`](rico-media.md) for shared paths and first-run setup.
+
 The host name is selected from the flake's `lib.serverHosts` output. A host is
 included when its host entry uses `./nixos/modules/server`. Task requires `--`
 before task arguments; `task server-update private` would mean two task names
