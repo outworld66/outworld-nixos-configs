@@ -1,7 +1,7 @@
 # Media services on Rico
 
-Rico's media tree is `/data1/media`, on the confirmed ext4 filesystem with
-about 11 TB free. It is separate from the existing Immich and Cloudreve data.
+Rico's shared media tree is `/srv/media`, on the mergerfs mount combining
+`/data1` and `/data2`. It is separate from the existing Immich and Cloudreve data.
 The `media` group grants qBittorrent, Radarr, Sonarr, Bindery, and Jellyfin
 access to the shared tree. The setgid directories keep files in that group.
 Jellyfin has read-only access to the library. Jackett and Seerr do not need
@@ -29,6 +29,8 @@ Pomerium. qBittorrent, Radarr, and Sonarr are configured to listen on loopback;
 Jackett's upstream default is local-only. The NixOS Seerr module exposes no
 bind-address option; its port is closed in the firewall and its only configured
 external path is its Pomerium route for `media-admin` and `media-user`.
+The qBittorrent Pomerium route preserves the public Host header so its Web UI
+accepts requests whose Host and Origin both use `torrent.outworld66.ru`.
 Jellyfin's `8096` backend port is not opened in the firewall.
 
 ## Authentication
@@ -51,8 +53,9 @@ documented by the [plugin project](https://github.com/Flowfin/jellyfin-plugin-ss
 
 Internal integrations use loopback endpoints and the target application's own
 credentials: Radarr, Sonarr, and Bindery use qBittorrent's Web UI credentials;
-Radarr uses Bitmagnet's loopback Torznab endpoint; Seerr uses Jellyfin and
-Radarr/Sonarr API keys entered during first-run setup. Pomerium is not placed
+Radarr, Sonarr, and Bindery use Jackett's loopback Torznab endpoint; Seerr
+uses Jellyfin for login and libraries, plus Radarr/Sonarr API keys. These
+connections are provisioned by `media-stack-bootstrap`. Pomerium is not placed
 between these services because their API requests are not interactive browser
 sessions. The public TCP/UDP peer port `51413` is BitTorrent traffic, not a web
 login endpoint, so Pocket ID/Pomerium cannot authenticate it.
@@ -68,53 +71,91 @@ visitors, and the portfolio is public content.
 
 ## Shared paths
 
-All download and library paths are below `/data1/media`:
+All media paths are below `/srv/media`, the mergerfs mount that combines
+`/data1` and `/data2`:
 
 ```text
-/data1/media/
+/srv/media/
 ├── downloads/
-│   ├── incomplete/
-│   └── complete/{movies,tv,books}/
+│   ├── incomplete/             # qBittorrent temporary/in-progress files
+│   └── complete/
+│       ├── movies/             # qBittorrent category used by Radarr
+│       ├── tv/                  # qBittorrent category used by Sonarr
+│       └── books/               # qBittorrent category used by Bindery
 └── library/{movies,tv,books,audiobooks}/
 ```
 
-The download and library directories share one filesystem, allowing Radarr,
-Sonarr, and Bindery to hard-link completed torrents into their libraries while
-qBittorrent continues seeding. The firewall allows peer traffic on TCP/UDP
-51413. Forward that port on the router if incoming peer connectivity is
+qBittorrent writes completed downloads to the category folders above. Radarr
+imports its managed movie downloads into `/srv/media/library/movies`; Sonarr
+imports its managed series downloads into `/srv/media/library/tv`; Bindery
+uses the books download folder and the books/audiobooks library folders.
+Jellyfin reads only `/srv/media/library/movies` and
+`/srv/media/library/tv`, which are configured as its Movies and TV libraries.
+The services use one mergerfs namespace over two filesystems. Radarr and Sonarr
+can hard-link an import when its source and destination are on the same backing
+filesystem; otherwise they copy it while qBittorrent keeps seeding. Jellyfin
+sees the imported file through its library scan.
+
+The normal flow is to request a movie or series in Seerr: Radarr or Sonarr
+matches it, sends the torrent to qBittorrent with the right category, and
+imports the completed file into the Jellyfin library. A torrent added manually
+to qBittorrent is not automatically adopted by Radarr or Sonarr just because it
+is in a category; import it through the matching manager (or place it in the
+library folder) for Jellyfin to see it. The firewall allows peer traffic on
+TCP/UDP 51413. Forward that port on the router if incoming peer connectivity is
 desired. The Web UI is separate and remains closed to network interfaces.
 
-## First-run setup
+## Declarative setup
 
-Credentials and API keys belong in each application's runtime configuration,
-not Nix source.
+The `media-stack-bootstrap.service` reconciles the first-run state and service
+connections after the applications start. It reads administrator passwords
+from SOPS and does not put them in the Nix store or journal. To create a missing
+password once, run `scripts/bootstrap-media-passwords`; it preserves existing
+values and never prints them.
 
-1. Visit qBittorrent through its protected URL. Set a strong Web UI password.
-   Create categories `movies`, `tv`, and `books`, saving them under
-   `/data1/media/downloads/complete/movies`, `/data1/media/downloads/complete/tv`,
-   and `/data1/media/downloads/complete/books`. Incomplete files use
-   `/data1/media/downloads/incomplete`.
-2. In Radarr, add qBittorrent at `127.0.0.1:8080`, using the Web UI credentials
-   and category `movies`. Set `/data1/media/library/movies` as the movie root.
-   Add Bitmagnet directly as a **Generic Torznab** indexer at
-   `http://127.0.0.1:3333/torznab`. Add individual Jackett Torznab feeds only
-   if more indexers are needed; copy each feed URL and API key from Jackett.
-3. In Sonarr, add qBittorrent at `127.0.0.1:8080`, using category `tv`, and
-   set `/data1/media/library/tv` as the series root. Configure any indexers
-   needed for TV in Jackett and add their individual Torznab feeds to Sonarr.
-4. In Bindery, create its administrator account during first-run setup. Add
-   qBittorrent at `127.0.0.1:8080` with category `books`. Bindery uses
-   `/data1/media/downloads/complete/books` for completed downloads,
-   `/data1/media/library/books` for ebooks, and
-   `/data1/media/library/audiobooks` for audiobooks.
-5. In Jellyfin at `https://jellyfin.outworld66.ru`, complete first-run setup,
-   create the admin and user accounts, and add the Movies and TV libraries at
-   `/data1/media/library/movies` and `/data1/media/library/tv`.
-6. In Seerr, configure Jellyfin at `http://127.0.0.1:8096`, then connect
-   Radarr at `http://127.0.0.1:7878` and Sonarr at `http://127.0.0.1:8989`.
-   Retrieve their API keys from each app's runtime settings. Seerr's Pomerium
-   gate permits both `media-admin` and `media-user`; Seerr's own first-run
-   settings determine which Jellyfin users may submit requests.
+On activation, the bootstrap service:
+
+- Sets qBittorrent's Web UI password and creates `movies`, `tv`, and `books`
+  categories with the matching shared download paths, updating existing
+  category locations when the media mount changes.
+- Adds the qBittorrent download client, Jackett Torznab endpoint, and movie/TV
+  root folders to Radarr and Sonarr. It removes unused old disk-specific root
+  folders; existing media entries keep their assigned roots. Their web
+  authentication uses Pomerium's Pocket ID policy; their APIs remain protected
+  by their generated API keys.
+- Creates Jellyfin's Movies and TV libraries from the merged mount, replacing
+  old disk-specific library paths.
+- Creates the Bindery `admin` account from SOPS and connects its qBittorrent
+  downloader and Jackett indexer.
+- Logs in to Jellyfin from Seerr using the SOPS administrator password, selects
+  both libraries, connects Radarr and Sonarr, and finishes Seerr initialization.
+  Seerr logins use Jellyfin accounts; newly provisioned users receive request
+  permission, not management permission.
+
+These services are reachable through Pomerium and restricted to the Pocket ID
+`media-admin` group, except Seerr, which allows both `media-admin` and
+`media-user`. qBittorrent and Bindery also use their SOPS-managed local admin
+credentials. Jackett has no local multi-user accounts: Pomerium is its web
+login. Radarr and Sonarr's `External` authentication delegates browser access
+to Pomerium; their API keys are generated and persisted by each application.
+
+The generic Torznab connection is registered in Radarr, Sonarr, and Bindery.
+This host currently has AniLibria configured in Jackett; add or manage tracker
+connections in Jackett itself. Any private tracker credentials stay in
+Jackett's runtime configuration.
+
+For anime on AniLibria, add the correctly titled series in Sonarr with its
+series type set to `Anime`; anime releases often use absolute episode numbers.
+The series lookup and release search are separate steps. Select the matching
+show (for example, *JoJo's Bizarre Adventure (2012)*), add it to the TV root,
+then run an interactive episode search. The indexer connection is healthy when
+Jackett's Torznab search returns results; an empty Jellyfin library does not
+need to be imported before adding a series.
+Sonarr uses SkyHook for TV metadata independently of Jackett. Rico has no
+default IPv6 route, so IPv6 is disabled for Sonarr's .NET process. A SkyHook
+timeout can therefore break title lookup while Jackett searches still work;
+Sonarr has an [upstream report of SkyHook requests timing out on pooled HTTP/2
+connections](https://github.com/Sonarr/Sonarr/issues/8912).
 
 ## SkyHook VPN route
 
@@ -161,13 +202,35 @@ timing out. Then retry adding a series in Sonarr. If the exported configuration
 changes, replace the file and run `systemctl restart vpn.service`. The service
 skips startup until `client.vpn` exists.
 
+Seerr provisions the Jellyfin API key through Jellyfin's API and stores it in
+its own protected application database. Seerr and Jellyfin user records are
+created from Jellyfin sign-ins; there is no separate Seerr user/password list
+to maintain.
+
+Seerr uses the newest package currently available in the locked nixpkgs-unstable
+input (3.4.1). Image caching is enabled by the media bootstrap; this proxies
+TMDB images through Seerr for browsers that cannot reach TMDB directly. Seerr
+prefers IPv4 because Rico has no IPv6 default route, and stores cached images
+under its config directory while periodically removing stale entries.
+
+Rico uses Quad9 DNS (`9.9.9.9`, `149.112.112.112`) because the router and
+Cloudflare resolvers return loopback addresses for TMDB's API host. Quad9
+returns public addresses, allowing Seerr to load discovery pages and artwork.
+
+To recreate Jellyfin with its SOPS administrator password, deploy the
+configuration and run `scripts/reset-jellyfin` on Rico. That script keeps a
+dated backup of `/var/lib/jellyfin` and `/var/cache/jellyfin`; it does not touch
+`/srv/media`. A reset removes Jellyfin users, settings, watched state,
+libraries, and generated metadata. The declarative bootstrap recreates the
+administrator and libraries, and the media-stack bootstrap reconnects Seerr.
+
 ## Jellyfin
 
 Jellyfin is the configured media server. Caddy serves its public TLS hostname
 directly to `127.0.0.1:8096`; Pomerium does not wrap Jellyfin. The service can
-read `/data1/media/library` but cannot modify or delete media. Plex remains
+read `/srv/media/library` but cannot modify or delete media. Plex remains
 disabled.
 
 For activation, follow the normal [server deployment workflow](deployment.md).
-Do not move or rename `/data1/media` during rollback; keep it intact across
+Do not move or rename `/srv/media` during rollback; keep it intact across
 NixOS generations.

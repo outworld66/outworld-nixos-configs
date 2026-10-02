@@ -73,6 +73,15 @@ Run checks from the repository root.
 - When adding a service with a user-facing web interface, add it to the
   appropriate Homepage group in the same change. If it should not appear in
   Homepage, document why.
+- On hosts with a mergerfs pool, configure applications and user-facing docs
+  to use the merged mount path for shared data. Refer to backing disk mount
+  paths only in the mount and storage configuration itself.
+- For a new web service, manage its administrator password through SOPS when
+  the service supports it. Enable native OIDC when available; otherwise put
+  the public UI behind Pomerium by default. Document any exception and why
+  that authentication path does not fit (for example, Jellyfin clients need
+  direct API and media-stream access). Before choosing ports, check both the
+  host's declared service ports and currently listening ports for conflicts.
 - `task ci` runs formatting followed by the full `nix flake check`; unlike
   `--no-build`, it can build both complete NixOS systems and all re-exported
   packages.

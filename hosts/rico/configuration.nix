@@ -30,7 +30,10 @@
     address = "192.168.0.1";
     interface = "eno1";
   };
-  networking.nameservers = [ "192.168.0.1" ];
+  networking.nameservers = [
+    "9.9.9.9"
+    "149.112.112.112"
+  ];
   system.stateVersion = stateVersion;
 
   hardware.enableRedistributableFirmware = true;

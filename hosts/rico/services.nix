@@ -7,6 +7,67 @@
   ...
 }:
 let
+  mediaRoot = "/srv/media";
+  jellyfinAdminPassword = config.sops.secrets."media/jellyfin-admin-password".path;
+  jellyfinBootstrap = pkgs.writeShellScript "jellyfin-bootstrap" ''
+    set -euo pipefail
+
+    api=http://127.0.0.1:8096
+    password_file=${jellyfinAdminPassword}
+    info=""
+
+    for attempt in $(seq 1 60); do
+      if info="$(${pkgs.curl}/bin/curl --silent --show-error --fail "$api/System/Info/Public" 2>/dev/null)"; then
+        break
+      fi
+      sleep 2
+    done
+
+    if [ -z "$info" ]; then
+      echo "Jellyfin did not become ready for first-run setup." >&2
+      exit 1
+    fi
+
+    if printf '%s' "$info" | ${pkgs.jq}/bin/jq -e '.StartupWizardCompleted == true' >/dev/null; then
+      exit 0
+    fi
+
+    post_json() {
+      local path="$1" payload="$2"
+      for attempt in $(seq 1 60); do
+        if printf '%s' "$payload" | ${pkgs.curl}/bin/curl --silent --show-error --fail \
+          --request POST --header 'Content-Type: application/json' \
+          --data-binary @- "$api$path" >/dev/null 2>&1; then
+          return 0
+        fi
+        info="$(${pkgs.curl}/bin/curl --silent --show-error --fail "$api/System/Info/Public" 2>/dev/null || true)"
+        if printf '%s' "$info" | ${pkgs.jq}/bin/jq -e '.StartupWizardCompleted == true' >/dev/null 2>&1; then
+          echo "Jellyfin setup was already completed during bootstrap."
+          exit 0
+        fi
+        sleep 2
+      done
+      echo "Jellyfin startup API did not accept $path." >&2
+      return 1
+    }
+
+    post_json /Startup/Configuration '{"UICulture":"ru-RU","MetadataCountryCode":"RU","PreferredMetadataLanguage":"ru"}'
+    user="$( ${pkgs.jq}/bin/jq -Rs '{Name:"admin",Password:rtrimstr("\n")}' "$password_file")"
+    post_json /Startup/User "$user"
+    post_json /Startup/RemoteAccess '{"EnableRemoteAccess":true,"EnableAutomaticPortMapping":false}'
+    for attempt in $(seq 1 60); do
+      if ${pkgs.curl}/bin/curl --silent --show-error --fail --request POST \
+        "$api/Startup/Complete" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 2
+    done
+    info="$(${pkgs.curl}/bin/curl --silent --show-error --fail "$api/System/Info/Public")"
+    printf '%s' "$info" | ${pkgs.jq}/bin/jq -e '.StartupWizardCompleted == true' >/dev/null
+
+    echo "Created Jellyfin admin account from the SOPS password."
+  '';
+
   homepageDomain = "home.outworld66.ru";
   bitmagnetDomain = "bitmagnet.outworld66.ru";
   portfolioDomain = "portfolio.outworld66.ru";
@@ -149,7 +210,8 @@ lib.mkIf (config.server.secrets.enable or false) {
         }
         {
           from = "https://${torrentDomain}";
-          to = "http://127.0.0.1:8080";
+          to = "http://127.0.0.1:8181";
+          preserve_host_header = true;
           policy = mediaAdminPolicy;
         }
         {
@@ -280,9 +342,21 @@ lib.mkIf (config.server.secrets.enable or false) {
       layout = {
         Infrastructure = {
           style = "row";
+          columns = 3;
+        };
+        Media = {
+          style = "row";
           columns = 4;
         };
-        Applications = {
+        "Photos & Files" = {
+          style = "row";
+          columns = 4;
+        };
+        Productivity = {
+          style = "row";
+          columns = 4;
+        };
+        "Personal & Network" = {
           style = "row";
           columns = 4;
         };
@@ -315,21 +389,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         ];
       }
       {
-        Applications = [
-          {
-            "Portfolio" = {
-              href = "https://${portfolioDomain}";
-              icon = "hugo.png";
-              description = "Personal portfolio";
-            };
-          }
-          {
-            "WebDAV" = {
-              href = "https://files.outworld66.ru/webdav";
-              icon = "filebrowser.png";
-              description = "Private files";
-            };
-          }
+        Media = [
           {
             "Bitmagnet" = {
               href = "https://${bitmagnetDomain}";
@@ -352,10 +412,17 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
+            "Sonarr" = {
+              href = "https://${sonarrDomain}";
+              icon = "sonarr.png";
+              description = "TV library manager (admins)";
+            };
+          }
+          {
             "Jackett" = {
               href = "https://${jackettDomain}";
               icon = "jackett.png";
-              description = "Optional torrent indexers (admins)";
+              description = "Torrent indexers (admins)";
             };
           }
           {
@@ -363,13 +430,6 @@ lib.mkIf (config.server.secrets.enable or false) {
               href = "https://${binderyDomain}";
               icon = "mdi-book-open-page-variant";
               description = "Book and audiobook manager (admins)";
-            };
-          }
-          {
-            "Sonarr" = {
-              href = "https://${sonarrDomain}";
-              icon = "sonarr.png";
-              description = "TV library manager (admins)";
             };
           }
           {
@@ -386,11 +446,15 @@ lib.mkIf (config.server.secrets.enable or false) {
               description = "Movies and TV";
             };
           }
+        ];
+      }
+      {
+        "Photos & Files" = [
           {
-            "Gotify" = {
-              href = "https://${gotifyDomain}";
-              icon = "https://gotify.net/img/logo.png";
-              description = "Push notifications";
+            "WebDAV" = {
+              href = "https://files.outworld66.ru/webdav";
+              icon = "filebrowser.png";
+              description = "Private files";
             };
           }
           {
@@ -408,24 +472,28 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
-            "Donetick" = {
-              href = "https://${donetickDomain}";
-              icon = "donetick.png";
-              description = "Tasks and reminders";
-            };
-          }
-          {
             "Cloudreve" = {
               href = "https://${cloudreveDomain}";
               icon = "cloudreve.png";
               description = "Cloud file storage";
             };
           }
+        ];
+      }
+      {
+        Productivity = [
           {
-            "Speedtest" = {
-              href = "https://${speedtestDomain}";
-              icon = "mdi-speedometer";
-              description = "Measure your connection to this server";
+            "Gotify" = {
+              href = "https://${gotifyDomain}";
+              icon = "https://gotify.net/img/logo.png";
+              description = "Push notifications";
+            };
+          }
+          {
+            "Donetick" = {
+              href = "https://${donetickDomain}";
+              icon = "donetick.png";
+              description = "Tasks and reminders";
             };
           }
           {
@@ -440,6 +508,24 @@ lib.mkIf (config.server.secrets.enable or false) {
               href = "https://${mailHostname}";
               icon = "mdi-email-outline";
               description = "Stalwart mail server";
+            };
+          }
+        ];
+      }
+      {
+        "Personal & Network" = [
+          {
+            "Portfolio" = {
+              href = "https://${portfolioDomain}";
+              icon = "hugo.png";
+              description = "Personal portfolio";
+            };
+          }
+          {
+            "Speedtest" = {
+              href = "https://${speedtestDomain}";
+              icon = "mdi-speedometer";
+              description = "Measure your connection to this server";
             };
           }
         ];
@@ -463,45 +549,96 @@ lib.mkIf (config.server.secrets.enable or false) {
   services.qbittorrent = {
     enable = true;
     group = "media";
-    webuiPort = 8080;
+    webuiPort = 8181;
     torrentingPort = 51413;
     serverConfig = {
       LegalNotice.Accepted = true;
       Preferences.WebUI.Address = "127.0.0.1";
       Downloads = {
-        SavePath = "/data1/media/downloads/complete";
-        TempPath = "/data1/media/downloads/incomplete";
+        SavePath = "${mediaRoot}/downloads/complete";
+        TempPath = "${mediaRoot}/downloads/incomplete";
         TempPathEnabled = true;
       };
     };
   };
 
   systemd.services.qbittorrent.serviceConfig = {
-    ReadWritePaths = [ "/data1/media/downloads" ];
+    ReadWritePaths = [ "${mediaRoot}/downloads" ];
     UMask = "0002";
   };
   systemd.services.radarr.serviceConfig.UMask = lib.mkForce "0002";
   systemd.services.sonarr.serviceConfig.UMask = lib.mkForce "0002";
+  # Rico has no IPv6 default route; keep Sonarr's .NET HTTP requests on IPv4.
+  systemd.services.sonarr.environment.DOTNET_SYSTEM_NET_DISABLEIPV6 = "1";
 
   services.radarr = {
     enable = true;
     group = "media";
-    settings.server.bindaddress = "127.0.0.1";
+    settings = {
+      server.bindaddress = "127.0.0.1";
+      auth.method = "External";
+    };
   };
 
   services.sonarr = {
     enable = true;
     group = "media";
-    settings.server.bindaddress = "127.0.0.1";
+    settings = {
+      server.bindaddress = "127.0.0.1";
+      auth.method = "External";
+    };
   };
 
   services.jackett.enable = true;
-  services.seerr.enable = true;
+  services.seerr = {
+    enable = true;
+    package = inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.seerr;
+  };
   services.jellyfin = {
     enable = true;
     group = "media";
   };
-  systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "/data1/media/library" ];
+  systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
+  systemd.services.jellyfin-bootstrap = {
+    description = "Create the initial Jellyfin administrator from SOPS";
+    wantedBy = [ "multi-user.target" ];
+    requires = [ "jellyfin.service" ];
+    after = [ "jellyfin.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = jellyfinBootstrap;
+    };
+  };
+  systemd.services.media-stack-bootstrap = {
+    description = "Configure media service accounts, libraries, and integrations";
+    wantedBy = [ "multi-user.target" ];
+    requires = [
+      "qbittorrent.service"
+      "radarr.service"
+      "sonarr.service"
+      "jackett.service"
+      "jellyfin.service"
+      "seerr.service"
+      "docker-bindery.service"
+    ];
+    after = [
+      "qbittorrent.service"
+      "radarr.service"
+      "sonarr.service"
+      "jackett.service"
+      "jellyfin-bootstrap.service"
+      "seerr.service"
+      "docker-bindery.service"
+    ];
+    path = [ pkgs.systemd ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../scripts/configure-media-stack.py}";
+      TimeoutStartSec = "15min";
+      UMask = "0077";
+    };
+  };
+  environment.systemPackages = [ pkgs.jq ];
 
   virtualisation.oci-containers.containers.bindery = {
     image = "ghcr.io/vavallee/bindery:1.39.0";
@@ -511,14 +648,14 @@ lib.mkIf (config.server.secrets.enable or false) {
     ];
     volumes = [
       "/var/lib/bindery:/config"
-      "/data1/media:/data1/media"
+      "${mediaRoot}:${mediaRoot}"
     ];
     environment = {
       BINDERY_PORT = "8787";
       BINDERY_DATA_DIR = "/config";
-      BINDERY_DOWNLOAD_DIR = "/data1/media/downloads/complete/books";
-      BINDERY_LIBRARY_DIR = "/data1/media/library/books";
-      BINDERY_AUDIOBOOK_DIR = "/data1/media/library/audiobooks";
+      BINDERY_DOWNLOAD_DIR = "${mediaRoot}/downloads/complete/books";
+      BINDERY_LIBRARY_DIR = "${mediaRoot}/library/books";
+      BINDERY_AUDIOBOOK_DIR = "${mediaRoot}/library/audiobooks";
       BINDERY_PUID = "2001";
       BINDERY_PGID = "2000";
     };
@@ -550,7 +687,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
     settings = {
       bind_address = "127.0.0.1";
-      listen_port = 8989;
+      listen_port = 8990;
       database_type = "none";
     };
   };
@@ -587,18 +724,18 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   systemd.tmpfiles.rules = [
-    "d /data1/media 2770 root media -"
-    "d /data1/media/downloads 2770 root media -"
-    "d /data1/media/downloads/incomplete 2770 root media -"
-    "d /data1/media/downloads/complete 2770 root media -"
-    "d /data1/media/downloads/complete/movies 2770 root media -"
-    "d /data1/media/downloads/complete/tv 2770 root media -"
-    "d /data1/media/downloads/complete/books 2770 root media -"
-    "d /data1/media/library 2770 root media -"
-    "d /data1/media/library/movies 2770 root media -"
-    "d /data1/media/library/tv 2770 root media -"
-    "d /data1/media/library/books 2770 root media -"
-    "d /data1/media/library/audiobooks 2770 root media -"
+    "d ${mediaRoot} 2770 root media -"
+    "d ${mediaRoot}/downloads 2770 root media -"
+    "d ${mediaRoot}/downloads/incomplete 2770 root media -"
+    "d ${mediaRoot}/downloads/complete 2770 root media -"
+    "d ${mediaRoot}/downloads/complete/movies 2770 root media -"
+    "d ${mediaRoot}/downloads/complete/tv 2770 root media -"
+    "d ${mediaRoot}/downloads/complete/books 2770 root media -"
+    "d ${mediaRoot}/library 2770 root media -"
+    "d ${mediaRoot}/library/movies 2770 root media -"
+    "d ${mediaRoot}/library/tv 2770 root media -"
+    "d ${mediaRoot}/library/books 2770 root media -"
+    "d ${mediaRoot}/library/audiobooks 2770 root media -"
     "d /var/lib/bindery 0750 bindery media -"
     "d /var/lib/llm-gateway 0700 root root -"
     "d /var/lib/immich-analyze 0700 root root -"
@@ -937,7 +1074,7 @@ lib.mkIf (config.server.secrets.enable or false) {
           output file /var/log/caddy/access.log
         }
         handle /backend/* {
-          reverse_proxy 127.0.0.1:8989
+          reverse_proxy 127.0.0.1:8990
         }
         handle {
           root * ${config.services.librespeed.settings.assets_path}

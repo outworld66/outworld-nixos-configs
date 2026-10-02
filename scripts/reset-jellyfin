@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+  echo "Run this script as root on the Jellyfin server." >&2
+  exit 1
+fi
+
+data_dir=/var/lib/jellyfin
+cache_dir=/var/cache/jellyfin
+secret=/run/secrets/media/jellyfin-admin-password
+backup_root="/var/lib/jellyfin-backups/$(date -u +%Y%m%dT%H%M%SZ)"
+
+test -r "$secret"
+test -d "$data_dir"
+test ! -e "$backup_root"
+install -d -m 0700 "$(dirname "$backup_root")" "$backup_root"
+
+rollback() {
+  result=$?
+  trap - ERR
+  set +e
+  systemctl stop jellyfin.service
+  if [[ -d "$data_dir" ]]; then
+    mv "$data_dir" "$backup_root/new-data"
+  fi
+  if [[ -d "$cache_dir" ]]; then
+    mv "$cache_dir" "$backup_root/new-cache"
+  fi
+  if [[ -d "$backup_root/data" ]]; then
+    mv "$backup_root/data" "$data_dir"
+  fi
+  if [[ -d "$backup_root/cache" ]]; then
+    mv "$backup_root/cache" "$cache_dir"
+  fi
+  systemctl start jellyfin.service
+  exit "$result"
+}
+trap rollback ERR
+
+systemctl stop jellyfin.service
+mv "$data_dir" "$backup_root/data"
+if [[ -d "$cache_dir" ]]; then
+  mv "$cache_dir" "$backup_root/cache"
+fi
+install -d -o jellyfin -g media -m 0700 "$data_dir" "$cache_dir"
+systemctl start jellyfin.service
+systemctl start jellyfin-bootstrap.service
+
+for attempt in $(seq 1 30); do
+  if /run/current-system/sw/bin/curl --silent --show-error --fail \
+    --retry 30 --retry-all-errors --retry-delay 2 --retry-max-time 90 \
+    http://127.0.0.1:8096/System/Info/Public \
+    | /run/current-system/sw/bin/jq -e '.StartupWizardCompleted == true' >/dev/null; then
+    break
+  fi
+  if [[ $attempt -eq 30 ]]; then
+    echo "Jellyfin first-run setup did not complete." >&2
+    false
+  fi
+  sleep 2
+done
+
+status="$(/run/current-system/sw/bin/jq -Rs '{Username:"admin",Pw:rtrimstr("\n")}' "$secret" \
+  | /run/current-system/sw/bin/curl --silent --show-error --retry 30 --retry-all-errors \
+    --retry-delay 2 --retry-max-time 90 --output /dev/null \
+    --write-out '%{http_code}' --request POST \
+    --header 'Content-Type: application/json' \
+    --header 'Authorization: MediaBrowser Client=JellyfinBootstrap, Device=Server, DeviceId=jellyfin-bootstrap, Version=1.0.0' \
+    --data-binary @- \
+    http://127.0.0.1:8096/Users/AuthenticateByName)"
+[[ $status == 200 ]]
+
+trap - ERR
+echo "Jellyfin was reset and bootstrapped. Previous data backup: $backup_root"
