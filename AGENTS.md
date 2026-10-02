@@ -70,6 +70,9 @@ Run checks from the repository root.
   `git diff --check`; build changed packages explicitly when practical.
 - Change package derivations in `outworld-nixos-packages`, not in this
   repository. Public flake outputs re-export them for convenience.
+- When adding a service with a user-facing web interface, add it to the
+  appropriate Homepage group in the same change. If it should not appear in
+  Homepage, document why.
 - `task ci` runs formatting followed by the full `nix flake check`; unlike
   `--no-build`, it can build both complete NixOS systems and all re-exported
   packages.
@@ -136,6 +139,9 @@ arguments.
   does not require system privileges.
 - Keep package-specific implementation in the `outworld-nixos-packages`
   repository; consume packages here through its overlay.
+- When adding a service with a user-facing web interface, add it to the
+  appropriate Homepage group in the same change. If it should not appear in
+  Homepage, document why.
 - Keep comments focused on non-obvious constraints and reasons, not a
   line-by-line restatement of Nix syntax.
 - When a change adds or changes behavior that operators cannot infer from the

@@ -31,6 +31,41 @@ bind-address option; its port is closed in the firewall and its only configured
 external path is its Pomerium route for `media-admin` and `media-user`.
 Jellyfin's `8096` backend port is not opened in the firewall.
 
+## Authentication
+
+Pomerium delegates interactive sign-in to Pocket ID. qBittorrent, Radarr,
+Sonarr, Jackett, Bindery, Bitmagnet, Homepage, and Seerr are reached through
+Pomerium. Management interfaces allow `media-admin`; Seerr and Bitmagnet also
+allow `media-user`. Service credentials and API keys are configured in each
+application for local service-to-service calls.
+
+Jellyfin is the exception: Caddy terminates TLS and Jellyfin authenticates its
+own accounts. Pomerium's browser redirect cannot serve as the only login path
+for native TV/mobile clients that call Jellyfin APIs and request media streams
+directly. Jellyfin requires WebSocket support and correct proxy forwarding for
+those clients ([Jellyfin reverse-proxy guidance](https://jellyfin.org/docs/general/post-install/networking/reverse-proxy/)).
+A community Pocket ID SSO plugin exists, but it is not part of the pinned
+NixOS service module and is not managed by this configuration; native Jellyfin
+login remains the supported path here. The plugin's Pocket ID setup is
+documented by the [plugin project](https://github.com/Flowfin/jellyfin-plugin-sso).
+
+Internal integrations use loopback endpoints and the target application's own
+credentials: Radarr, Sonarr, and Bindery use qBittorrent's Web UI credentials;
+Radarr uses Bitmagnet's loopback Torznab endpoint; Seerr uses Jellyfin and
+Radarr/Sonarr API keys entered during first-run setup. Pomerium is not placed
+between these services because their API requests are not interactive browser
+sessions. The public TCP/UDP peer port `51413` is BitTorrent traffic, not a web
+login endpoint, so Pocket ID/Pomerium cannot authenticate it.
+
+Other public Rico services keep their existing authentication: Cloudreve,
+Donetick, Gotify, and Immich use Pocket ID OIDC; NocoDB, Elengrab, LiteLLM's
+browser UI, stats, and Homepage use Pomerium. Pocket ID and Pomerium's own
+authenticate endpoint must remain reachable to complete login flows. WebDAV
+and mail clients use their protocol-level credentials because redirect-based
+Pomerium login does not work with WebDAV, IMAP, or SMTP clients. LibreSpeed
+and the static portfolio stay public by design: the speed test is for anonymous
+visitors, and the portfolio is public content.
+
 ## Shared paths
 
 All download and library paths are below `/data1/media`:
