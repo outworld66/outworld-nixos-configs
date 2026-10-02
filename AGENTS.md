@@ -82,6 +82,11 @@ Run checks from the repository root.
   that authentication path does not fit (for example, Jellyfin clients need
   direct API and media-stream access). Before choosing ports, check both the
   host's declared service ports and currently listening ports for conflicts.
+- Prefer declarative bootstrap or reconciliation for first-run settings when
+  the application API supports it and the change is small and reliable. If it
+  would require substantial code, ongoing complexity, or operator inconvenience,
+  explain the cost and ask the user before choosing that approach. Document any
+  remaining one-time manual setup.
 - `task ci` runs formatting followed by the full `nix flake check`; unlike
   `--no-build`, it can build both complete NixOS systems and all re-exported
   packages.

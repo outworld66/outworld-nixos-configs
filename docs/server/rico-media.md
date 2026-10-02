@@ -118,8 +118,9 @@ On activation, the bootstrap service:
 - Sets qBittorrent's Web UI password and creates `movies`, `tv`, and `books`
   categories with the matching shared download paths, updating existing
   category locations when the media mount changes.
-- Adds the qBittorrent download client, Jackett Torznab endpoint, and movie/TV
-  root folders to Radarr and Sonarr. It removes unused old disk-specific root
+- Adds the qBittorrent download client, Jackett Torznab endpoint with RSS,
+  automatic, and interactive searches enabled, and movie/TV root folders to
+  Radarr and Sonarr. It removes unused old disk-specific root
   folders; existing media entries keep their assigned roots. Their web
   authentication uses Pomerium's Pocket ID policy; their APIs remain protected
   by their generated API keys.

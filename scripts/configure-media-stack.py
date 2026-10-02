@@ -220,7 +220,17 @@ def ensure_arr_indexer(port, data_dir, categories):
     for field in schema["fields"]:
         if field["name"] in values:
             field["value"] = values[field["name"]]
-    schema.update({"name": "Jackett", "enable": True, "protocol": "torrent", "priority": 1})
+    schema.update(
+        {
+            "name": "Jackett",
+            "enable": True,
+            "enableRss": True,
+            "enableAutomaticSearch": True,
+            "enableInteractiveSearch": True,
+            "protocol": "torrent",
+            "priority": 1,
+        }
+    )
     if existing:
         schema["id"] = existing["id"]
         path = f"indexer/{existing['id']}"
