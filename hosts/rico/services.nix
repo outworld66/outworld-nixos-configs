@@ -15,6 +15,7 @@ let
   donetickDomain = "donetick.outworld66.ru";
   cloudreveDomain = "cloudreve.outworld66.ru";
   nocodbDomain = "nocodb.outworld66.ru";
+  speedtestDomain = "speedtest.outworld66.ru";
   pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
   llmDomain = "llm.outworld66.ru";
@@ -318,6 +319,13 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
+            "Speedtest" = {
+              href = "https://${speedtestDomain}";
+              icon = "mdi-speedometer";
+              description = "Measure your connection to this server";
+            };
+          }
+          {
             "NocoDB" = {
               href = "https://${nocodbDomain}";
               icon = "nocodb.png";
@@ -348,6 +356,23 @@ lib.mkIf (config.server.secrets.enable or false) {
   server.gotify.enable = true;
   server.immich.enable = true;
   server.goaccess.wsUrl = "wss://stats.outworld66.ru:443/ws";
+
+  services.librespeed = {
+    enable = true;
+    domain = speedtestDomain;
+    frontend = {
+      enable = true;
+      contactEmail = "";
+      pageTitle = "Outworld Server Speed Test";
+      useNginx = false;
+      settings.telemetry_level = "disabled";
+    };
+    settings = {
+      bind_address = "127.0.0.1";
+      listen_port = 8989;
+      database_type = "none";
+    };
+  };
 
   services.ollama = {
     enable = true;
@@ -666,6 +691,21 @@ lib.mkIf (config.server.secrets.enable or false) {
         }
         handle {
           reverse_proxy 127.0.0.1:8443
+        }
+      '';
+    };
+
+    ${speedtestDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        handle /backend/* {
+          reverse_proxy 127.0.0.1:8989
+        }
+        handle {
+          root * ${config.services.librespeed.settings.assets_path}
+          file_server
         }
       '';
     };
