@@ -116,6 +116,51 @@ not Nix source.
    gate permits both `media-admin` and `media-user`; Seerr's own first-run
    settings determine which Jellyfin users may submit requests.
 
+## SkyHook VPN route
+
+Rico can send Sonarr's SkyHook requests through an AmneziaWG tunnel. Export a
+client from AmneziaVPN in its `.vpn` sharing format. The service extracts the
+AmneziaWG configuration from the selected container at startup; no desktop
+client is needed on Rico.
+
+Copy the exported file to Rico as root at
+`/var/lib/vpn/client.vpn`, owned by root with mode `0600`. Keep it
+out of Git and the Nix store. After deploying the NixOS configuration, place
+the file and start the tunnel:
+
+```bash
+scp amnezia_config_rico.vpn root@192.168.0.4:/root/vpn-client.vpn
+ssh root@192.168.0.4 \
+  'install -m 600 /root/vpn-client.vpn /var/lib/vpn/client.vpn && rm /root/vpn-client.vpn && systemctl restart vpn.service'
+```
+
+The service extracts the embedded AmneziaWG config into `/run`, then removes
+default-route, DNS, and hook directives, plus empty optional `I1`–`I5` fields,
+before starting the tunnel. It routes only traffic from Sonarr to SkyHook's current IPv4
+addresses through the VPN. A timer refreshes the destination addresses every
+five minutes. If the tunnel stops passing traffic, Sonarr's matched SkyHook
+traffic cannot fall back to the ordinary gateway. Other services keep their
+existing routes. Rico uses loose reverse-path filtering because its per-user
+VPN routes are asymmetric with the host's default route; strict filtering
+would drop valid replies arriving on `vpn0`.
+
+Verify the tunnel and the route after loading the client configuration:
+
+```bash
+ssh root@192.168.0.4 'systemctl status vpn.service; awg show vpn0'
+ssh root@192.168.0.4 '
+  address=$(getent ahostsv4 skyhook.sonarr.tv | head -n1 | cut -d " " -f1)
+  ip -4 route get "$address" uid "$(id -u sonarr)"
+  runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
+    -sS -o /dev/null -w "HTTP %{http_code}\\n" https://skyhook.sonarr.tv/
+'
+```
+
+The route should show `dev vpn0`; curl should return an HTTP status instead of
+timing out. Then retry adding a series in Sonarr. If the exported configuration
+changes, replace the file and run `systemctl restart vpn.service`. The service
+skips startup until `client.vpn` exists.
+
 ## Jellyfin
 
 Jellyfin is the configured media server. Caddy serves its public TLS hostname

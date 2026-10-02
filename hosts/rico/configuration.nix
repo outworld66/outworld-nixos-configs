@@ -13,6 +13,7 @@
     ./disko.nix
     ../../nixos/modules/server/services.nix
     ./services.nix
+    ./vpn.nix
     ../../nixos/modules/zapret.nix
   ];
 
