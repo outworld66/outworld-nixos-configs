@@ -50,6 +50,7 @@ in
         machineLearning = {
           clip.modelName = "ViT-SO400M-16-SigLIP2-384__webli";
           facialRecognition.maxDistance = 0.4;
+          ocr.modelName = "ESLAV__PP-OCRv5_mobile";
         };
         oauth = {
           enabled = true;
