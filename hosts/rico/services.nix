@@ -657,6 +657,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         log {
           output file /var/log/caddy/access.log
         }
+        redir /ui /ui/ 308
         @uiPage path_regexp uiPage ^/ui/(([^./]+/)*[^./]+)/*$
         rewrite @uiPage /ui/{re.uiPage.1}.html
         @api path /v1 /v1/*
