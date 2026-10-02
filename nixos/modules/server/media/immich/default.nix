@@ -33,7 +33,13 @@ in
           substituteInPlace "$out/lib/node_modules/immich/dist/services/auth.service.js" \
             --replace-fail \
               'const isRole = (role) => roles.includes(role);' \
-              "const roleMappings = $role_mappings; const isRole = (role) => roles.some((group) => roleMappings[group] === role);"
+              "const roleMappings = $role_mappings; const isRole = (role) => roles.some((group) => roleMappings[group] === role);" \
+            --replace-fail \
+              'if (!autoRegister) {' \
+              'if (!autoRegister || !role) {' \
+            --replace-fail \
+              'User does not exist and auto registering is disabled.' \
+              'User does not exist or has no mapped OAuth role.'
         '';
       });
       host = "127.0.0.1";
@@ -52,7 +58,7 @@ in
           clientSecret._secret = "/var/lib/immich/oidc-client-secret";
           scope = "openid email profile groups";
           buttonText = "Login with Pocket ID";
-          autoRegister = false;
+          autoRegister = true;
           autoLaunch = false;
           mobileOverrideEnabled = true;
           mobileRedirectUri = "https://immich.outworld66.ru/api/oauth/mobile-redirect";

@@ -77,15 +77,19 @@ require `admins`; its `/v1` model API remains protected by LiteLLM Bearer keys.
 
 Gotify uses its native OIDC integration and accepts only `admins`. Immich uses
 its native Pocket ID OIDC login for both the web and mobile clients; it is not
-wrapped in Pomerium. Immich does not auto-register OAuth users, so an existing
-Immich account must use the same email as the verified Pocket ID account before
-its owner can log in. WebDAV keeps its own Basic Authentication because desktop
-WebDAV clients do not reliably support browser-based OIDC redirects.
+wrapped in Pomerium. Immich creates a new account on first OIDC login only when
+the `groups` claim contains a group mapped by
+`server.immich.oauthRoleMappings` (by default, `media-admin` or `media-user`).
+Existing Immich accounts can also link to Pocket ID by matching the verified
+email address. WebDAV keeps its own Basic Authentication because desktop WebDAV
+clients do not reliably support browser-based OIDC redirects.
 
 Immich role mapping is declared separately in
-`server.immich.oauthRoleMappings`: Pocket ID `admins` maps to the Immich
-`admin` role, and Pocket ID `media` maps to the Immich `user` role. These are
-Immich application roles, not additional Pocket ID groups.
+`server.immich.oauthRoleMappings`. The default mapping gives `media-admin` the
+Immich `admin` role and `media-user` the `user` role. That same mapping gates
+new-account creation, so a Pocket ID user without one of these groups cannot
+self-register in Immich. These are Immich application roles, not additional
+Pocket ID groups.
 
 The relevant access rules live in `hosts/rico/services.nix`; Pocket ID's group
 creation, email mapping application, and OIDC client provisioning live in
