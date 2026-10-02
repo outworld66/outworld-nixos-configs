@@ -119,12 +119,12 @@ arguments.
   hand-built activation command.
 
 - Never run `task switch`, `nh os switch`, `nixos-rebuild switch`, Disko,
-  installation commands or other system-activating commands unless the user
-  explicitly requests activation.
-- The user has explicitly authorized activation of the `private` server for
-  the Pocket ID/Pomerium migration; after validation, use the documented
-  `nixos-rebuild switch --flake .#private --target-host root@192.168.0.3`
-  workflow and do not activate other hosts without a new request.
+  installation commands or other system-activating commands without the user's
+  explicit authorization. Server-update authorization remains valid for the
+  rest of the current session, including later tasks.
+- Activate server changes only with the documented
+  `task server-update -- <host>` workflow after validation. Do not substitute
+  direct `nixos-rebuild` commands or other activation methods.
 - Do not edit `hosts/*/hardware-configuration.nix` unless the task is
   specifically about detected hardware. These files are generated and excluded
   from treefmt.
