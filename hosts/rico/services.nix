@@ -371,6 +371,8 @@ lib.mkIf (config.server.secrets.enable or false) {
           };
         }
       ];
+      litellm_settings.public_model_groups = [ "qwen3-vl" ];
+      general_settings.enable_public_model_hub = true;
       general_settings.master_key = builtins.concatStringsSep "" [
         "os.environ/"
         "LITELLM_MASTER_KEY"
@@ -404,6 +406,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   systemd.services.litellm = {
+    environment.PROXY_BASE_URL = "https://${llmDomain}";
     requires = [
       "llm-gateway-credentials.service"
       "ollama-model-loader.service"
