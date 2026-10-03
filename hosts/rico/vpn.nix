@@ -84,11 +84,15 @@ let
       exit 0
     fi
 
-    new_addresses="$(${pkgs.glibc.getent}/bin/getent ahostsv4 skyhook.sonarr.tv \
-      | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }' \
-      | ${pkgs.coreutils}/bin/sort -u)"
+    new_addresses="$(
+      for host in skyhook.sonarr.tv services.sonarr.tv; do
+        ${pkgs.glibc.getent}/bin/getent ahostsv4 "$host" \
+          | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }'
+      done \
+        | ${pkgs.coreutils}/bin/sort -u
+    )"
     if [ -z "$new_addresses" ]; then
-      echo "SkyHook has no IPv4 DNS records" >&2
+      echo "Sonarr metadata services have no IPv4 DNS records" >&2
       exit 1
     fi
 
@@ -151,7 +155,7 @@ in
   };
 
   systemd.services.sonarr-skyhook-routes = {
-    description = "Refresh Sonarr SkyHook VPN destination addresses";
+    description = "Refresh Sonarr metadata VPN destination addresses";
     after = [ "vpn.service" ];
     unitConfig.ConditionPathExists = runtimeConfig;
     serviceConfig = {

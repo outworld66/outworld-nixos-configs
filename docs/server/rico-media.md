@@ -168,7 +168,7 @@ timeout can therefore break title lookup while Jackett searches still work;
 Sonarr has an [upstream report of SkyHook requests timing out on pooled HTTP/2
 connections](https://github.com/Sonarr/Sonarr/issues/8912).
 
-## Jackett and SkyHook VPN routes
+## Jackett and Sonarr VPN routes
 
 Rico can send Sonarr's SkyHook requests through an AmneziaWG tunnel. Export a
 client from AmneziaVPN in its `.vpn` sharing format. The service extracts the
@@ -191,11 +191,13 @@ default-route, DNS, and hook directives, plus empty optional `I1`–`I5` fields,
 before starting the tunnel. All outbound IPv4 traffic from Jackett uses the
 VPN, covering tracker requests even when a tracker changes its IP address.
 Jackett is ordered after and tied to the VPN service, so a VPN restart also
-restarts Jackett. Sonarr traffic to SkyHook's current IPv4 addresses uses the
-same tunnel; a timer refreshes those destination addresses every five minutes.
-Other services keep their existing routes. Rico uses loose reverse-path
-filtering because its per-user VPN routes are asymmetric with the host's
-default route; strict filtering would drop valid replies arriving on `vpn0`.
+restarts Jackett. Sonarr traffic to `skyhook.sonarr.tv` and
+`services.sonarr.tv` uses the same tunnel; a timer refreshes their IPv4
+addresses every five minutes. The latter serves Sonarr's scene mappings, which
+include anime title aliases. Other services keep their existing routes. Rico
+uses loose reverse-path filtering because its per-user VPN routes are
+asymmetric with the host's default route; strict filtering would drop valid
+replies arriving on `vpn0`.
 
 Verify the tunnel and the route after loading the client configuration:
 
@@ -204,16 +206,20 @@ ssh root@192.168.0.4 'systemctl status vpn.service; awg show vpn0'
 ssh root@192.168.0.4 '
   address=$(getent ahostsv4 skyhook.sonarr.tv | head -n1 | cut -d " " -f1)
   ip -4 route get "$address" uid "$(id -u sonarr)"
+  address=$(getent ahostsv4 services.sonarr.tv | head -n1 | cut -d " " -f1)
+  ip -4 route get "$address" uid "$(id -u sonarr)"
   ip -4 route get 1.1.1.1 uid "$(id -u jackett)"
   runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
     -sS -o /dev/null -w "HTTP %{http_code}\\n" https://skyhook.sonarr.tv/
+  runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
+    -sS -o /dev/null -w "HTTP %{http_code}\\n" https://services.sonarr.tv/v1/scenemapping
 '
 ```
 
-Both routes should show `dev vpn0`; the SkyHook curl should return an HTTP
-status instead of timing out. If the exported configuration changes, replace
-the file and run `systemctl restart vpn.service`. The service skips startup
-until `client.vpn` exists.
+All three routes should show `dev vpn0`; both curls should return an HTTP
+status. If the exported configuration changes, replace the file and run
+`systemctl restart vpn.service`. The service skips startup until `client.vpn`
+exists.
 
 Seerr provisions the Jellyfin API key through Jellyfin's API and stores it in
 its own protected application database. Seerr and Jellyfin user records are
