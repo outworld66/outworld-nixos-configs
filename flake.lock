@@ -664,11 +664,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1791059986,
-        "narHash": "sha256-gpjxCUavLW+xBUsqlhVQgW7f97obfZWH6GOTnSJyIlA=",
+        "lastModified": 1791063797,
+        "narHash": "sha256-oVS3+erityQJbqw6ubnmUjw4PT3Ij5RNK8CFcsYOgu8=",
         "owner": "outworld66",
         "repo": "streamline",
-        "rev": "80f5967f1f0eb25c3153873c0710a070033c842a",
+        "rev": "898eec8916c17ea75b08878872165f1239b22ae0",
         "type": "github"
       },
       "original": {
