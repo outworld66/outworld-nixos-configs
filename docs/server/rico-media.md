@@ -198,6 +198,9 @@ scene mappings, while TheXEM provides anime aliases and episode mappings.
 Other services keep their existing routes. Rico uses loose reverse-path
 filtering because its per-user VPN routes are asymmetric with the host's
 default route; strict filtering would drop valid replies arriving on `vpn0`.
+TheXEM uses Cloudflare addresses that rotate between `.0` and `.1` in the
+`188.114.96.0/31` and `188.114.97.0/31` pairs, so the route refresh covers both
+addresses in each pair instead of only the current DNS answer.
 
 Verify the tunnel and the route after loading the client configuration:
 
@@ -210,6 +213,8 @@ ssh root@192.168.0.4 '
   ip -4 route get "$address" uid "$(id -u sonarr)"
   address=$(getent ahostsv4 thexem.info | head -n1 | cut -d " " -f1)
   ip -4 route get "$address" uid "$(id -u sonarr)"
+  ip -4 route get 188.114.96.0 uid "$(id -u sonarr)"
+  ip -4 route get 188.114.96.1 uid "$(id -u sonarr)"
   ip -4 route get 1.1.1.1 uid "$(id -u jackett)"
   runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
     -sS -o /dev/null -w "HTTP %{http_code}\\n" https://skyhook.sonarr.tv/

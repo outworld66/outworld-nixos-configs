@@ -76,7 +76,7 @@ let
 
     if [ "''${1:-}" = down ]; then
       for address in $old_addresses; do
-        ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address/32" uidrange "$uid-$uid" table ${routeTable} || true
+        ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address" uidrange "$uid-$uid" table ${routeTable} || true
       done
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable} || true
       ${pkgs.iproute2}/bin/ip -4 route flush table ${routeTable} 2>/dev/null || true
@@ -85,11 +85,14 @@ let
     fi
 
     new_addresses="$(
-      for host in skyhook.sonarr.tv services.sonarr.tv thexem.info; do
-        ${pkgs.glibc.getent}/bin/getent ahostsv4 "$host" \
-          | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }'
-      done \
-        | ${pkgs.coreutils}/bin/sort -u
+      {
+        for host in skyhook.sonarr.tv services.sonarr.tv thexem.info; do
+          ${pkgs.glibc.getent}/bin/getent ahostsv4 "$host" \
+            | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }'
+        done
+        # Cloudflare alternates TheXEM between the .0 and .1 VIPs in both /31 pairs.
+        printf '%s\n' 188.114.96.0/31 188.114.97.0/31
+      } | ${pkgs.coreutils}/bin/sort -u
     )"
     if [ -z "$new_addresses" ]; then
       echo "Sonarr metadata services have no IPv4 DNS records" >&2
@@ -104,12 +107,12 @@ let
     fi
     for address in $new_addresses; do
       if ! printf '%s\n' "$old_addresses" | ${pkgs.gnugrep}/bin/grep -Fxq "$address"; then
-        ${pkgs.iproute2}/bin/ip -4 rule add priority ${rulePriority} to "$address/32" uidrange "$uid-$uid" table ${routeTable}
+        ${pkgs.iproute2}/bin/ip -4 rule add priority ${rulePriority} to "$address" uidrange "$uid-$uid" table ${routeTable}
       fi
     done
     for address in $old_addresses; do
       if ! printf '%s\n' "$new_addresses" | ${pkgs.gnugrep}/bin/grep -Fxq "$address"; then
-        ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address/32" uidrange "$uid-$uid" table ${routeTable}
+        ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address" uidrange "$uid-$uid" table ${routeTable}
       fi
     done
     printf '%s\n' "$new_addresses" > "$state"
