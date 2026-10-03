@@ -213,7 +213,7 @@ def ensure_arr_indexer(port, data_dir, categories):
     )
     values = {
         "baseUrl": "http://127.0.0.1:9117",
-        "apiPath": "/api/v2.0/indexers/all/results/torznab/api",
+        "apiPath": "/api/v2.0/indexers/anilibria/results/torznab/api",
         "apiKey": key,
         "categories": categories,
     }
