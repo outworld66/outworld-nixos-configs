@@ -31,7 +31,9 @@ classifies HTTP 400 as a rejected query. If a narrowed search gets that status,
 Streamline retries once using the bare title while retaining the movie or TV
 search kind. Authentication errors, network failures and other HTTP statuses
 do not trigger the retry. The existing title and quality checks still decide
-which result can be grabbed.
+which result can be grabbed. A completed search with no eligible release is
+now treated as a normal no-match outcome instead of an internal-server error;
+genuine indexer or download-client failures still return errors.
 
 The Nix flake uses this branch as its Streamline input, and `flake.lock` pins
 the exact fork revision. To update the fork later, push the fix branch and run
@@ -44,5 +46,5 @@ The movie menu action **Search for releases** calls `search-now`: Streamline
 searches indexers and automatically sends its best eligible result to
 qBittorrent. **Manual search** opens the release list so an operator can pick
 one. If no result passes title and quality checks after the fallback, no
-download is started; Streamline 3.2.0 still reports that no-match outcome as
-HTTP 500.
+download is started and the API returns its accepted-search response. Use
+**Manual search** to inspect candidates and choose a release yourself.
