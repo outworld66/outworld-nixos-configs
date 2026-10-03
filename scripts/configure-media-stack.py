@@ -241,10 +241,11 @@ def ensure_arr_indexer(port, data_dir, categories):
     arr_api(port, data_dir, path, method=method, data=schema)
 
 
-def configure_arr(port, data_dir, root, category, indexer_categories):
+def configure_arr(port, data_dir, root, category, indexer_categories=None):
     ensure_arr_root(port, data_dir, root)
     ensure_arr_download_client(port, data_dir, category)
-    ensure_arr_indexer(port, data_dir, indexer_categories)
+    if indexer_categories is not None:
+        ensure_arr_indexer(port, data_dir, indexer_categories)
 
 
 def jellyfin_request(path, *, token=None, method="GET", data=None):
@@ -502,7 +503,7 @@ def configure_bindery():
 
 def main():
     configure_qbittorrent()
-    configure_arr(7878, "/var/lib/radarr/.config/Radarr", f"{MEDIA_ROOT}/library/movies", "movies", [2000])
+    configure_arr(7878, "/var/lib/radarr/.config/Radarr", f"{MEDIA_ROOT}/library/movies", "movies")
     configure_arr(8989, "/var/lib/sonarr/.config/NzbDrone", f"{MEDIA_ROOT}/library/tv", "tv", [5000])
     configure_jellyfin()
     restart_seerr = configure_seerr()

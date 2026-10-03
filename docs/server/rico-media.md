@@ -118,9 +118,11 @@ On activation, the bootstrap service:
 - Sets qBittorrent's Web UI password and creates `movies`, `tv`, and `books`
   categories with the matching shared download paths, updating existing
   category locations when the media mount changes.
-- Adds the qBittorrent download client, Jackett Torznab endpoint with RSS,
-  automatic, and interactive searches enabled, and movie/TV root folders to
-  Radarr and Sonarr. It removes unused old disk-specific root
+- Adds the qBittorrent download client and movie/TV root folders to Radarr and
+  Sonarr. Sonarr receives the Jackett Torznab endpoint with RSS, automatic, and
+  interactive searches enabled. The current Jackett tracker returns no movie
+  category results, so the bootstrap does not attach it to Radarr. It removes
+  unused old disk-specific root
   folders; existing media entries keep their assigned roots. Their web
   authentication uses Pomerium's Pocket ID policy; their APIs remain protected
   by their generated API keys.
@@ -140,10 +142,11 @@ credentials. Jackett has no local multi-user accounts: Pomerium is its web
 login. Radarr and Sonarr's `External` authentication delegates browser access
 to Pomerium; their API keys are generated and persisted by each application.
 
-The generic Torznab connection is registered in Radarr, Sonarr, and Bindery.
-This host currently has AniLibria configured in Jackett; add or manage tracker
-connections in Jackett itself. Any private tracker credentials stay in
-Jackett's runtime configuration.
+The generic Torznab connection is registered in Sonarr and Bindery. This host
+currently has AniLibria configured in Jackett; it returns TV categories but no
+movie categories, so Radarr needs a movie-capable tracker before it can use the
+Jackett endpoint. Add or manage tracker connections in Jackett itself. Any
+private tracker credentials stay in Jackett's runtime configuration.
 
 For anime on AniLibria, add the correctly titled series in Sonarr with its
 series type set to `Anime`; anime releases often use absolute episode numbers.
