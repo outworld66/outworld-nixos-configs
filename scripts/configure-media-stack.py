@@ -19,7 +19,7 @@ def secret(name):
     return Path(f"/run/secrets/media/{name}").read_text().strip()
 
 
-def request(base, path, *, method="GET", data=None, headers=None, cookies=None):
+def request(base, path, *, method="GET", data=None, headers=None, cookies=None, retries=60):
     body = None
     request_headers = dict(headers or {})
     if data is not None:
@@ -33,7 +33,7 @@ def request(base, path, *, method="GET", data=None, headers=None, cookies=None):
         if cookies is not None
         else urllib.request.BaseHandler()
     )
-    for attempt in range(60):
+    for attempt in range(retries):
         try:
             req = urllib.request.Request(
                 base + path, data=body, headers=request_headers, method=method
@@ -45,29 +45,30 @@ def request(base, path, *, method="GET", data=None, headers=None, cookies=None):
                 content_type = response.headers.get("Content-Type", "")
                 return json.loads(payload) if "json" in content_type else payload
         except urllib.error.HTTPError as error:
-            if error.code in (429, 500, 502, 503, 504) and attempt < 59:
+            if error.code in (429, 500, 502, 503, 504) and attempt + 1 < retries:
                 time.sleep(2)
                 continue
             raise RuntimeError(f"{method} {path}: HTTP {error.code}") from None
         except (urllib.error.URLError, TimeoutError):
-            if attempt == 59:
+            if attempt + 1 == retries:
                 raise RuntimeError(f"{method} {path}: service did not become ready") from None
             time.sleep(2)
 
 
-def arr_api(port, data_dir, path, *, method="GET", data=None):
+def arr_api(port, data_dir, path, *, method="GET", data=None, retries=60):
     config = ET.parse(Path(data_dir) / "config.xml").getroot()
     key = config.findtext("ApiKey")
-    return arr_request(port, key, path, method=method, data=data)
+    return arr_request(port, key, path, method=method, data=data, retries=retries)
 
 
-def arr_request(port, key, path, *, method="GET", data=None):
+def arr_request(port, key, path, *, method="GET", data=None, retries=60):
     return request(
         f"http://127.0.0.1:{port}",
         f"/api/v3/{path}",
         method=method,
         data=data,
         headers={"X-Api-Key": key},
+        retries=retries,
     )
 
 
@@ -237,7 +238,6 @@ def ensure_arr_indexers(port, data_dir):
 
         name = f"Jackett - {title}"
         managed_names.add(name)
-        configured_count += 1
         existing = next((item for item in indexers if item.get("name") == name), None)
         schema = next(
             item
@@ -272,7 +272,15 @@ def ensure_arr_indexers(port, data_dir):
         else:
             path = "indexer"
             method = "POST"
-        arr_api(port, data_dir, path, method=method, data=schema)
+        try:
+            arr_api(port, data_dir, path, method=method, data=schema, retries=1)
+        except RuntimeError as error:
+            print(f"Sonarr could not configure Jackett tracker {title}: {error}")
+            continue
+        configured_count += 1
+
+    if not configured_count:
+        raise RuntimeError("Sonarr could not configure any Jackett TV indexers")
 
     for existing in indexers:
         name = existing.get("name", "")
