@@ -191,13 +191,13 @@ default-route, DNS, and hook directives, plus empty optional `I1`–`I5` fields,
 before starting the tunnel. All outbound IPv4 traffic from Jackett uses the
 VPN, covering tracker requests even when a tracker changes its IP address.
 Jackett is ordered after and tied to the VPN service, so a VPN restart also
-restarts Jackett. Sonarr traffic to `skyhook.sonarr.tv` and
-`services.sonarr.tv` uses the same tunnel; a timer refreshes their IPv4
-addresses every five minutes. The latter serves Sonarr's scene mappings, which
-include anime title aliases. Other services keep their existing routes. Rico
-uses loose reverse-path filtering because its per-user VPN routes are
-asymmetric with the host's default route; strict filtering would drop valid
-replies arriving on `vpn0`.
+restarts Jackett. Sonarr traffic to `skyhook.sonarr.tv`,
+`services.sonarr.tv`, and `thexem.info` uses the same tunnel; a timer refreshes
+their IPv4 addresses every five minutes. The Sonarr services endpoint provides
+scene mappings, while TheXEM provides anime aliases and episode mappings.
+Other services keep their existing routes. Rico uses loose reverse-path
+filtering because its per-user VPN routes are asymmetric with the host's
+default route; strict filtering would drop valid replies arriving on `vpn0`.
 
 Verify the tunnel and the route after loading the client configuration:
 
@@ -208,11 +208,15 @@ ssh root@192.168.0.4 '
   ip -4 route get "$address" uid "$(id -u sonarr)"
   address=$(getent ahostsv4 services.sonarr.tv | head -n1 | cut -d " " -f1)
   ip -4 route get "$address" uid "$(id -u sonarr)"
+  address=$(getent ahostsv4 thexem.info | head -n1 | cut -d " " -f1)
+  ip -4 route get "$address" uid "$(id -u sonarr)"
   ip -4 route get 1.1.1.1 uid "$(id -u jackett)"
   runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
     -sS -o /dev/null -w "HTTP %{http_code}\\n" https://skyhook.sonarr.tv/
   runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
     -sS -o /dev/null -w "HTTP %{http_code}\\n" https://services.sonarr.tv/v1/scenemapping
+  runuser -u sonarr -- curl -4 --connect-timeout 10 --max-time 20 \
+    -sS -o /dev/null -w "HTTP %{http_code}\\n" "https://thexem.info/map/allNames?origin=tvdb&defaultNames=1"
 '
 ```
 

@@ -85,7 +85,7 @@ let
     fi
 
     new_addresses="$(
-      for host in skyhook.sonarr.tv services.sonarr.tv; do
+      for host in skyhook.sonarr.tv services.sonarr.tv thexem.info; do
         ${pkgs.glibc.getent}/bin/getent ahostsv4 "$host" \
           | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }'
       done \
