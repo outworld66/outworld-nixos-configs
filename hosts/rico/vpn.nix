@@ -11,6 +11,7 @@ let
   runtimeConfig = "${runtimeDir}/${interface}.conf";
   routeTable = "168";
   rulePriority = "1100";
+  jackettRulePriority = "1099";
 
   extractConfig = pkgs.writeText "extract-amnezia-vpn.py" ''
     import base64
@@ -71,11 +72,13 @@ let
     state=${runtimeDir}/sonarr-skyhook-addresses
     uid="$(${pkgs.coreutils}/bin/id -u sonarr)"
     old_addresses="$(${pkgs.coreutils}/bin/cat "$state" 2>/dev/null || true)"
+    jackett_uid="$(${pkgs.coreutils}/bin/id -u jackett)"
 
     if [ "''${1:-}" = down ]; then
       for address in $old_addresses; do
         ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address/32" uidrange "$uid-$uid" table ${routeTable} || true
       done
+      ${pkgs.iproute2}/bin/ip -4 rule del priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable} || true
       ${pkgs.iproute2}/bin/ip -4 route flush table ${routeTable} 2>/dev/null || true
       ${pkgs.coreutils}/bin/rm -f "$state"
       exit 0
@@ -92,6 +95,9 @@ let
     # The unreachable route prevents fallback to the ordinary gateway if the tunnel disappears.
     ${pkgs.iproute2}/bin/ip -4 route replace unreachable default table ${routeTable} metric 10000
     ${pkgs.iproute2}/bin/ip -4 route replace default dev ${interface} table ${routeTable} metric 100
+    if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $jackett_uid-$jackett_uid lookup ${routeTable}"; then
+      ${pkgs.iproute2}/bin/ip -4 rule add priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable}
+    fi
     for address in $new_addresses; do
       if ! printf '%s\n' "$old_addresses" | ${pkgs.gnugrep}/bin/grep -Fxq "$address"; then
         ${pkgs.iproute2}/bin/ip -4 rule add priority ${rulePriority} to "$address/32" uidrange "$uid-$uid" table ${routeTable}
@@ -136,6 +142,12 @@ in
       ExecStop = "${awgPackages.amneziawg-tools}/bin/awg-quick down ${runtimeConfig}";
       ExecStopPost = "${updateRoutes} down";
     };
+  };
+
+  systemd.services.jackett = {
+    after = [ "vpn.service" ];
+    requires = [ "vpn.service" ];
+    partOf = [ "vpn.service" ];
   };
 
   systemd.services.sonarr-skyhook-routes = {
