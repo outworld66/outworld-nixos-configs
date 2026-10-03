@@ -146,7 +146,10 @@ to Pomerium; their API keys are generated and persisted by each application.
 Sonarr creates an individual Torznab connection for each configured Jackett
 tracker that advertises TV categories. The bootstrap reconciles these entries
 on activation, so adding or removing a TV tracker in Jackett updates Sonarr
-automatically. Anime category `5070` is enabled when a tracker advertises it.
+automatically. It enables Sonarr's Anime category `5070` for every TV-capable
+tracker: Jackett may expose tracker-specific anime category IDs instead of the
+standard Torznab category, while Sonarr disables anime searches when this field
+is empty.
 Bindery uses Jackett's aggregate Torznab feed. AniLibria returns TV categories
 but no movie categories, so Radarr needs a movie-capable tracker before it can
 use Jackett. Add or manage tracker connections in Jackett itself. Any private

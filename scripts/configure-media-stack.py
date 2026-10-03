@@ -249,7 +249,7 @@ def ensure_arr_indexers(port, data_dir):
             "apiPath": f"/api/v2.0/indexers/{indexer_id}/results/torznab/api",
             "apiKey": key,
             "categories": categories,
-            "animeCategories": [5070] if 5070 in categories else [],
+            "animeCategories": [5070],
         }
         for field in schema["fields"]:
             if field["name"] in values:
