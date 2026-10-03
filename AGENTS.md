@@ -137,6 +137,10 @@ arguments.
   check is a heuristic gate, not permission to store credentials.
 - Do not add secrets, credentials, private keys, tokens or machine runtime
   state to the repository.
+- Before creating an issue in an external repository or issue tracker, get the
+  user's explicit approval for the target repository and the exact issue title
+  and body. Approval to investigate or fix a problem does not authorize opening
+  a public issue.
 - Treat files under `home-manager/dotfiles/` carefully: they are linked
   out-of-store and may contain application-managed state. Avoid unrelated bulk
   rewrites.
