@@ -143,19 +143,22 @@ credentials. Jackett has no local multi-user accounts: Pomerium is its web
 login. Radarr and Sonarr's `External` authentication delegates browser access
 to Pomerium; their API keys are generated and persisted by each application.
 
-Sonarr uses the individual AniLibria Torznab feed; Bindery uses Jackett's
-aggregate Torznab feed. AniLibria returns TV categories but no movie categories,
-so Radarr needs a movie-capable tracker before it can use Jackett. Add or manage
-tracker connections in Jackett itself. Any private tracker credentials stay in
-Jackett's runtime configuration.
+Sonarr creates an individual Torznab connection for each configured Jackett
+tracker that advertises TV categories. The bootstrap reconciles these entries
+on activation, so adding or removing a TV tracker in Jackett updates Sonarr
+automatically. Anime category `5070` is enabled when a tracker advertises it.
+Bindery uses Jackett's aggregate Torznab feed. AniLibria returns TV categories
+but no movie categories, so Radarr needs a movie-capable tracker before it can
+use Jackett. Add or manage tracker connections in Jackett itself. Any private
+tracker credentials stay in Jackett's runtime configuration.
 
-For anime on AniLibria, add the correctly titled series in Sonarr with its
-series type set to `Anime`; anime releases often use absolute episode numbers.
-The series lookup and release search are separate steps. Select the matching
-show (for example, *JoJo's Bizarre Adventure (2012)*), add it to the TV root,
-then run an interactive episode search. The indexer connection is healthy when
-Jackett's Torznab search returns results; an empty Jellyfin library does not
-need to be imported before adding a series.
+For anime, add the correctly titled series in Sonarr with its series type set
+to `Anime`; anime releases often use absolute episode numbers. The series
+lookup and release search are separate steps. Select the matching show (for
+example, *JoJo's Bizarre Adventure (2012)*), add it to the TV root, then run an
+interactive episode search. The indexer connection is healthy when Jackett's
+Torznab search returns results; an empty Jellyfin library does not need to be
+imported before adding a series.
 Sonarr uses SkyHook for TV metadata independently of Jackett. Rico has no
 default IPv6 route, so IPv6 is disabled for Sonarr's .NET process. A SkyHook
 timeout can therefore break title lookup while Jackett searches still work;

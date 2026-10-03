@@ -199,53 +199,93 @@ def ensure_arr_download_client(port, data_dir, category):
     arr_api(port, data_dir, path, method=method, data=schema)
 
 
-def ensure_arr_indexer(port, data_dir, categories):
+def jackett_api(key, indexer, **params):
+    query = urllib.parse.urlencode({"apikey": key, **params})
+    path = f"/api/v2.0/indexers/{indexer}/results/torznab/api?{query}"
+    return request("http://127.0.0.1:9117", path)
+
+
+def ensure_arr_indexers(port, data_dir):
     jackett = json.loads(
         Path("/var/lib/jackett/.config/Jackett/ServerConfig.json").read_text()
     )
     key = jackett["APIKey"]
     indexers = arr_api(port, data_dir, "indexer")
-    existing = next((item for item in indexers if item.get("name") == "Jackett"), None)
-    schema = next(
-        item
-        for item in arr_api(port, data_dir, "indexer/schema")
-        if item["implementation"] == "Torznab"
-    )
-    values = {
-        "baseUrl": "http://127.0.0.1:9117",
-        "apiPath": "/api/v2.0/indexers/anilibria/results/torznab/api",
-        "apiKey": key,
-        "categories": categories,
-    }
-    for field in schema["fields"]:
-        if field["name"] in values:
-            field["value"] = values[field["name"]]
-    schema.update(
-        {
-            "name": "Jackett",
-            "enable": True,
-            "enableRss": True,
-            "enableAutomaticSearch": True,
-            "enableInteractiveSearch": True,
-            "protocol": "torrent",
-            "priority": 1,
+    listed = jackett_api(key, "all", t="indexers", configured="true")
+    configured = [
+        (item.get("id"), item.findtext("title"))
+        for item in ET.fromstring(listed).findall("./indexer")
+        if item.get("configured") == "true" and item.get("id") and item.findtext("title")
+    ]
+    if not configured:
+        raise RuntimeError("Jackett has no configured indexers")
+
+    managed_names = set()
+    configured_count = 0
+    for indexer_id, title in configured:
+        caps = jackett_api(key, indexer_id, t="caps")
+        categories = sorted(
+            {
+                int(category.get("id"))
+                for category in ET.fromstring(caps).findall(".//category")
+                if category.get("id", "").isdigit()
+                and 5000 <= int(category.get("id")) < 6000
+            }
+        )
+        if not categories:
+            continue
+
+        name = f"Jackett - {title}"
+        managed_names.add(name)
+        configured_count += 1
+        existing = next((item for item in indexers if item.get("name") == name), None)
+        schema = next(
+            item
+            for item in arr_api(port, data_dir, "indexer/schema")
+            if item["implementation"] == "Torznab"
+        )
+        values = {
+            "baseUrl": "http://127.0.0.1:9117",
+            "apiPath": f"/api/v2.0/indexers/{indexer_id}/results/torznab/api",
+            "apiKey": key,
+            "categories": categories,
+            "animeCategories": [5070] if 5070 in categories else [],
         }
-    )
-    if existing:
-        schema["id"] = existing["id"]
-        path = f"indexer/{existing['id']}"
-        method = "PUT"
-    else:
-        path = "indexer"
-        method = "POST"
-    arr_api(port, data_dir, path, method=method, data=schema)
+        for field in schema["fields"]:
+            if field["name"] in values:
+                field["value"] = values[field["name"]]
+        schema.update(
+            {
+                "name": name,
+                "enable": True,
+                "enableRss": True,
+                "enableAutomaticSearch": True,
+                "enableInteractiveSearch": True,
+                "protocol": "torrent",
+                "priority": 1,
+            }
+        )
+        if existing:
+            schema["id"] = existing["id"]
+            path = f"indexer/{existing['id']}"
+            method = "PUT"
+        else:
+            path = "indexer"
+            method = "POST"
+        arr_api(port, data_dir, path, method=method, data=schema)
+
+    for existing in indexers:
+        name = existing.get("name", "")
+        if (name == "Jackett" or name.startswith("Jackett - ")) and name not in managed_names:
+            arr_api(port, data_dir, f"indexer/{existing['id']}", method="DELETE")
+    print(f"Sonarr configured {configured_count} Jackett TV indexers")
 
 
-def configure_arr(port, data_dir, root, category, indexer_categories=None):
+def configure_arr(port, data_dir, root, category, configure_indexers=False):
     ensure_arr_root(port, data_dir, root)
     ensure_arr_download_client(port, data_dir, category)
-    if indexer_categories is not None:
-        ensure_arr_indexer(port, data_dir, indexer_categories)
+    if configure_indexers:
+        ensure_arr_indexers(port, data_dir)
 
 
 def jellyfin_request(path, *, token=None, method="GET", data=None):
@@ -504,7 +544,7 @@ def configure_bindery():
 def main():
     configure_qbittorrent()
     configure_arr(7878, "/var/lib/radarr/.config/Radarr", f"{MEDIA_ROOT}/library/movies", "movies")
-    configure_arr(8989, "/var/lib/sonarr/.config/NzbDrone", f"{MEDIA_ROOT}/library/tv", "tv", [5000])
+    configure_arr(8989, "/var/lib/sonarr/.config/NzbDrone", f"{MEDIA_ROOT}/library/tv", "tv", True)
     configure_jellyfin()
     restart_seerr = configure_seerr()
     configure_bindery()
