@@ -70,6 +70,7 @@ let
 
   homepageDomain = "home.outworld66.ru";
   bitmagnetDomain = "bitmagnet.outworld66.ru";
+  prowlarrDomain = "prowlarr.outworld66.ru";
   portfolioDomain = "portfolio.outworld66.ru";
   gotifyDomain = "gotify.outworld66.ru";
   elengrabDomain = "elengrab.outworld66.ru";
@@ -139,6 +140,9 @@ lib.mkIf (config.server.secrets.enable or false) {
         "groups"
         "offline_access"
       ];
+      jwt_claims_headers = {
+        "X-Remote-User" = "email";
+      };
       routes = [
         {
           from = "https://stats.outworld66.ru";
@@ -205,6 +209,12 @@ lib.mkIf (config.server.secrets.enable or false) {
         {
           from = "https://${jackettDomain}";
           to = "http://127.0.0.1:9117";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${prowlarrDomain}";
+          to = "http://127.0.0.1:9696";
+          pass_identity_headers = true;
           policy = mediaAdminPolicy;
         }
         {
@@ -385,6 +395,13 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
+            "Prowlarr" = {
+              href = "https://${prowlarrDomain}";
+              icon = "prowlarr.png";
+              description = "Torrent indexer manager (admins)";
+            };
+          }
+          {
             "Bindery" = {
               href = "https://${binderyDomain}";
               icon = "mdi-book-open-page-variant";
@@ -526,6 +543,14 @@ lib.mkIf (config.server.secrets.enable or false) {
     UMask = "0002";
   };
   services.jackett.enable = true;
+  services.prowlarr = {
+    enable = true;
+    settings = {
+      server.bindaddress = "127.0.0.1";
+      server.port = 9696;
+      auth.method = "External";
+    };
+  };
   services.streamline = {
     enable = true;
     package = inputs.streamline.packages.${pkgs.system}.streamline;
@@ -534,6 +559,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     credentials = {
       admin-password = config.sops.secrets."media/streamline-admin-password".path;
       jackett-api-key = "/var/lib/streamline/jackett-api-key";
+      prowlarr-api-key = "/var/lib/streamline/prowlarr-api-key";
       pocket-id-client-secret = "/var/lib/streamline/oidc-client-secret";
       qbittorrent-password = config.sops.secrets."media/qbittorrent-webui-password".path;
       jellyfin-api-key = "/var/lib/streamline/jellyfin-api-key";
@@ -607,6 +633,25 @@ lib.mkIf (config.server.secrets.enable or false) {
           api_key_file = "/run/credentials/streamline.service/jackett-api-key";
           enabled = true;
         }
+        {
+          name = "Bitmagnet";
+          host = "127.0.0.1";
+          port = 3333;
+          path = "/torznab";
+          protocol = "torznab";
+          api_key_file = "/dev/null";
+          priority = 2;
+          enabled = true;
+        }
+        {
+          name = "Prowlarr";
+          host = "127.0.0.1";
+          port = 9696;
+          protocol = "prowlarr";
+          api_key_file = "/run/credentials/streamline.service/prowlarr-api-key";
+          priority = 3;
+          enabled = true;
+        }
       ];
     };
   };
@@ -633,20 +678,61 @@ lib.mkIf (config.server.secrets.enable or false) {
       '';
     };
   };
+  systemd.services.streamline-prowlarr-key = {
+    description = "Provide Streamline with Prowlarr's current API key";
+    after = [ "prowlarr.service" ];
+    requires = [ "prowlarr.service" ];
+    before = [ "streamline.service" ];
+    partOf = [ "prowlarr.service" ];
+    path = [
+      pkgs.coreutils
+      pkgs.curl
+      pkgs.gnugrep
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "streamline-prowlarr-key" ''
+        set -euo pipefail
+        key=""
+        for _ in {1..60}; do
+          if [ -r /var/lib/prowlarr/config.xml ]; then
+            key=$(grep -oP '<ApiKey>\K[^<]+' /var/lib/prowlarr/config.xml | head -n1 || true)
+            if [ -n "$key" ] && curl --silent --max-time 2 --output /dev/null http://127.0.0.1:9696; then
+              break
+            fi
+          fi
+          sleep 1
+        done
+        test -n "$key"
+        curl --silent --max-time 2 --output /dev/null http://127.0.0.1:9696
+        install -d -m 0750 /var/lib/streamline
+        printf '%s' "$key" > /var/lib/streamline/prowlarr-api-key.new
+        chmod 0400 /var/lib/streamline/prowlarr-api-key.new
+        mv /var/lib/streamline/prowlarr-api-key.new /var/lib/streamline/prowlarr-api-key
+      '';
+    };
+  };
   systemd.services.streamline = {
     after = [
       "jackett.service"
+      "prowlarr.service"
       "pocket-id-oidc-provision.service"
       "streamline-jackett-key.service"
+      "streamline-prowlarr-key.service"
       "streamline-jellyfin-key.service"
     ];
     requires = [
       "jackett.service"
+      "prowlarr.service"
       "pocket-id-oidc-provision.service"
       "streamline-jackett-key.service"
+      "streamline-prowlarr-key.service"
       "streamline-jellyfin-key.service"
     ];
-    partOf = [ "streamline-jackett-key.service" ];
+    partOf = [
+      "streamline-jackett-key.service"
+      "streamline-prowlarr-key.service"
+    ];
     environment.STREAMLINE_PUBLIC_URL = "https://${streamlineDomain}";
   };
   systemd.services.streamline-jellyfin-key = {
@@ -1028,6 +1114,12 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
 
     ${jackettDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${prowlarrDomain} = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:8443
       '';

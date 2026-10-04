@@ -11,6 +11,7 @@ to `media-admin`:
 
 - qBittorrent: `torrent.outworld66.ru`
 - Jackett: `jackett.outworld66.ru`
+- Prowlarr: `prowlarr.outworld66.ru`
 - Bindery: `books.outworld66.ru`
 - Streamline: `streamline.outworld66.ru`, protected by its native Pocket ID
   OIDC login and restricted to the `media-admin` and `media-user` groups.
@@ -18,10 +19,11 @@ to `media-admin`:
   Jellyfin's native login. It is not behind Pomerium, so native TV and mobile
   clients can authenticate normally.
 
-The qBittorrent and Jackett web ports are not opened in the firewall. Bindery
-uses host networking so it can connect to loopback-only qBittorrent; its 8787
-port is also closed in the firewall and reached through Pomerium.
-qBittorrent listens on loopback; Jackett's upstream default is local-only.
+The qBittorrent, Jackett, and Prowlarr web ports are not opened in the firewall.
+Bindery uses host networking so it can connect to loopback-only qBittorrent;
+its 8787 port is also closed in the firewall and reached through Pomerium.
+qBittorrent listens on loopback; Jackett and Prowlarr are reached through their
+Pomerium routes.
 The qBittorrent Pomerium route preserves the public Host header so its Web UI
 accepts requests whose Host and Origin both use `torrent.outworld66.ru`.
 Jellyfin's `8096` backend port is not opened in the firewall.
@@ -29,8 +31,8 @@ Jellyfin's `8096` backend port is not opened in the firewall.
 ## Authentication
 
 Pomerium delegates interactive sign-in to Pocket ID. qBittorrent, Jackett,
-Bindery, Bitmagnet, and Homepage are reached through Pomerium. Management
-interfaces allow `media-admin`; Bitmagnet also allows `media-user`.
+Prowlarr, Bindery, Bitmagnet, and Homepage are reached through Pomerium.
+Management interfaces allow `media-admin`; Bitmagnet also allows `media-user`.
 Streamline uses its native Pocket ID OIDC login and
 restricts its Pocket ID client to `media-admin` and `media-user`. Streamline
 3.2.0 assigns newly provisioned OIDC users the default `member` role; linking
@@ -50,9 +52,14 @@ documented by the [plugin project](https://github.com/Flowfin/jellyfin-plugin-ss
 
 Internal integrations use loopback endpoints and the target application's own
 credentials: Bindery and Streamline use qBittorrent's Web UI credentials;
-Bindery and Streamline use Jackett's loopback aggregate Torznab endpoint.
+Bindery and Streamline use Jackett's loopback aggregate Torznab endpoint;
+Streamline also queries Bitmagnet's Torznab endpoint and Prowlarr's search API.
 `media-stack-bootstrap` configures Bindery's connections; Streamline's are
-declared in Nix. Streamline's Jellyfin integration uses
+declared in Nix. Bitmagnet's Torznab API has no API-key authentication, so
+Streamline uses an empty key file for that connection. Prowlarr generates its
+own API key at first start; a local systemd helper copies it into
+`/var/lib/streamline` and Streamline receives it as a systemd credential.
+Streamline's Jellyfin integration uses
 `https://jellyfin.outworld66.ru`: Streamline uses this single URL both for its
 API connection and for **Play on** links, so it must be a browser-reachable
 address rather than `127.0.0.1`. Rico can reach the public hostname through
@@ -62,8 +69,8 @@ BitTorrent traffic, not a web login endpoint, so Pocket ID/Pomerium cannot
 authenticate it.
 
 Other public Rico services keep their existing authentication: Cloudreve,
-Donetick, Gotify, and Immich use Pocket ID OIDC; NocoDB, Elengrab, LiteLLM's
-browser UI, stats, and Homepage use Pomerium. Pocket ID and Pomerium's own
+Donetick, Gotify, and Immich use Pocket ID OIDC; NocoDB, Elengrab, Prowlarr,
+LiteLLM's browser UI, stats, and Homepage use Pomerium. Pocket ID and Pomerium's own
 authenticate endpoint must remain reachable to complete login flows. WebDAV
 and mail clients use their protocol-level credentials because redirect-based
 Pomerium login does not work with WebDAV, IMAP, or SMTP clients. LibreSpeed
@@ -107,14 +114,31 @@ system disk. qBittorrent downloads and the Jellyfin library already use the
 
 Use Streamline to search for or request a movie or series. Streamline submits
 the torrent to qBittorrent and imports the completed file into the matching
-Jellyfin library folder. Jackett remains as the tracker adapter: Streamline
-connects to Jackett's aggregate `all` Torznab feed for tracker search. The feed
-includes all indexers currently configured in Jackett, so later additions are
-available on the next search. This gives up per-indexer controls in Streamline;
-Jackett notes that a slow tracker can delay the combined response and caps the
-aggregate at 1,000 results. Disable a slow indexer in Jackett if it holds up
-searches. The firewall allows peer traffic on TCP/UDP 51413. Forward that port
-on the router if incoming peer connectivity is desired. The qBittorrent Web UI
+Jellyfin library folder. Its indexer sources are:
+
+- **Jackett (all)** queries Jackett's aggregate Torznab feed. It includes every
+  indexer currently configured in Jackett, so Jackett additions appear on the
+  next Streamline search. This gives up per-indexer controls in Streamline;
+  a slow tracker can delay the combined response, and Jackett caps the
+  aggregate at 1,000 results.
+- **Bitmagnet** queries `http://127.0.0.1:3333/torznab` directly. Bitmagnet's
+  official [Servarr integration guide](https://bitmagnet.io/guides/servarr-integration.html)
+  documents this Torznab endpoint.
+- **Prowlarr** uses its native search API at `http://127.0.0.1:9696`. Prowlarr
+  starts without configured trackers; add indexers in its UI at
+  `https://prowlarr.outworld66.ru`. Those Prowlarr indexers are queried by
+  Streamline automatically on later searches.
+
+Prowlarr and Jackett do not automatically synchronize their tracker
+definitions. Adding an indexer to Jackett does not add it to Prowlarr, and
+vice versa. Keep using Jackett's aggregate for Jackett-managed trackers; use
+Prowlarr for additional trackers you add there. This avoids a migration step
+and keeps private tracker credentials inside the manager where they were
+entered. Prowlarr does not need its own download client for searches initiated
+by Streamline; Streamline sends selected releases to qBittorrent directly.
+
+The firewall allows peer traffic on TCP/UDP 51413. Forward that port on the
+router if incoming peer connectivity is desired. The qBittorrent Web UI
 remains closed to network interfaces.
 
 Streamline's Jackett search failure and the local compatibility fix are
@@ -140,11 +164,14 @@ On activation, the bootstrap service:
   downloader and Jackett indexer.
 
 Streamline seeds its initial administrator from SOPS on first start. The
-Pocket ID provisioning service creates its OIDC client, and the declared
-Streamline config connects qBittorrent and Jackett's aggregate `all` Torznab
-feed. Jackett reads its configured indexers when the feed is queried, so
+Pocket ID provisioning service creates its OIDC client. Streamline's declared
+configuration connects qBittorrent, Jackett's aggregate feed, Bitmagnet, and
+Prowlarr. Jackett reads its configured indexers when the feed is queried, so
 adding or removing an indexer in Jackett takes effect in Streamline on the next
-search without a Nix change or service restart.
+search without a Nix change or service restart. Prowlarr's sources are managed
+separately in its UI. If you regenerate Prowlarr's API key, run
+`systemctl restart streamline-prowlarr-key.service streamline.service` to
+refresh Streamline's copy.
 
 qBittorrent and Bindery use their SOPS-managed local admin credentials.
 Streamline uses native Pocket ID OIDC and keeps a SOPS-seeded local account for
@@ -162,8 +189,9 @@ before a library import can attach them. An empty Jellyfin library does not
 need to be imported before adding a series.
 
 Streamline is the only movie and TV request and management application.
-Jackett provides the aggregate Torznab feed, qBittorrent downloads, and
-Jellyfin serves the media. Streamline writes into the existing Jellyfin
+Jackett provides the aggregate Torznab feed, Bitmagnet and Prowlarr provide
+additional search sources, qBittorrent downloads, and Jellyfin serves the
+media. Streamline writes into the existing Jellyfin
 library folders and uses copy imports so downloads work even when mergerfs
 places source and destination on different backing disks.
 
@@ -178,8 +206,14 @@ new OIDC accounts receive the default `member` role. The seeded administrator
 keeps its role when linked by email. The client secret stays under
 `/var/lib/streamline`. The service reads the qBittorrent
 password from SOPS and refreshes its Jackett API credential from Jackett's
-runtime configuration whenever Jackett restarts. New Jackett indexers must
-also be added to Streamline's declared Torznab list.
+runtime configuration before Streamline starts. Its Prowlarr API credential
+is read from Prowlarr's runtime `config.xml` in the same way. Prowlarr itself
+uses its `External` authentication mode behind the Pomerium route, which
+forwards the authenticated Pocket ID email as `X-Remote-User`; its UI is
+restricted to `media-admin`, and its backend only listens on loopback. This
+delegated login is why Prowlarr does not have a second SOPS-managed local
+password. The Streamline integration uses Prowlarr's API key, not the UI
+session.
 
 Streamline requires a TheTVDB API key for TV lookups and a TMDB API Read Access
 Token for movie lookups. Missing credentials produce HTTP 401 responses, so

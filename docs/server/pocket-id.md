@@ -70,6 +70,8 @@ allows users in `admins` or `media` for the common browser-protected services:
 - `cloudreve.outworld66.ru` — Cloudreve;
 
 `donetick.outworld66.ru` also permits the dedicated `donetick` group.
+Prowlarr at `prowlarr.outworld66.ru` is separately restricted to
+`media-admin`.
 `stats.outworld66.ru` is an exception: Pomerium permits only the `admins`
 group before proxying GoAccess and its websocket.
 The LiteLLM web interface and non-API routes on `llm.outworld66.ru` also
