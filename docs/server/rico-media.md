@@ -230,12 +230,26 @@ After a successful import, Streamline can notify Jellyfin to refresh its
 library. Jellyfin still reads the files from `/srv/media/library`; Streamline's
 `/var/lib/streamline/data` is only its own database and state.
 
-## Jackett and VPN
+## Jackett, FlareSolverr, and VPN
 
-Rico routes Jackett's outbound IPv4 traffic through an AmneziaWG tunnel. Export
-a client from AmneziaVPN in its `.vpn` sharing format. The service extracts the
-AmneziaWG configuration from the selected container at startup; no desktop
-client is needed on Rico.
+Jackett uses FlareSolverr for indexers protected by Cloudflare or similar
+browser challenges. FlareSolverr is installed as a local service on
+`127.0.0.1:8191`; Jackett's `FlareSolverrUrl` is reconciled from Nix before
+Jackett starts. The endpoint has no authentication, is not published through
+Caddy or Pomerium, and is not opened in the firewall. Keep it private; the
+[FlareSolverr project warns against exposing it to the internet](https://github.com/FlareSolverr/FlareSolverr#docker).
+It has no user-facing page, so it is not a separate Homepage entry. Most
+indexers do not need it, so use it only for trackers that report a Cloudflare
+or anti-bot challenge.
+
+Rico routes both Jackett and FlareSolverr's outbound IPv4 traffic through the
+same AmneziaWG tunnel. The [FlareSolverr troubleshooting guide](https://github.com/FlareSolverr/FlareSolverr/wiki/Troubleshooting)
+requires the solver and requesting application to use the same IP, so this
+keeps challenge cookies and follow-up tracker requests on one egress address.
+Export a client from
+AmneziaVPN in its `.vpn` sharing format. The service extracts the AmneziaWG
+configuration from the selected container at startup; no desktop client is
+needed on Rico.
 
 Copy the exported file to Rico as root at `/var/lib/vpn/client.vpn`, owned by
 root with mode `0600`. Keep it out of Git and the Nix store. After deploying
@@ -249,8 +263,8 @@ ssh root@192.168.0.4 \
 
 The service extracts the embedded AmneziaWG config into `/run`, then removes
 default-route, DNS, and hook directives, plus empty optional `I1`–`I5` fields,
-before starting the tunnel. All outbound IPv4 traffic from Jackett uses the
-VPN. Jellyfin is narrower: only addresses returned for
+before starting the tunnel. All outbound IPv4 traffic from Jackett and
+FlareSolverr uses the VPN. Jellyfin is narrower: only addresses returned for
 `image.tmdb.org`, and only traffic from the Jellyfin service user, use the VPN.
 Its other outbound traffic uses Rico's ordinary route; its proxy connection
 and responses to Caddy stay on loopback.
@@ -270,7 +284,9 @@ Verify the tunnel and route after loading the client configuration:
 
 ```bash
 ssh root@192.168.0.4 'systemctl status vpn.service; awg show vpn0'
+ssh root@192.168.0.4 'systemctl status flaresolverr.service; curl -fsS http://127.0.0.1:8191/'
 ssh root@192.168.0.4 '
+  ip -4 route get 1.1.1.1 uid "$(id -u flaresolverr)"
   ip -4 route get 1.1.1.1 uid "$(id -u jackett)"
   runuser -u jackett -- curl -4 --connect-timeout 10 --max-time 20 \
     -sS -o /dev/null -w "HTTP %{http_code}\\n" https://rutracker.org/
@@ -280,9 +296,11 @@ ssh root@192.168.0.4 '
 '
 ```
 
-Jackett's route and the artwork IP route should show `dev vpn0`; Jellyfin's
-route to `1.1.1.1` should use Rico's ordinary gateway. The curl should return
-an HTTP status. If the exported configuration changes, replace the file and run
+FlareSolverr's and Jackett's routes and the artwork IP route should show
+`dev vpn0`; Jellyfin's route to `1.1.1.1` should use Rico's ordinary gateway.
+The FlareSolverr health request should return a JSON ready response, and the
+tracker curl should return an HTTP status. If the exported configuration
+changes, replace the file and run
 `systemctl restart vpn.service`. The service skips startup until `client.vpn`
 exists.
 

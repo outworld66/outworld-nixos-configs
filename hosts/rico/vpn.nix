@@ -10,6 +10,7 @@ let
   sourceConfig = "/var/lib/vpn/client.vpn";
   runtimeConfig = "${runtimeDir}/${interface}.conf";
   routeTable = "168";
+  flaresolverrRulePriority = "1098";
   jackettRulePriority = "1099";
   jellyfinRulePriority = "1100";
   jellyfinArtworkHost = "image.tmdb.org";
@@ -72,11 +73,13 @@ let
 
   updateRoutes = pkgs.writeShellScript "update-media-vpn-routes" ''
     set -euo pipefail
+    flaresolverr_uid="$(${pkgs.coreutils}/bin/id -u flaresolverr)"
     jackett_uid="$(${pkgs.coreutils}/bin/id -u jackett)"
     jellyfin_uid="$(${pkgs.coreutils}/bin/id -u jellyfin)"
     old_jellyfin_addresses="$(${pkgs.coreutils}/bin/cat ${jellyfinRouteState} 2>/dev/null || true)"
 
     if [ "''${1:-}" = down ]; then
+      ${pkgs.iproute2}/bin/ip -4 rule del priority ${flaresolverrRulePriority} uidrange "$flaresolverr_uid-$flaresolverr_uid" table ${routeTable} || true
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable} || true
       for address in $old_jellyfin_addresses; do
         ${pkgs.iproute2}/bin/ip -4 rule del priority ${jellyfinRulePriority} to "$address" uidrange "$jellyfin_uid-$jellyfin_uid" table ${routeTable} || true
@@ -91,6 +94,9 @@ let
     # The unreachable route prevents fallback to the ordinary gateway if the tunnel disappears.
     ${pkgs.iproute2}/bin/ip -4 route replace unreachable default table ${routeTable} metric 10000
     ${pkgs.iproute2}/bin/ip -4 route replace default dev ${interface} table ${routeTable} metric 100
+    if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $flaresolverr_uid-$flaresolverr_uid lookup ${routeTable}"; then
+      ${pkgs.iproute2}/bin/ip -4 rule add priority ${flaresolverrRulePriority} uidrange "$flaresolverr_uid-$flaresolverr_uid" table ${routeTable}
+    fi
     if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $jackett_uid-$jackett_uid lookup ${routeTable}"; then
       ${pkgs.iproute2}/bin/ip -4 rule add priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable}
     fi
@@ -154,6 +160,12 @@ in
   };
 
   systemd.services.jackett = {
+    after = [ "vpn.service" ];
+    requires = [ "vpn.service" ];
+    partOf = [ "vpn.service" ];
+  };
+
+  systemd.services.flaresolverr = {
     after = [ "vpn.service" ];
     requires = [ "vpn.service" ];
     partOf = [ "vpn.service" ];

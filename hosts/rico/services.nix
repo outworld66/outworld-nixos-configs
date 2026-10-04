@@ -543,6 +543,31 @@ lib.mkIf (config.server.secrets.enable or false) {
     UMask = "0002";
   };
   services.jackett.enable = true;
+  systemd.services.jackett.preStart = lib.mkAfter ''
+    config_file=/var/lib/jackett/.config/Jackett/ServerConfig.json
+    if [ -s "$config_file" ] && [ "$( ${pkgs.jq}/bin/jq -r '.FlareSolverrUrl // ""' "$config_file")" != "http://127.0.0.1:8191" ]; then
+      umask 077
+      ${pkgs.jq}/bin/jq '.FlareSolverrUrl = "http://127.0.0.1:8191"' "$config_file" > "$config_file.new"
+      mv "$config_file.new" "$config_file"
+    fi
+  '';
+  services.flaresolverr = {
+    enable = true;
+    openFirewall = false;
+  };
+  users.groups.flaresolverr = { };
+  users.users.flaresolverr = {
+    isSystemUser = true;
+    group = "flaresolverr";
+  };
+  systemd.services.flaresolverr = {
+    environment.HOST = "127.0.0.1";
+    serviceConfig = {
+      DynamicUser = lib.mkForce false;
+      User = "flaresolverr";
+      Group = "flaresolverr";
+    };
+  };
   services.prowlarr = {
     enable = true;
     settings = {
