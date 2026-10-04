@@ -179,6 +179,7 @@ tasks:
       - |
         set -eu
         private_dir="{{.PRIVATE_FLAKE_DIR}}"
+        packages_dir="{{.PACKAGES_FLAKE_DIR}}"
         host="{{.CLI_ARGS}}"
         target="{{.SERVER_TARGET}}"
         server_hosts="$(nix eval --json .#lib.serverHosts --no-write-lock-file | tr -d '[]" ' | tr ',' '\n')"
@@ -200,18 +201,22 @@ tasks:
         }
 
         test -f "$private_dir/flake.nix"
+        test -f "$packages_dir/flake.nix"
 
         git pull --ff-only --autostash
         git -C "$private_dir" pull --ff-only --autostash
+        git -C "$packages_dir" pull --ff-only --autostash
 
         if test -z "$target"; then
           target="$(task --silent server-target -- "$host")"
         fi
 
         nix flake check --no-build --no-write-lock-file \
+          --override-input outworld-packages "path:$packages_dir" \
           --override-input private "path:$private_dir"
         nixos-rebuild switch --flake ".#$host" \
           --target-host "$target" \
+          --override-input outworld-packages "path:$packages_dir" \
           --override-input private "path:$private_dir"
 
   server-list:

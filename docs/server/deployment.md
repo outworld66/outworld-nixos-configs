@@ -1,9 +1,10 @@
 # Deploying the NixOS configuration
 
-The setup uses two checkouts:
+The setup uses three checkouts:
 
 - `outworld-nixos-configs` — the public configuration;
-- `outworld-nixos-private` — private modules and encrypted secrets.
+- `outworld-nixos-private` — private modules and encrypted secrets;
+- `outworld-nixos-packages` — reusable package overrides.
 
 ## Manual deployment from a workstation
 
@@ -15,12 +16,17 @@ configuration over SSH.
 cd ~/nix/outworld-nixos-private
 git pull --ff-only
 
+cd ../outworld-nixos-packages
+git pull --ff-only
+
 cd ../outworld-nixos-configs
 nix flake check --no-build --no-write-lock-file \
+  --override-input outworld-packages path:../outworld-nixos-packages \
   --override-input private path:../outworld-nixos-private
 
 nixos-rebuild switch --flake .#private \
   --target-host root@192.168.0.3 \
+  --override-input outworld-packages path:../outworld-nixos-packages \
   --override-input private path:../outworld-nixos-private
 ```
 
@@ -49,6 +55,7 @@ example, store the checkouts as follows:
 ```text
 /var/lib/nixos-configs/public   # outworld-nixos-configs
 /var/lib/nixos-configs/private  # outworld-nixos-private
+/var/lib/nixos-configs/packages # outworld-nixos-packages
 ```
 
 The update commands should be equivalent to:
@@ -56,9 +63,12 @@ The update commands should be equivalent to:
 ```bash
 git -C /var/lib/nixos-configs/public pull --ff-only
 git -C /var/lib/nixos-configs/private pull --ff-only
+git -C /var/lib/nixos-configs/packages pull --ff-only
 
 nixos-rebuild switch \
   --flake /var/lib/nixos-configs/public#private \
+  --override-input outworld-packages \
+  path:/var/lib/nixos-configs/packages \
   --override-input private \
   path:/var/lib/nixos-configs/private
 ```
@@ -147,15 +157,17 @@ included when its host entry uses `./nixos/modules/server`. Task requires `--`
 before task arguments; `task server-update private` would mean two task names
 instead of selecting `private`.
 
-The update task pulls both sibling repositories with `git pull --ff-only
---autostash`, evaluates the complete flake, and activates the selected host
-over SSH. Existing tracked changes are restored after each pull. Override the
-target or private checkout when needed:
+The update task pulls both sibling repositories and the public configuration
+with `git pull --ff-only --autostash`, evaluates the complete flake using the
+local package and private checkouts, and activates the selected host over SSH.
+Existing tracked changes are restored after each pull. Override the target or
+checkout paths when needed:
 
 ```bash
 task server-update \
   SERVER_TARGET=root@192.168.0.10 \
   PRIVATE_FLAKE=/path/to/outworld-nixos-private \
+  PACKAGES_FLAKE=/path/to/outworld-nixos-packages \
   -- private
 ```
 
