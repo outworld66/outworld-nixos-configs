@@ -81,11 +81,9 @@ let
   immichDomain = "immich.outworld66.ru";
   jellyfinDomain = "jellyfin.outworld66.ru";
   torrentDomain = "torrent.outworld66.ru";
-  radarrDomain = "radarr.outworld66.ru";
   jackettDomain = "jackett.outworld66.ru";
   binderyDomain = "books.outworld66.ru";
-  sonarrDomain = "sonarr.outworld66.ru";
-  seerrDomain = "requests.outworld66.ru";
+  streamlineDomain = "streamline.outworld66.ru";
   llmDomain = "llm.outworld66.ru";
   llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
   immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
@@ -112,16 +110,6 @@ let
     {
       allow = {
         and = [ { "claim/groups" = "media-admin"; } ];
-      };
-    }
-  ];
-  mediaUserPolicy = [
-    {
-      allow = {
-        or = [
-          { "claim/groups" = "media-admin"; }
-          { "claim/groups" = "media-user"; }
-        ];
       };
     }
   ];
@@ -215,11 +203,6 @@ lib.mkIf (config.server.secrets.enable or false) {
           policy = mediaAdminPolicy;
         }
         {
-          from = "https://${radarrDomain}";
-          to = "http://127.0.0.1:7878";
-          policy = mediaAdminPolicy;
-        }
-        {
           from = "https://${jackettDomain}";
           to = "http://127.0.0.1:9117";
           policy = mediaAdminPolicy;
@@ -228,16 +211,6 @@ lib.mkIf (config.server.secrets.enable or false) {
           from = "https://${binderyDomain}";
           to = "http://127.0.0.1:8787";
           policy = mediaAdminPolicy;
-        }
-        {
-          from = "https://${sonarrDomain}";
-          to = "http://127.0.0.1:8989";
-          policy = mediaAdminPolicy;
-        }
-        {
-          from = "https://${seerrDomain}";
-          to = "http://127.0.0.1:5055";
-          policy = mediaUserPolicy;
         }
         {
           from = "https://${llmDomain}";
@@ -405,20 +378,6 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
-            "Radarr" = {
-              href = "https://${radarrDomain}";
-              icon = "radarr.png";
-              description = "Movie library manager (admins)";
-            };
-          }
-          {
-            "Sonarr" = {
-              href = "https://${sonarrDomain}";
-              icon = "sonarr.png";
-              description = "TV library manager (admins)";
-            };
-          }
-          {
             "Jackett" = {
               href = "https://${jackettDomain}";
               icon = "jackett.png";
@@ -433,10 +392,10 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
-            "Seerr" = {
-              href = "https://${seerrDomain}";
-              icon = "seerr.png";
-              description = "Media requests";
+            "Streamline" = {
+              href = "https://${streamlineDomain}";
+              icon = "mdi-movie-open-cog";
+              description = "Unified media library and requests";
             };
           }
           {
@@ -566,33 +525,155 @@ lib.mkIf (config.server.secrets.enable or false) {
     ReadWritePaths = [ "${mediaRoot}/downloads" ];
     UMask = "0002";
   };
-  systemd.services.radarr.serviceConfig.UMask = lib.mkForce "0002";
-  systemd.services.sonarr.serviceConfig.UMask = lib.mkForce "0002";
-  # Rico has no IPv6 default route; keep Sonarr's .NET HTTP requests on IPv4.
-  systemd.services.sonarr.environment.DOTNET_SYSTEM_NET_DISABLEIPV6 = "1";
-
-  services.radarr = {
-    enable = true;
-    group = "media";
-    settings = {
-      server.bindaddress = "127.0.0.1";
-      auth.method = "External";
-    };
-  };
-
-  services.sonarr = {
-    enable = true;
-    group = "media";
-    settings = {
-      server.bindaddress = "127.0.0.1";
-      auth.method = "External";
-    };
-  };
-
   services.jackett.enable = true;
-  services.seerr = {
+  services.streamline = {
     enable = true;
-    package = inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.seerr;
+    package = inputs.streamline.packages.${pkgs.system}.streamline;
+    mutableSettings = false;
+    group = "media";
+    credentials = {
+      admin-password = config.sops.secrets."media/streamline-admin-password".path;
+      jackett-api-key = "/var/lib/streamline/jackett-api-key";
+      pocket-id-client-secret = "/var/lib/streamline/oidc-client-secret";
+      qbittorrent-password = config.sops.secrets."media/qbittorrent-webui-password".path;
+      jellyfin-api-key = "/var/lib/streamline/jellyfin-api-key";
+      tmdb-api-key = config.sops.secrets."media/streamline-tmdb-api-key".path;
+      tvdb-api-key = config.sops.secrets."media/streamline-tvdb-api-key".path;
+    };
+    settings = {
+      server = {
+        host = "127.0.0.1";
+        port = 8097;
+        trusted_proxies = [ "127.0.0.1/32" ];
+      };
+      auth = {
+        registration_mode = "invite";
+        default_role = "member";
+        seed_admin = {
+          email = "outworld66@gmail.com";
+          password_file = "/run/credentials/streamline.service/admin-password";
+        };
+        oidc = [
+          {
+            name = "pocket-id";
+            issuer = "https://id.outworld66.ru";
+            client_id = "streamline";
+            client_secret_file = "/run/credentials/streamline.service/pocket-id-client-secret";
+            email_linking = "all";
+            auto_provision = true;
+          }
+        ];
+      };
+      metadata = {
+        tmdb_api_key_file = "/run/credentials/streamline.service/tmdb-api-key";
+        tvdb_api_key_file = "/run/credentials/streamline.service/tvdb-api-key";
+      };
+      media_server.servers = [
+        {
+          name = "Jellyfin";
+          server_type = "jellyfin";
+          host = "https://${jellyfinDomain}";
+          api_key_file = "/run/credentials/streamline.service/jellyfin-api-key";
+          enabled = true;
+        }
+      ];
+      library = {
+        movie_path = "${mediaRoot}/library/movies";
+        series_path = "${mediaRoot}/library/tv";
+        download_path = "${mediaRoot}/downloads/complete/streamline";
+        allowed_download_roots = [ "${mediaRoot}/downloads/complete/streamline" ];
+        import_mode = "copy";
+      };
+      download_clients = [
+        {
+          name = "qBittorrent";
+          client_type = "qbittorrent";
+          host = "127.0.0.1";
+          port = 8181;
+          auth_method = "password";
+          username = "admin";
+          password_file = "/run/credentials/streamline.service/qbittorrent-password";
+          download_dir = "${mediaRoot}/downloads/complete/streamline";
+          enabled = true;
+        }
+      ];
+      indexers =
+        map
+          (name: {
+            inherit name;
+            host = "127.0.0.1";
+            port = 9117;
+            path = "/api/v2.0/indexers/${name}/results/torznab/api";
+            protocol = "torznab";
+            api_key_file = "/run/credentials/streamline.service/jackett-api-key";
+            enabled = true;
+          })
+          [
+            "anilibria"
+            "bigfangroup"
+            "megapeer"
+            "noname-club"
+            "rutor"
+            "rutracker-ru"
+          ];
+    };
+  };
+  systemd.services.streamline-jackett-key = {
+    description = "Provide Streamline with Jackett's current API key";
+    after = [ "jackett.service" ];
+    requires = [ "jackett.service" ];
+    before = [ "streamline.service" ];
+    partOf = [ "jackett.service" ];
+    path = [
+      pkgs.coreutils
+      pkgs.jq
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "streamline-jackett-key" ''
+        set -euo pipefail
+        key=$(jq -er '.APIKey | select(type == "string" and length > 0)' \
+          /var/lib/jackett/.config/Jackett/ServerConfig.json)
+        install -d -m 0750 /var/lib/streamline
+        printf '%s' "$key" > /var/lib/streamline/jackett-api-key.new
+        chmod 0400 /var/lib/streamline/jackett-api-key.new
+        mv /var/lib/streamline/jackett-api-key.new /var/lib/streamline/jackett-api-key
+      '';
+    };
+  };
+  systemd.services.streamline = {
+    after = [
+      "jackett.service"
+      "pocket-id-oidc-provision.service"
+      "streamline-jackett-key.service"
+      "streamline-jellyfin-key.service"
+    ];
+    requires = [
+      "jackett.service"
+      "pocket-id-oidc-provision.service"
+      "streamline-jackett-key.service"
+      "streamline-jellyfin-key.service"
+    ];
+    partOf = [ "streamline-jackett-key.service" ];
+    environment.STREAMLINE_PUBLIC_URL = "https://${streamlineDomain}";
+  };
+  systemd.services.streamline-jellyfin-key = {
+    description = "Provide Streamline with a Jellyfin API key";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "streamline.service" ];
+    requires = [
+      "jellyfin.service"
+      "jellyfin-bootstrap.service"
+    ];
+    after = [
+      "jellyfin.service"
+      "jellyfin-bootstrap.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../scripts/configure-media-stack.py} --streamline-jellyfin-key";
+      UMask = "0077";
+    };
   };
   services.jellyfin = {
     enable = true;
@@ -614,20 +695,14 @@ lib.mkIf (config.server.secrets.enable or false) {
     wantedBy = [ "multi-user.target" ];
     requires = [
       "qbittorrent.service"
-      "radarr.service"
-      "sonarr.service"
       "jackett.service"
       "jellyfin.service"
-      "seerr.service"
       "docker-bindery.service"
     ];
     after = [
       "qbittorrent.service"
-      "radarr.service"
-      "sonarr.service"
       "jackett.service"
       "jellyfin-bootstrap.service"
-      "seerr.service"
       "docker-bindery.service"
     ];
     path = [ pkgs.systemd ];
@@ -731,6 +806,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     "d ${mediaRoot}/downloads/complete/movies 2770 root media -"
     "d ${mediaRoot}/downloads/complete/tv 2770 root media -"
     "d ${mediaRoot}/downloads/complete/books 2770 root media -"
+    "d ${mediaRoot}/downloads/complete/streamline 2770 root media -"
     "d ${mediaRoot}/library 2770 root media -"
     "d ${mediaRoot}/library/movies 2770 root media -"
     "d ${mediaRoot}/library/tv 2770 root media -"
@@ -959,12 +1035,6 @@ lib.mkIf (config.server.secrets.enable or false) {
       '';
     };
 
-    ${radarrDomain} = {
-      extraConfig = ''
-        reverse_proxy 127.0.0.1:8443
-      '';
-    };
-
     ${jackettDomain} = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:8443
@@ -977,15 +1047,15 @@ lib.mkIf (config.server.secrets.enable or false) {
       '';
     };
 
-    ${sonarrDomain} = {
+    ${streamlineDomain} = {
       extraConfig = ''
-        reverse_proxy 127.0.0.1:8443
-      '';
-    };
+        @streamlineLogin path /login
+        redir @streamlineLogin /auth/oidc/pocket-id/start?next={query.next} 302
 
-    ${seerrDomain} = {
-      extraConfig = ''
-        reverse_proxy 127.0.0.1:8443
+        @streamlineLocalAuth path /auth/login /auth/register
+        respond @streamlineLocalAuth "Sign in with Pocket ID." 403
+
+        reverse_proxy 127.0.0.1:8097
       '';
     };
 

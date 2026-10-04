@@ -235,6 +235,7 @@ in
             frontchannel_logout_url=''${5:-}
             backchannel_logout_url=''${6:-}
             pkce_enabled=''${7:-true}
+            allowed_user_group_names=''${8:-}
             payload=$(jq -cn \
               --arg id "$client_id" \
               --arg name "$name" \
@@ -276,6 +277,25 @@ in
                 | jq -er .secret | tr -d '\r\n' > "$client_secret_file"
               chmod 0400 "$client_secret_file"
             fi
+
+            if [ -n "$allowed_user_group_names" ]; then
+              allowed_user_group_ids=$(printf '%s' "$allowed_user_group_names" \
+                | jq -r '.[]' \
+                | while IFS= read -r group_name; do
+                    ensure_group "$group_name"
+                    printf '\n'
+                  done \
+                | jq -Rsc 'split("\n") | map(select(length > 0))')
+              allowed_groups_payload=$(jq -cn \
+                --argjson userGroupIds "$allowed_user_group_ids" \
+                '{userGroupIds: $userGroupIds}')
+              curl_api \
+                -H "X-API-KEY: $api_key" \
+                -H 'Content-Type: application/json' \
+                -X PUT \
+                -d "$allowed_groups_payload" \
+                "$api/oidc/clients/$client_id/allowed-user-groups" >/dev/null
+            fi
           }
 
           provision_client gotify Gotify \
@@ -303,6 +323,12 @@ in
             "" \
             "" \
             false
+          ${lib.optionalString (config.networking.hostName == "rico") ''
+            provision_client streamline Streamline \
+              '["https://streamline.outworld66.ru/auth/oidc/pocket-id/callback"]' \
+              /var/lib/streamline/oidc-client-secret \
+              "" "" true '["media-admin","media-user"]'
+          ''}
 
           install -d -m 0750 /var/lib/pomerium
           if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 44 ]; then

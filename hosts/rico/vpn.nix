@@ -10,8 +10,10 @@ let
   sourceConfig = "/var/lib/vpn/client.vpn";
   runtimeConfig = "${runtimeDir}/${interface}.conf";
   routeTable = "168";
-  rulePriority = "1100";
   jackettRulePriority = "1099";
+  jellyfinRulePriority = "1100";
+  jellyfinArtworkHost = "image.tmdb.org";
+  jellyfinRouteState = "${runtimeDir}/jellyfin-artwork-addresses";
 
   extractConfig = pkgs.writeText "extract-amnezia-vpn.py" ''
     import base64
@@ -55,7 +57,8 @@ let
     set -euo pipefail
     trap '${pkgs.coreutils}/bin/rm -f ${runtimeDir}/export.conf' EXIT
     ${pkgs.python3}/bin/python ${extractConfig} ${sourceConfig} > ${runtimeDir}/export.conf
-    # Native exports often request a default route and DNS; Sonarr needs neither.
+    # Native exports often request default-route and DNS changes, which this
+    # split-tunnel service does not use.
     ${pkgs.gawk}/bin/awk '
       /^\[Interface\][[:space:]]*$/ { in_interface = 1; found = 1; print; print "Table = off"; next }
       /^\[/ { in_interface = 0 }
@@ -67,36 +70,22 @@ let
     ${pkgs.coreutils}/bin/chmod 600 ${runtimeConfig}
   '';
 
-  updateRoutes = pkgs.writeShellScript "update-sonarr-skyhook-routes" ''
+  updateRoutes = pkgs.writeShellScript "update-media-vpn-routes" ''
     set -euo pipefail
-    state=${runtimeDir}/sonarr-skyhook-addresses
-    uid="$(${pkgs.coreutils}/bin/id -u sonarr)"
-    old_addresses="$(${pkgs.coreutils}/bin/cat "$state" 2>/dev/null || true)"
     jackett_uid="$(${pkgs.coreutils}/bin/id -u jackett)"
+    jellyfin_uid="$(${pkgs.coreutils}/bin/id -u jellyfin)"
+    old_jellyfin_addresses="$(${pkgs.coreutils}/bin/cat ${jellyfinRouteState} 2>/dev/null || true)"
 
     if [ "''${1:-}" = down ]; then
-      for address in $old_addresses; do
-        ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address" uidrange "$uid-$uid" table ${routeTable} || true
-      done
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable} || true
+      for address in $old_jellyfin_addresses; do
+        ${pkgs.iproute2}/bin/ip -4 rule del priority ${jellyfinRulePriority} to "$address" uidrange "$jellyfin_uid-$jellyfin_uid" table ${routeTable} || true
+      done
+      # Remove the former catch-all Jellyfin rule when switching generations.
+      ${pkgs.iproute2}/bin/ip -4 rule del priority ${jellyfinRulePriority} uidrange "$jellyfin_uid-$jellyfin_uid" table ${routeTable} || true
+      ${pkgs.coreutils}/bin/rm -f ${jellyfinRouteState}
       ${pkgs.iproute2}/bin/ip -4 route flush table ${routeTable} 2>/dev/null || true
-      ${pkgs.coreutils}/bin/rm -f "$state"
       exit 0
-    fi
-
-    new_addresses="$(
-      {
-        for host in skyhook.sonarr.tv services.sonarr.tv thexem.info; do
-          ${pkgs.glibc.getent}/bin/getent ahostsv4 "$host" \
-            | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }'
-        done
-        # Cloudflare alternates TheXEM between the .0 and .1 VIPs in both /31 pairs.
-        printf '%s\n' 188.114.96.0/31 188.114.97.0/31
-      } | ${pkgs.coreutils}/bin/sort -u
-    )"
-    if [ -z "$new_addresses" ]; then
-      echo "Sonarr metadata services have no IPv4 DNS records" >&2
-      exit 1
     fi
 
     # The unreachable route prevents fallback to the ordinary gateway if the tunnel disappears.
@@ -105,17 +94,30 @@ let
     if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $jackett_uid-$jackett_uid lookup ${routeTable}"; then
       ${pkgs.iproute2}/bin/ip -4 rule add priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable}
     fi
-    for address in $new_addresses; do
-      if ! printf '%s\n' "$old_addresses" | ${pkgs.gnugrep}/bin/grep -Fxq "$address"; then
-        ${pkgs.iproute2}/bin/ip -4 rule add priority ${rulePriority} to "$address" uidrange "$uid-$uid" table ${routeTable}
-      fi
-    done
-    for address in $old_addresses; do
-      if ! printf '%s\n' "$new_addresses" | ${pkgs.gnugrep}/bin/grep -Fxq "$address"; then
-        ${pkgs.iproute2}/bin/ip -4 rule del priority ${rulePriority} to "$address" uidrange "$uid-$uid" table ${routeTable}
-      fi
-    done
-    printf '%s\n' "$new_addresses" > "$state"
+    # Only route Jellyfin's TMDB artwork CDN addresses through the VPN.
+    new_jellyfin_addresses="$(
+      for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        ${pkgs.coreutils}/bin/timeout 1s ${pkgs.glibc.getent}/bin/getent ahostsv4 ${jellyfinArtworkHost} || true
+      done \
+        | ${pkgs.gawk}/bin/awk '$2 == "STREAM" { print $1 }' \
+        | ${pkgs.coreutils}/bin/sort -u
+    )"
+    if [ -n "$new_jellyfin_addresses" ]; then
+      # Keep prior DNS answers for this tunnel session because the CDN rotates them.
+      jellyfin_addresses="$(
+        printf '%s\n%s\n' "$old_jellyfin_addresses" "$new_jellyfin_addresses" \
+          | ${pkgs.gawk}/bin/awk -F. 'NF == 4 && $1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ && $4 ~ /^[0-9]+$/ { print }' \
+          | ${pkgs.coreutils}/bin/sort -u
+      )"
+      for address in $jellyfin_addresses; do
+        if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "to $address uidrange $jellyfin_uid-$jellyfin_uid lookup ${routeTable}"; then
+          ${pkgs.iproute2}/bin/ip -4 rule add priority ${jellyfinRulePriority} to "$address" uidrange "$jellyfin_uid-$jellyfin_uid" table ${routeTable}
+        fi
+      done
+      printf '%s\n' "$jellyfin_addresses" > ${jellyfinRouteState}
+    else
+      echo "No IPv4 records for ${jellyfinArtworkHost}; keeping the current artwork routes" >&2
+    fi
   '';
 in
 {
@@ -157,9 +159,12 @@ in
     partOf = [ "vpn.service" ];
   };
 
-  systemd.services.sonarr-skyhook-routes = {
-    description = "Refresh Sonarr metadata VPN destination addresses";
+  systemd.services.jellyfin.after = [ "vpn.service" ];
+
+  systemd.services.jellyfin-artwork-vpn-routes = {
+    description = "Refresh Jellyfin artwork CDN VPN routes";
     after = [ "vpn.service" ];
+    requires = [ "vpn.service" ];
     unitConfig.ConditionPathExists = runtimeConfig;
     serviceConfig = {
       Type = "oneshot";
@@ -167,12 +172,14 @@ in
     };
   };
 
-  systemd.timers.sonarr-skyhook-routes = {
+  systemd.timers.jellyfin-artwork-vpn-routes = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "5m";
-      OnUnitActiveSec = "5m";
-      Unit = "sonarr-skyhook-routes.service";
+      AccuracySec = "1s";
+      OnBootSec = "10s";
+      OnUnitActiveSec = "15s";
+      Unit = "jellyfin-artwork-vpn-routes.service";
     };
   };
+
 }

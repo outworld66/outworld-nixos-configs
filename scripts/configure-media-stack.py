@@ -5,11 +5,11 @@ import http.cookiejar
 import json
 import re
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 MEDIA_ROOT = "/srv/media"
@@ -53,23 +53,6 @@ def request(base, path, *, method="GET", data=None, headers=None, cookies=None, 
             if attempt + 1 == retries:
                 raise RuntimeError(f"{method} {path}: service did not become ready") from None
             time.sleep(2)
-
-
-def arr_api(port, data_dir, path, *, method="GET", data=None, retries=60):
-    config = ET.parse(Path(data_dir) / "config.xml").getroot()
-    key = config.findtext("ApiKey")
-    return arr_request(port, key, path, method=method, data=data, retries=retries)
-
-
-def arr_request(port, key, path, *, method="GET", data=None, retries=60):
-    return request(
-        f"http://127.0.0.1:{port}",
-        f"/api/v3/{path}",
-        method=method,
-        data=data,
-        headers={"X-Api-Key": key},
-        retries=retries,
-    )
 
 
 def qbit_login(password):
@@ -138,7 +121,7 @@ def configure_qbittorrent():
             raise RuntimeError("qBittorrent did not accept its SOPS password")
 
     categories = json.loads(qbit_request(opener, "torrents/categories"))
-    for category in ("movies", "tv", "books"):
+    for category in ("movies", "tv", "books", "streamline"):
         save_path = f"{MEDIA_ROOT}/downloads/complete/{category}"
         if category not in categories:
             qbit_request(
@@ -155,149 +138,16 @@ def configure_qbittorrent():
     print("qBittorrent credentials, paths, and categories are configured")
 
 
-def ensure_arr_root(port, data_dir, path):
-    folders = arr_api(port, data_dir, "rootfolder")
-    if not any(folder["path"] == path for folder in folders):
-        arr_api(port, data_dir, "rootfolder", method="POST", data={"path": path})
-    media_type = "movie" if path.endswith("/movies") else "series"
-    managed = arr_api(port, data_dir, media_type)
-    for folder in folders:
-        if (
-            folder["path"].startswith("/data")
-            and "/media/library/" in folder["path"]
-            and not any(item.get("rootFolderPath") == folder["path"] for item in managed)
-        ):
-            arr_api(port, data_dir, f"rootfolder/{folder['id']}", method="DELETE")
-
-
-def ensure_arr_download_client(port, data_dir, category):
-    clients = arr_api(port, data_dir, "downloadclient")
-    existing = next((item for item in clients if item["name"] == "qBittorrent"), None)
-    schema = next(
-        item
-        for item in arr_api(port, data_dir, "downloadclient/schema")
-        if item["implementation"] == "QBittorrent"
-    )
-    values = {
-        "host": "127.0.0.1",
-        "port": 8181,
-        "username": "admin",
-        "password": secret("qbittorrent-webui-password"),
-        "movieCategory": category,
-        "tvCategory": category,
-    }
-    for field in schema["fields"]:
-        if field["name"] in values:
-            field["value"] = values[field["name"]]
-    schema.update({"name": "qBittorrent", "enable": True, "protocol": "torrent", "priority": 1})
-    if existing:
-        schema["id"] = existing["id"]
-        path = f"downloadclient/{existing['id']}"
-        method = "PUT"
-    else:
-        path = "downloadclient"
-        method = "POST"
-    arr_api(port, data_dir, path, method=method, data=schema)
-
-
 def jackett_api(key, indexer, **params):
     query = urllib.parse.urlencode({"apikey": key, **params})
     path = f"/api/v2.0/indexers/{indexer}/results/torznab/api?{query}"
     return request("http://127.0.0.1:9117", path)
 
 
-def ensure_arr_indexers(port, data_dir):
-    jackett = json.loads(
-        Path("/var/lib/jackett/.config/Jackett/ServerConfig.json").read_text()
-    )
-    key = jackett["APIKey"]
-    indexers = arr_api(port, data_dir, "indexer")
-    listed = jackett_api(key, "all", t="indexers", configured="true")
-    configured = [
-        (item.get("id"), item.findtext("title"))
-        for item in ET.fromstring(listed).findall("./indexer")
-        if item.get("configured") == "true" and item.get("id") and item.findtext("title")
-    ]
-    if not configured:
-        raise RuntimeError("Jackett has no configured indexers")
-
-    managed_names = set()
-    configured_count = 0
-    for indexer_id, title in configured:
-        caps = jackett_api(key, indexer_id, t="caps")
-        categories = sorted(
-            {
-                int(category.get("id"))
-                for category in ET.fromstring(caps).findall(".//category")
-                if category.get("id", "").isdigit()
-                and 5000 <= int(category.get("id")) < 6000
-            }
-        )
-        if not categories:
-            continue
-
-        name = f"Jackett - {title}"
-        managed_names.add(name)
-        existing = next((item for item in indexers if item.get("name") == name), None)
-        schema = next(
-            item
-            for item in arr_api(port, data_dir, "indexer/schema")
-            if item["implementation"] == "Torznab"
-        )
-        values = {
-            "baseUrl": "http://127.0.0.1:9117",
-            "apiPath": f"/api/v2.0/indexers/{indexer_id}/results/torznab/api",
-            "apiKey": key,
-            "categories": categories,
-            "animeCategories": [5070],
-        }
-        for field in schema["fields"]:
-            if field["name"] in values:
-                field["value"] = values[field["name"]]
-        schema.update(
-            {
-                "name": name,
-                "enable": True,
-                "enableRss": True,
-                "enableAutomaticSearch": True,
-                "enableInteractiveSearch": True,
-                "protocol": "torrent",
-                "priority": 1,
-            }
-        )
-        if existing:
-            schema["id"] = existing["id"]
-            path = f"indexer/{existing['id']}"
-            method = "PUT"
-        else:
-            path = "indexer"
-            method = "POST"
-        try:
-            arr_api(port, data_dir, path, method=method, data=schema, retries=1)
-        except RuntimeError as error:
-            print(f"Sonarr could not configure Jackett tracker {title}: {error}")
-            continue
-        configured_count += 1
-
-    if not configured_count:
-        raise RuntimeError("Sonarr could not configure any Jackett TV indexers")
-
-    for existing in indexers:
-        name = existing.get("name", "")
-        if (name == "Jackett" or name.startswith("Jackett - ")) and name not in managed_names:
-            arr_api(port, data_dir, f"indexer/{existing['id']}", method="DELETE")
-    print(f"Sonarr configured {configured_count} Jackett TV indexers")
-
-
-def configure_arr(port, data_dir, root, category, configure_indexers=False):
-    ensure_arr_root(port, data_dir, root)
-    ensure_arr_download_client(port, data_dir, category)
-    if configure_indexers:
-        ensure_arr_indexers(port, data_dir)
-
-
-def jellyfin_request(path, *, token=None, method="GET", data=None):
-    authorization = 'MediaBrowser Client="Media Stack Bootstrap", Device="Rico", DeviceId="rico-media-bootstrap", Version="1.0"'
+def jellyfin_request(
+    path, *, token=None, method="GET", data=None, device_id="rico-media-bootstrap"
+):
+    authorization = f'MediaBrowser Client="Media Stack Bootstrap", Device="Rico", DeviceId="{device_id}", Version="1.0"'
     if token:
         authorization += f', Token="{token}"'
     return request(
@@ -358,138 +208,41 @@ def configure_jellyfin():
     return token
 
 
-def seerr_request(path, *, method="GET", data=None, cookies):
-    return request("http://127.0.0.1:5055", path, method=method, data=data, cookies=cookies)
-
-
-def configure_seerr():
+def configure_streamline_jellyfin_key():
     password = secret("jellyfin-admin-password")
-    cookies = http.cookiejar.CookieJar()
-    public = request("http://127.0.0.1:5055", "/api/v1/settings/public")
-    body = {"username": "admin", "password": password}
-    if public["mediaServerType"] == 4:
-        body.update(
-            {
-                "hostname": "127.0.0.1",
-                "port": 8096,
-                "useSsl": False,
-                "urlBase": "",
-                "serverType": 2,
-            }
-        )
-    seerr_request("/api/v1/auth/jellyfin", method="POST", data=body, cookies=cookies)
-
-    main = seerr_request("/api/v1/settings/main", cookies=cookies)
-    main.pop("apiKey", None)
-    main.update(
-        {
-            "applicationTitle": "Media Requests",
-            "applicationUrl": "https://requests.outworld66.ru",
-            "cacheImages": True,
-            "defaultPermissions": 32,
-            "localLogin": False,
-            "mediaServerLogin": True,
-            "newPlexLogin": True,
-        }
-    )
-    seerr_request("/api/v1/settings/main", method="POST", data=main, cookies=cookies)
-    network = seerr_request("/api/v1/settings/network", cookies=cookies)
-    restart_after_configure = not network.get("forceIpv4First", False)
-    network["forceIpv4First"] = True
-    seerr_request(
-        "/api/v1/settings/network",
+    auth = jellyfin_request(
+        "/Users/AuthenticateByName",
         method="POST",
-        data=network,
-        cookies=cookies,
+        data={"Username": "admin", "Pw": password},
+        device_id="rico-streamline-jellyfin-key",
     )
-    jellyfin = seerr_request("/api/v1/settings/jellyfin", cookies=cookies)
-    for key in ("name", "libraries", "serverId"):
-        jellyfin.pop(key, None)
-    jellyfin.update({"externalHostname": "https://jellyfin.outworld66.ru"})
-    seerr_request("/api/v1/settings/jellyfin", method="POST", data=jellyfin, cookies=cookies)
+    token = auth["AccessToken"]
 
-    libraries = seerr_request("/api/v1/settings/jellyfin/library?sync=true", cookies=cookies)
-    enabled = [item["id"] for item in libraries if item["name"] in ("Movies", "TV")]
-    if len(enabled) != 2:
-        raise RuntimeError("Seerr could not find both Jellyfin libraries")
-    seerr_request(
-        "/api/v1/settings/jellyfin/library?enable=" + urllib.parse.quote(",".join(enabled)),
-        cookies=cookies,
-    )
-
-    for kind, port, root in (
-        ("radarr", 7878, f"{MEDIA_ROOT}/library/movies"),
-        ("sonarr", 8989, f"{MEDIA_ROOT}/library/tv"),
-    ):
-        config_path = (
-            "/var/lib/radarr/.config/Radarr/config.xml"
-            if kind == "radarr"
-            else "/var/lib/sonarr/.config/NzbDrone/config.xml"
+    def keys():
+        result = jellyfin_request(
+            "/Auth/Keys", token=token, device_id="rico-streamline-jellyfin-key"
         )
-        arr_config = ET.parse(config_path).getroot()
-        api_key = arr_config.findtext("ApiKey")
-        profiles = arr_request(port, api_key, "qualityprofile")
-        profile = profiles[0]
-        settings = {
-            "name": kind.capitalize(),
-            "hostname": "127.0.0.1",
-            "port": port,
-            "apiKey": api_key,
-            "useSsl": False,
-            "baseUrl": "",
-            "activeProfileId": profile["id"],
-            "activeProfileName": profile["name"],
-            "activeDirectory": root,
-            "tags": [],
-            "is4k": False,
-            "isDefault": True,
-            "externalUrl": f"https://{kind}.outworld66.ru",
-            "syncEnabled": True,
-            "preventSearch": False,
-            "tagRequests": False,
-            "overrideRule": [],
-        }
-        response = seerr_request(
-            f"/api/v1/settings/{kind}/test",
+        return result if isinstance(result, list) else result.get("Items", [])
+
+    matches = [key for key in keys() if key.get("AppName") == "Streamline"]
+    if not matches:
+        jellyfin_request(
+            "/Auth/Keys?" + urllib.parse.urlencode({"app": "Streamline"}),
+            token=token,
             method="POST",
-            data=settings,
-            cookies=cookies,
+            device_id="rico-streamline-jellyfin-key",
         )
-        if kind == "radarr":
-            settings["minimumAvailability"] = "released"
-        else:
-            settings.update(
-                {
-                    "seriesType": "standard",
-                    "animeSeriesType": "standard",
-                    "enableSeasonFolders": True,
-                    "monitorNewItems": "all",
-                }
-            )
-        settings["activeProfileId"] = response["profiles"][0]["id"]
-        settings["activeProfileName"] = response["profiles"][0]["name"]
-        directories = {folder["path"] for folder in response["rootFolders"]}
-        if root not in directories:
-            raise RuntimeError(f"{kind} root folder is missing")
-        current = seerr_request(f"/api/v1/settings/{kind}", cookies=cookies)
-        existing = next((item for item in current if item["hostname"] == "127.0.0.1"), None)
-        if existing:
-            seerr_request(
-                f"/api/v1/settings/{kind}/{existing['id']}",
-                method="PUT",
-                data=settings,
-                cookies=cookies,
-            )
-        else:
-            seerr_request(
-                f"/api/v1/settings/{kind}", method="POST", data=settings, cookies=cookies
-            )
+        matches = [key for key in keys() if key.get("AppName") == "Streamline"]
+    if not matches or not matches[0].get("AccessToken"):
+        raise RuntimeError("Jellyfin did not return the Streamline API key")
 
-    public = seerr_request("/api/v1/settings/public", cookies=cookies)
-    if not public.get("initialized"):
-        seerr_request("/api/v1/settings/initialize", method="POST", cookies=cookies)
-    print("Seerr Jellyfin, Radarr, and Sonarr connections are configured")
-    return restart_after_configure
+    path = Path("/var/lib/streamline/jellyfin-api-key")
+    path.parent.mkdir(mode=0o750, parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".new")
+    temporary.write_text(matches[0]["AccessToken"] + "\n")
+    temporary.chmod(0o400)
+    temporary.replace(path)
+    print("Streamline Jellyfin API key is configured")
 
 
 def configure_bindery():
@@ -551,14 +304,12 @@ def configure_bindery():
 
 def main():
     configure_qbittorrent()
-    configure_arr(7878, "/var/lib/radarr/.config/Radarr", f"{MEDIA_ROOT}/library/movies", "movies")
-    configure_arr(8989, "/var/lib/sonarr/.config/NzbDrone", f"{MEDIA_ROOT}/library/tv", "tv", True)
     configure_jellyfin()
-    restart_seerr = configure_seerr()
     configure_bindery()
-    if restart_seerr:
-        subprocess.run(["systemctl", "restart", "seerr.service"], check=True)
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--streamline-jellyfin-key"]:
+        configure_streamline_jellyfin_key()
+    else:
+        main()

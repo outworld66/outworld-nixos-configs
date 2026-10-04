@@ -9,6 +9,7 @@
 }:
 {
   imports = [
+    inputs.streamline.nixosModules.default
     inputs.disko.nixosModules.disko
     ./disko.nix
     ../../nixos/modules/server/services.nix
