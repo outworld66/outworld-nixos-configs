@@ -241,6 +241,8 @@ Caddy or Pomerium, and is not opened in the firewall. Keep it private; the
 It has no user-facing page, so it is not a separate Homepage entry. Most
 indexers do not need it, so use it only for trackers that report a Cloudflare
 or anti-bot challenge.
+FlareSolverr's informational request logs can include POST data, so Rico runs
+it with error-only logging to avoid writing indexer credentials to the journal.
 
 Rico routes both Jackett and FlareSolverr's outbound IPv4 traffic through the
 same AmneziaWG tunnel. The [FlareSolverr troubleshooting guide](https://github.com/FlareSolverr/FlareSolverr/wiki/Troubleshooting)
@@ -250,6 +252,15 @@ Export a client from
 AmneziaVPN in its `.vpn` sharing format. The service extracts the AmneziaWG
 configuration from the selected container at startup; no desktop client is
 needed on Rico.
+
+RuTracker setup currently fails when Cloudflare holds the request on its
+“Just a moment” challenge: FlareSolverr reaches its 55-second default timeout,
+then Jackett's configuration API request fails. This is an upstream challenge
+that FlareSolverr could not solve during the check, rather than a missing
+Jackett login form setting. The [Jackett guide recommends keeping the default
+FlareSolverr timeout](https://github.com/Jackett/Jackett#configuring-flaresolverr);
+increasing it would only make the UI wait longer unless the challenge becomes
+solvable.
 
 Copy the exported file to Rico as root at `/var/lib/vpn/client.vpn`, owned by
 root with mode `0600`. Keep it out of Git and the Nix store. After deploying

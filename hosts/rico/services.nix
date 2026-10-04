@@ -561,7 +561,10 @@ lib.mkIf (config.server.secrets.enable or false) {
     group = "flaresolverr";
   };
   systemd.services.flaresolverr = {
-    environment.HOST = "127.0.0.1";
+    environment = {
+      HOST = "127.0.0.1";
+      LOG_LEVEL = "error";
+    };
     serviceConfig = {
       DynamicUser = lib.mkForce false;
       User = "flaresolverr";
