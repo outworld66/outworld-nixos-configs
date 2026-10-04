@@ -253,14 +253,20 @@ AmneziaVPN in its `.vpn` sharing format. The service extracts the AmneziaWG
 configuration from the selected container at startup; no desktop client is
 needed on Rico.
 
-RuTracker setup currently fails when Cloudflare holds the request on its
-“Just a moment” challenge: FlareSolverr reaches its 55-second default timeout,
-then Jackett's configuration API request fails. This is an upstream challenge
-that FlareSolverr could not solve during the check, rather than a missing
-Jackett login form setting. The [Jackett guide recommends keeping the default
-FlareSolverr timeout](https://github.com/Jackett/Jackett#configuring-flaresolverr);
-increasing it would only make the UI wait longer unless the challenge becomes
-solvable.
+Opening the RuTracker setup form makes Jackett fetch RuTracker's login page and
+captcha. When Cloudflare holds that request on its “Just a moment” challenge,
+FlareSolverr reaches its 55-second default timeout; Jackett catches that error
+and returns the form after about 57 seconds. Pomerium's default upstream route
+timeout is 30 seconds, so it returned 504 before Jackett could send the form.
+The Jackett Pomerium route now allows 90 seconds for this request. After
+deployment, allow about a minute for the form to appear. This fixes the proxy
+timeout, but does not make FlareSolverr solve the challenge; authentication may
+still fail while RuTracker blocks the VPN exit address. The alternative
+`rutracker.net` URL hit the same challenge in a direct solver check. Keep
+FlareSolverr's timeout at its [Jackett-recommended default](https://github.com/Jackett/Jackett#configuring-flaresolverr),
+and check `journalctl -u flaresolverr.service` if login still fails.
+Pomerium's [route timeout reference](https://www.pomerium.com/docs/reference/routes/timeouts)
+documents the 30-second default and per-route override.
 
 Copy the exported file to Rico as root at `/var/lib/vpn/client.vpn`, owned by
 root with mode `0600`. Keep it out of Git and the Nix store. After deploying

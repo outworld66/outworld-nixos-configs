@@ -209,6 +209,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         {
           from = "https://${jackettDomain}";
           to = "http://127.0.0.1:9117";
+          timeout = "90s";
           policy = mediaAdminPolicy;
         }
         {
