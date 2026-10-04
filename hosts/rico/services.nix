@@ -597,25 +597,17 @@ lib.mkIf (config.server.secrets.enable or false) {
           enabled = true;
         }
       ];
-      indexers =
-        map
-          (name: {
-            inherit name;
-            host = "127.0.0.1";
-            port = 9117;
-            path = "/api/v2.0/indexers/${name}/results/torznab/api";
-            protocol = "torznab";
-            api_key_file = "/run/credentials/streamline.service/jackett-api-key";
-            enabled = true;
-          })
-          [
-            "anilibria"
-            "bigfangroup"
-            "megapeer"
-            "noname-club"
-            "rutor"
-            "rutracker-ru"
-          ];
+      indexers = [
+        {
+          name = "Jackett (all)";
+          host = "127.0.0.1";
+          port = 9117;
+          path = "/api/v2.0/indexers/all/results/torznab/api";
+          protocol = "torznab";
+          api_key_file = "/run/credentials/streamline.service/jackett-api-key";
+          enabled = true;
+        }
+      ];
     };
   };
   systemd.services.streamline-jackett-key = {

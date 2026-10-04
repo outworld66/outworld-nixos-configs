@@ -50,15 +50,16 @@ documented by the [plugin project](https://github.com/Flowfin/jellyfin-plugin-ss
 
 Internal integrations use loopback endpoints and the target application's own
 credentials: Bindery and Streamline use qBittorrent's Web UI credentials;
-Bindery and Streamline use Jackett's loopback Torznab endpoints. These
-connections are provisioned by `media-stack-bootstrap`. Streamline's Jellyfin
-integration uses `https://jellyfin.outworld66.ru`: Streamline uses this single
-URL both for its API connection and for **Play on** links, so it must be a
-browser-reachable address rather than `127.0.0.1`. Rico can reach the public
-hostname through Caddy. Pomerium is not placed between these services because
-their API requests are not interactive browser sessions. The public TCP/UDP
-peer port `51413` is BitTorrent traffic, not a web login endpoint, so Pocket
-ID/Pomerium cannot authenticate it.
+Bindery and Streamline use Jackett's loopback aggregate Torznab endpoint.
+`media-stack-bootstrap` configures Bindery's connections; Streamline's are
+declared in Nix. Streamline's Jellyfin integration uses
+`https://jellyfin.outworld66.ru`: Streamline uses this single URL both for its
+API connection and for **Play on** links, so it must be a browser-reachable
+address rather than `127.0.0.1`. Rico can reach the public hostname through
+Caddy. Pomerium is not placed between these services because their API requests
+are not interactive browser sessions. The public TCP/UDP peer port `51413` is
+BitTorrent traffic, not a web login endpoint, so Pocket ID/Pomerium cannot
+authenticate it.
 
 Other public Rico services keep their existing authentication: Cloudreve,
 Donetick, Gotify, and Immich use Pocket ID OIDC; NocoDB, Elengrab, LiteLLM's
@@ -107,10 +108,14 @@ system disk. qBittorrent downloads and the Jellyfin library already use the
 Use Streamline to search for or request a movie or series. Streamline submits
 the torrent to qBittorrent and imports the completed file into the matching
 Jellyfin library folder. Jackett remains as the tracker adapter: Streamline
-connects to its Torznab endpoints for tracker search. The firewall allows peer
-traffic on TCP/UDP 51413. Forward that port on the router if incoming peer
-connectivity is desired. The qBittorrent Web UI remains closed to network
-interfaces.
+connects to Jackett's aggregate `all` Torznab feed for tracker search. The feed
+includes all indexers currently configured in Jackett, so later additions are
+available on the next search. This gives up per-indexer controls in Streamline;
+Jackett notes that a slow tracker can delay the combined response and caps the
+aggregate at 1,000 results. Disable a slow indexer in Jackett if it holds up
+searches. The firewall allows peer traffic on TCP/UDP 51413. Forward that port
+on the router if incoming peer connectivity is desired. The qBittorrent Web UI
+remains closed to network interfaces.
 
 Streamline's Jackett search failure and the local compatibility fix are
 documented in [Streamline Jackett search](./streamline-jackett-search.md).
@@ -136,9 +141,10 @@ On activation, the bootstrap service:
 
 Streamline seeds its initial administrator from SOPS on first start. The
 Pocket ID provisioning service creates its OIDC client, and the declared
-Streamline config connects qBittorrent and the six Jackett indexers configured
-on Rico at installation time. Add future Jackett indexers to the Streamline
-declaration in `hosts/rico/services.nix` as well.
+Streamline config connects qBittorrent and Jackett's aggregate `all` Torznab
+feed. Jackett reads its configured indexers when the feed is queried, so
+adding or removing an indexer in Jackett takes effect in Streamline on the next
+search without a Nix change or service restart.
 
 qBittorrent and Bindery use their SOPS-managed local admin credentials.
 Streamline uses native Pocket ID OIDC and keeps a SOPS-seeded local account for
@@ -156,10 +162,10 @@ before a library import can attach them. An empty Jellyfin library does not
 need to be imported before adding a series.
 
 Streamline is the only movie and TV request and management application.
-Jackett provides its Torznab indexer feeds, qBittorrent downloads, and Jellyfin
-serves the media. Streamline writes into the existing Jellyfin library folders
-and uses copy imports so downloads work even when mergerfs places source and
-destination on different backing disks.
+Jackett provides the aggregate Torznab feed, qBittorrent downloads, and
+Jellyfin serves the media. Streamline writes into the existing Jellyfin
+library folders and uses copy imports so downloads work even when mergerfs
+places source and destination on different backing disks.
 
 Streamline uses loopback port `8097`; it is not opened in the firewall. Caddy
 proxies directly to it. The `/login` page starts Pocket ID sign-in, and Caddy
