@@ -546,9 +546,9 @@ lib.mkIf (config.server.secrets.enable or false) {
   services.jackett.enable = true;
   systemd.services.jackett.preStart = lib.mkAfter ''
     config_file=/var/lib/jackett/.config/Jackett/ServerConfig.json
-    if [ -s "$config_file" ] && [ "$( ${pkgs.jq}/bin/jq -r '(.FlareSolverrUrl == "http://127.0.0.1:8191") and (.FlareSolverrMaxTimeout == 120000)' "$config_file")" != "true" ]; then
+    if [ -s "$config_file" ] && [ "$( ${pkgs.jq}/bin/jq -r '(.FlareSolverrUrl == "http://127.0.0.1:8191") and (.FlareSolverrMaxTimeout == 55000)' "$config_file")" != "true" ]; then
       umask 077
-      ${pkgs.jq}/bin/jq '.FlareSolverrUrl = "http://127.0.0.1:8191" | .FlareSolverrMaxTimeout = 120000' "$config_file" > "$config_file.new"
+      ${pkgs.jq}/bin/jq '.FlareSolverrUrl = "http://127.0.0.1:8191" | .FlareSolverrMaxTimeout = 55000' "$config_file" > "$config_file.new"
       mv "$config_file.new" "$config_file"
     fi
   '';
@@ -564,9 +564,6 @@ lib.mkIf (config.server.secrets.enable or false) {
   systemd.services.flaresolverr = {
     environment = {
       HOST = "127.0.0.1";
-      BROWSER_WAIT_TIMEOUT = "5";
-      LANG = "en-US";
-      LC_ALL = "C.UTF-8";
       LOG_LEVEL = "error";
     };
     serviceConfig = {

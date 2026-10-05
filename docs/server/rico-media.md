@@ -236,16 +236,18 @@ Jackett uses FlareSolverr for indexers protected by Cloudflare or similar
 browser challenges. Rico uses FlareSolverr 3.5.2 from the shared Nix package
 overlay; Nix supplies its Chromium and driver dependencies. FlareSolverr is
 installed as a local service on
-`127.0.0.1:8191`; Jackett's `FlareSolverrUrl` and its 120-second
-`FlareSolverrMaxTimeout` are reconciled from Nix before Jackett starts. The
+`127.0.0.1:8191`; Jackett's `FlareSolverrUrl` is set to that local endpoint,
+and its timeout is restored to the default 55 seconds before Jackett starts. The
 endpoint has no authentication, is not published through
 Caddy or Pomerium, and is not opened in the firewall. Keep it private; the
 [FlareSolverr project warns against exposing it to the internet](https://github.com/FlareSolverr/FlareSolverr#docker).
 It has no user-facing page, so it is not a separate Homepage entry. Most
 indexers do not need it, so use it only for trackers that report a Cloudflare
 or anti-bot challenge.
-FlareSolverr's informational request logs can include POST data, so Rico runs
-it with error-only logging to avoid writing indexer credentials to the journal.
+Rico keeps FlareSolverr at error-only logging because its informational request
+logs can include POST data, including tracker credentials. Its browser wait and
+language settings use the FlareSolverr defaults: one second and no explicit
+browser language.
 
 Rico routes all outbound IPv4 traffic from both Jackett and FlareSolverr through
 the same AmneziaWG tunnel, including Cloudflare challenge resources such as
@@ -259,31 +261,24 @@ configuration from the selected container at startup; no desktop client is
 needed on Rico.
 
 Opening the RuTracker setup form makes Jackett fetch RuTracker's login page and
-captcha. The default 55-second FlareSolverr timeout was too short, and a direct
-test on version 3.5.0 still timed out after raising it to 120 seconds. Rico now
-uses upstream FlareSolverr 3.5.2. Jackett allows 120 seconds for a solve, and
-Pomerium allows 150 seconds for Jackett's request. FlareSolverr's separate
-`BROWSER_WAIT_TIMEOUT` controls each browser state wait; its default is one
-second, and increasing `maxTimeout` alone does not change that. Rico sets
-`BROWSER_WAIT_TIMEOUT` to five seconds. It also sets `LANG=en-US`, which
-FlareSolverr passes to Chromium as its `Accept-Language`, while `LC_ALL=C.UTF-8`
-keeps the process locale valid. Upstream reports show managed challenges can
-loop with `LANG` unset, while `LANG=en-US` or `en` can pass them; `en_US` may
-produce an incompatible challenge configuration
-([discussion #1717](https://github.com/FlareSolverr/FlareSolverr/discussions/1717)).
-The [upstream wait-time fix](https://github.com/FlareSolverr/FlareSolverr/pull/1766)
-reproduced the retry loop and confirmed that five seconds solved the same
-challenge on the reporter's host. See the [FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables)
-and the [upstream report about the one-second wait](https://github.com/FlareSolverr/FlareSolverr/issues/1765).
-After deployment, allow up to two minutes for the form or login result. If it
-still fails, check the page response through FlareSolverr's VPN route:
+captcha. A direct request through FlareSolverr timed out at both 120 seconds
+and 10 minutes on version 3.5.2, including with an explicit
+`maxTimeout: 600000`. The temporary longer timeouts, five-second browser wait,
+and browser-language overrides were reverted. Jackett now uses its default
+55-second timeout; FlareSolverr's API default is 60 seconds, and its browser
+wait default is one second. Pomerium still allows 150 seconds for Jackett's
+request. See the [Jackett FlareSolverr guide](https://github.com/Jackett/Jackett#configuring-flaresolverr)
+and [FlareSolverr environment variables and request defaults](https://github.com/FlareSolverr/FlareSolverr#environment-variables).
+
+If RuTracker setup still fails, check the page response through FlareSolverr's
+VPN route:
 
 ```bash
 sudo -u flaresolverr curl -4sS -D - -o /dev/null --max-time 20 \
   https://rutracker.org/forum/login.php | grep -Ei '^(HTTP/|server:|cf-ray:|cf-mitigated:)'
 
-curl -sS --max-time 130 -H 'Content-Type: application/json' \
-  -d '{"cmd":"request.get","url":"https://rutracker.org/forum/login.php","maxTimeout":120000}' \
+curl -sS --max-time 70 -H 'Content-Type: application/json' \
+  -d '{"cmd":"request.get","url":"https://rutracker.org/forum/login.php","maxTimeout":60000}' \
   http://127.0.0.1:8191/v1 | jq '{status,message,version,http_status:.solution.status}'
 ```
 
@@ -296,19 +291,14 @@ exit while FlareSolverr's headless browser still times out. This is a reported
 FlareSolverr failure mode for managed challenges, including cases where the
 normal browser works on the same network
 ([upstream issue #1675](https://github.com/FlareSolverr/FlareSolverr/issues/1675)).
-Rico's direct API test still timed out after the full 120-second limit with
-FlareSolverr 3.5.2, including after setting `LANG=en-US`; the language setting
-is not a confirmed fix here. The current network checks confirm Jackett and
-FlareSolverr run on the same host, use the same VPN egress address, and have no
-IPv6 default route. Jackett points to the local FlareSolverr API with the
-120-second timeout. The troubleshooting guide also suggests a test without a
-VPN; Rico keeps the VPN because RuTracker is only reachable through it, so that
-test would prevent access to the tracker.
-In that case, longer Jackett, FlareSolverr, or Pomerium timeouts and changing
-the VPN route may not help. Test through FlareSolverr itself before changing
-the VPN exit, and keep Jackett and FlareSolverr on the same egress address so
-challenge cookies and follow-up requests share one public address.
-FlareSolverr logs are error-only to avoid logging indexer credentials.
+The current network checks confirm Jackett and FlareSolverr run on the same
+host, use the same VPN egress address, and have no IPv6 default route. Jackett
+points to the local FlareSolverr API. The troubleshooting guide also suggests
+a test without a VPN; Rico keeps the VPN because RuTracker is only reachable
+through it, so that test would prevent access to the tracker. Longer timeouts
+did not resolve the challenge, so test through FlareSolverr itself before
+changing the VPN exit, and keep Jackett and FlareSolverr on the same egress
+address so challenge cookies and follow-up requests share one public address.
 Pomerium's [route timeout reference](https://www.pomerium.com/docs/reference/routes/timeouts)
 documents the 30-second default and per-route override.
 
