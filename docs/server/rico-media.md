@@ -267,11 +267,22 @@ second, and increasing `maxTimeout` alone does not change that. Rico sets
 reproduced the retry loop and confirmed that five seconds solved the same
 challenge on the reporter's host. See the [FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables)
 and the [upstream report about the one-second wait](https://github.com/FlareSolverr/FlareSolverr/issues/1765).
-An [upstream report for this RuTracker login URL](https://github.com/FlareSolverr/FlareSolverr/issues/1760)
-found that updating FlareSolverr resolved the timeout; success can still depend
-on RuTracker's challenge and the VPN exit address. After deployment, allow up to
-two minutes for the form or login result. If it still fails, check
-`journalctl -u flaresolverr.service`.
+After deployment, allow up to two minutes for the form or login result. If it
+still fails, check the page response through FlareSolverr's VPN route:
+
+```bash
+sudo -u flaresolverr curl -4sS -D - -o /dev/null --max-time 20 \
+  https://rutracker.org/forum/login.php | grep -Ei '^(HTTP/|server:|cf-ray:)'
+```
+
+Rico's current VPN exit receives `HTTP 403` from Cloudflare at the RuTracker
+login page, before Jackett can load the login form or captcha. Increasing either
+timeout cannot fix that rejection. If the response has `server: cloudflare`
+with status `403`, switch to another AmneziaVPN exit/configuration and test
+again. If the alternate exit is also denied, use a different indexer or tracker.
+Keep Jackett and FlareSolverr on the same VPN exit so any challenge cookies and
+follow-up requests share one public address. FlareSolverr logs are error-only to
+avoid logging indexer credentials.
 Pomerium's [route timeout reference](https://www.pomerium.com/docs/reference/routes/timeouts)
 documents the 30-second default and per-route override.
 
