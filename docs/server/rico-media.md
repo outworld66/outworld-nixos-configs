@@ -296,8 +296,14 @@ exit while FlareSolverr's headless browser still times out. This is a reported
 FlareSolverr failure mode for managed challenges, including cases where the
 normal browser works on the same network
 ([upstream issue #1675](https://github.com/FlareSolverr/FlareSolverr/issues/1675)).
-Rico's direct API test still timed out after 60 seconds with FlareSolverr 3.5.2,
-including after setting `LANG=en-US`; the setting is not a confirmed fix here.
+Rico's direct API test still timed out after the full 120-second limit with
+FlareSolverr 3.5.2, including after setting `LANG=en-US`; the language setting
+is not a confirmed fix here. The current network checks confirm Jackett and
+FlareSolverr run on the same host, use the same VPN egress address, and have no
+IPv6 default route. Jackett points to the local FlareSolverr API with the
+120-second timeout. The troubleshooting guide also suggests a test without a
+VPN; Rico keeps the VPN because RuTracker is only reachable through it, so that
+test would prevent access to the tracker.
 In that case, longer Jackett, FlareSolverr, or Pomerium timeouts and changing
 the VPN route may not help. Test through FlareSolverr itself before changing
 the VPN exit, and keep Jackett and FlareSolverr on the same egress address so
