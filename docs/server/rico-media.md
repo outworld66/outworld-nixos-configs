@@ -263,8 +263,9 @@ uses upstream FlareSolverr 3.5.2. Jackett allows 120 seconds for a solve, and
 Pomerium allows 150 seconds for Jackett's request. FlareSolverr's separate
 `BROWSER_WAIT_TIMEOUT` controls each browser state wait; its default is one
 second, and increasing `maxTimeout` alone does not change that. Rico sets
-`BROWSER_WAIT_TIMEOUT` to ten seconds so slow Cloudflare page transitions have
-time to complete. See the [FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables)
+`BROWSER_WAIT_TIMEOUT` to five seconds. The [upstream fix](https://github.com/FlareSolverr/FlareSolverr/pull/1766)
+reproduced the retry loop and confirmed that five seconds solved the same
+challenge on the reporter's host. See the [FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables)
 and the [upstream report about the one-second wait](https://github.com/FlareSolverr/FlareSolverr/issues/1765).
 An [upstream report for this RuTracker login URL](https://github.com/FlareSolverr/FlareSolverr/issues/1760)
 found that updating FlareSolverr resolved the timeout; success can still depend
