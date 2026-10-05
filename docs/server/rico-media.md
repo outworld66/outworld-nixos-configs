@@ -259,13 +259,18 @@ needed on Rico.
 Opening the RuTracker setup form makes Jackett fetch RuTracker's login page and
 captcha. The default 55-second FlareSolverr timeout was too short, and a direct
 test on version 3.5.0 still timed out after raising it to 120 seconds. Rico now
-uses upstream FlareSolverr 3.5.2, which includes challenge-wait changes; Jackett
-allows 120 seconds for a solve and Pomerium allows 150 seconds for Jackett's
-request. An [upstream report for this RuTracker login URL](https://github.com/FlareSolverr/FlareSolverr/issues/1760)
-found that updating to the latest FlareSolverr resolved the timeout, but success
-still depends on RuTracker's challenge and the VPN exit address. After
-deployment, allow up to two minutes for the form or login result. If it still
-fails, check `journalctl -u flaresolverr.service`.
+uses upstream FlareSolverr 3.5.2. Jackett allows 120 seconds for a solve, and
+Pomerium allows 150 seconds for Jackett's request. FlareSolverr's separate
+`BROWSER_WAIT_TIMEOUT` controls each browser state wait; its default is one
+second, and increasing `maxTimeout` alone does not change that. Rico sets
+`BROWSER_WAIT_TIMEOUT` to ten seconds so slow Cloudflare page transitions have
+time to complete. See the [FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables)
+and the [upstream report about the one-second wait](https://github.com/FlareSolverr/FlareSolverr/issues/1765).
+An [upstream report for this RuTracker login URL](https://github.com/FlareSolverr/FlareSolverr/issues/1760)
+found that updating FlareSolverr resolved the timeout; success can still depend
+on RuTracker's challenge and the VPN exit address. After deployment, allow up to
+two minutes for the form or login result. If it still fails, check
+`journalctl -u flaresolverr.service`.
 Pomerium's [route timeout reference](https://www.pomerium.com/docs/reference/routes/timeouts)
 documents the 30-second default and per-route override.
 

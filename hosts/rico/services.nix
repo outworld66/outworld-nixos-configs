@@ -564,6 +564,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   systemd.services.flaresolverr = {
     environment = {
       HOST = "127.0.0.1";
+      BROWSER_WAIT_TIMEOUT = "10";
       LOG_LEVEL = "error";
     };
     serviceConfig = {
