@@ -565,6 +565,8 @@ lib.mkIf (config.server.secrets.enable or false) {
     environment = {
       HOST = "127.0.0.1";
       BROWSER_WAIT_TIMEOUT = "5";
+      LANG = "en-US";
+      LC_ALL = "C.UTF-8";
       LOG_LEVEL = "error";
     };
     serviceConfig = {

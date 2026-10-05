@@ -247,8 +247,10 @@ or anti-bot challenge.
 FlareSolverr's informational request logs can include POST data, so Rico runs
 it with error-only logging to avoid writing indexer credentials to the journal.
 
-Rico routes both Jackett and FlareSolverr's outbound IPv4 traffic through the
-same AmneziaWG tunnel. The [FlareSolverr troubleshooting guide](https://github.com/FlareSolverr/FlareSolverr/wiki/Troubleshooting)
+Rico routes all outbound IPv4 traffic from both Jackett and FlareSolverr through
+the same AmneziaWG tunnel, including Cloudflare challenge resources such as
+`challenges.cloudflare.com`. There is no per-domain split tunnel for either
+service. The [FlareSolverr troubleshooting guide](https://github.com/FlareSolverr/FlareSolverr/wiki/Troubleshooting)
 requires the solver and requesting application to use the same IP, so this
 keeps challenge cookies and follow-up tracker requests on one egress address.
 Export a client from
@@ -263,7 +265,13 @@ uses upstream FlareSolverr 3.5.2. Jackett allows 120 seconds for a solve, and
 Pomerium allows 150 seconds for Jackett's request. FlareSolverr's separate
 `BROWSER_WAIT_TIMEOUT` controls each browser state wait; its default is one
 second, and increasing `maxTimeout` alone does not change that. Rico sets
-`BROWSER_WAIT_TIMEOUT` to five seconds. The [upstream fix](https://github.com/FlareSolverr/FlareSolverr/pull/1766)
+`BROWSER_WAIT_TIMEOUT` to five seconds. It also sets `LANG=en-US`, which
+FlareSolverr passes to Chromium as its `Accept-Language`, while `LC_ALL=C.UTF-8`
+keeps the process locale valid. Upstream reports show managed challenges can
+loop with `LANG` unset, while `LANG=en-US` or `en` can pass them; `en_US` may
+produce an incompatible challenge configuration
+([discussion #1717](https://github.com/FlareSolverr/FlareSolverr/discussions/1717)).
+The [upstream wait-time fix](https://github.com/FlareSolverr/FlareSolverr/pull/1766)
 reproduced the retry loop and confirmed that five seconds solved the same
 challenge on the reporter's host. See the [FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables)
 and the [upstream report about the one-second wait](https://github.com/FlareSolverr/FlareSolverr/issues/1765).
@@ -272,17 +280,29 @@ still fails, check the page response through FlareSolverr's VPN route:
 
 ```bash
 sudo -u flaresolverr curl -4sS -D - -o /dev/null --max-time 20 \
-  https://rutracker.org/forum/login.php | grep -Ei '^(HTTP/|server:|cf-ray:)'
+  https://rutracker.org/forum/login.php | grep -Ei '^(HTTP/|server:|cf-ray:|cf-mitigated:)'
+
+curl -sS --max-time 130 -H 'Content-Type: application/json' \
+  -d '{"cmd":"request.get","url":"https://rutracker.org/forum/login.php","maxTimeout":120000}' \
+  http://127.0.0.1:8191/v1 | jq '{status,message,version,http_status:.solution.status}'
 ```
 
-Rico's current VPN exit receives `HTTP 403` from Cloudflare at the RuTracker
-login page, before Jackett can load the login form or captcha. Increasing either
-timeout cannot fix that rejection. If the response has `server: cloudflare`
-with status `403`, switch to another AmneziaVPN exit/configuration and test
-again. If the alternate exit is also denied, use a different indexer or tracker.
-Keep Jackett and FlareSolverr on the same VPN exit so any challenge cookies and
-follow-up requests share one public address. FlareSolverr logs are error-only to
-avoid logging indexer credentials.
+The raw `curl` check can receive `HTTP 403` from Cloudflare because it does not
+run the browser challenge. A `403` with `server: cloudflare` alone does not
+prove that the VPN exit is blocked; inspect `cf-mitigated: challenge` and the
+page title (`Just a moment...`) to distinguish a managed challenge from an
+explicit denial. A regular browser may pass the challenge from the same VPN
+exit while FlareSolverr's headless browser still times out. This is a reported
+FlareSolverr failure mode for managed challenges, including cases where the
+normal browser works on the same network
+([upstream issue #1675](https://github.com/FlareSolverr/FlareSolverr/issues/1675)).
+Rico's direct API test still timed out after 60 seconds with FlareSolverr 3.5.2,
+including after setting `LANG=en-US`; the setting is not a confirmed fix here.
+In that case, longer Jackett, FlareSolverr, or Pomerium timeouts and changing
+the VPN route may not help. Test through FlareSolverr itself before changing
+the VPN exit, and keep Jackett and FlareSolverr on the same egress address so
+challenge cookies and follow-up requests share one public address.
+FlareSolverr logs are error-only to avoid logging indexer credentials.
 Pomerium's [route timeout reference](https://www.pomerium.com/docs/reference/routes/timeouts)
 documents the 30-second default and per-route override.
 
