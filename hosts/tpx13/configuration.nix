@@ -23,6 +23,7 @@
   # kernel opt-in local to this host. The shared module remains the fallback
   # if Zen-specific behaviour or compatibility becomes a problem.
   boot.kernelPackages = pkgs.linuxPackages_zen;
+  boot.loader.systemd-boot.configurationLimit = 3;
 
   # The X13 Gen 1 lid switch is buggy: the EC emits phantom "Lid closed"
   # ACPI events while the lid is physically open (kernel logs "The lid

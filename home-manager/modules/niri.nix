@@ -29,13 +29,20 @@ let
             transform "normal"
             position x=440 y=0
         }
+
+        output "Xiaomi Corporation Mi Monitor 0000000000000" {
+            mode "3440x1440@49.998"
+            scale 1
+            transform "normal"
+            position x=0 y=-1440
+        }
       ''
     else
       # Majesty is a desktop profile and has no guaranteed eDP-1 output.
       # Leave its outputs to niri's automatic discovery instead of forcing
       # the laptop panel configuration used by tpx13.
       ''
-        output "Xiaomi Corporation Mi Monitor Unknown" {
+        output "Xiaomi Corporation Mi Monitor 0000000000000" {
             mode "3440x1440@144.000"
             scale 1
             transform "normal"
