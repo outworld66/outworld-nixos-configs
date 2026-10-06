@@ -9,25 +9,28 @@ let
   outputConfig =
     if hostname == "tpx13" then
       ''
+        // Vertical stack with no dead zones in any monitor combination:
+        // Xiaomi on top (y < 0), then eDP-1, then the external Lenovo below.
+        // eDP-1 physical size after scale 1.25 is 1536x864.
         output "eDP-1" {
             mode "1920x1080"
             scale 1.25
             transform "normal"
-            position x=952 y=1440
+            position x=952 y=0
         }
 
         output "Lenovo Group Limited LEN T24h-20 V308A2D4" {
             mode "2560x1440"
             scale 1
             transform "normal"
-            position x=440 y=0
+            position x=440 y=864
         }
 
         output "Lenovo Group Limited LEN T24h-20 V308A2KA" {
             mode "2560x1440"
             scale 1
             transform "normal"
-            position x=440 y=0
+            position x=440 y=864
         }
 
         output "Xiaomi Corporation Mi Monitor 0000000000000" {
