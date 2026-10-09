@@ -68,7 +68,8 @@ trusted_hash = "sha256:8c9efc5a5e649c8cdca3f0b7bf4cba81d9717d1bc930c7dbc18b6efd6
 enabled = true
 
 [hooks.state."ponytail@ponytail:hooks/claude-codex-hooks.json:subagent_start:0:0"]
-trusted_hash = "sha256:1423b56c1322f96c8f74c51c1e7ae9a047b904c1fa43ee9165d462fd7a6e70ef"
+trusted_hash = "sha256:7954d675ef3bafd5e5a6073ae51d7de57a08f21340f241c332f99078e955675d"
+enabled = true
 
 [projects."/home/outworld/nix"]
 trust_level = "trusted"
