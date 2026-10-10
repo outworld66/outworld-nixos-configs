@@ -161,7 +161,7 @@ def configure_prowlarr_download_client():
         priority=1,
         tags=[],
         fields=[
-            {"name": field["name"], "value": values.get(field["name"], field["value"])}
+            {"name": field["name"], "value": values.get(field["name"], field.get("value"))}
             for field in client["fields"]
         ],
     )
