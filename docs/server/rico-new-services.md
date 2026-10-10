@@ -12,7 +12,7 @@ Verify the ACL bootstrap with `systemctl status filebrowser-access-bootstrap` an
 
 ## Matrix and Element
 
-- Element Web: `https://chat.outworld66.ru`
+- Element Web: `https://chat.outworld66.ru` (Element Web share links use this domain)
 - Matrix homeserver: `https://matrix.outworld66.ru`
 - User IDs: `@name:matrix.outworld66.ru`
 
