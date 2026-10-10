@@ -100,12 +100,17 @@ Streamline imports movies into `/srv/media/library/movies` and series into
 books/audiobooks library folders.
 Jellyfin reads only `/srv/media/library/movies` and
 `/srv/media/library/tv`, which are configured as its Movies and TV libraries.
-The services use one mergerfs namespace over two filesystems. Streamline
-uses copy mode because mergerfs can place the download and library directories
-on different backing filesystems. Jellyfin sees the imported file through its
-library scan. Jellyfin scans libraries every 12 hours; after a Streamline
-import, use **Dashboard → Libraries → Scan All Libraries** to make the new
-item appear immediately.
+The services use one mergerfs namespace over two filesystems. Streamline uses
+hardlinks for imports so qBittorrent can continue seeding without a second
+copy of the media. Jellyfin sees the imported file through its library scan.
+Streamline's systemd sandbox grants write access to the merged `/srv/media`
+mount as one path. Keeping the download and library paths in one mount
+namespace is required for mergerfs hardlinks; granting them as separate
+`ReadWritePaths` makes systemd expose them as different mount points, which
+breaks hardlink imports with `EXDEV`.
+Jellyfin scans libraries every 12 hours; after a Streamline import, use
+**Dashboard → Libraries → Scan All Libraries** to make the new item appear
+immediately.
 
 `/var/lib/streamline/data` is Streamline's local application state, including
 its SQLite database. It is not a download or media directory; keep it on the
@@ -192,8 +197,8 @@ Streamline is the only movie and TV request and management application.
 Jackett provides the aggregate Torznab feed, Bitmagnet and Prowlarr provide
 additional search sources, qBittorrent downloads, and Jellyfin serves the
 media. Streamline writes into the existing Jellyfin
-library folders and uses copy imports so downloads work even when mergerfs
-places source and destination on different backing disks.
+library folders and uses hardlink imports so downloads can keep seeding without
+duplicating media storage.
 
 Streamline uses loopback port `8097`; it is not opened in the firewall. Caddy
 proxies directly to it. The `/login` page starts Pocket ID sign-in, and Caddy
@@ -245,30 +250,31 @@ It has no user-facing page, so it is not a separate Homepage entry. Most
 indexers do not need it, so use it only for trackers that report a Cloudflare
 or anti-bot challenge.
 Rico keeps FlareSolverr at error-only logging because its informational request
-logs can include POST data, including tracker credentials. Its browser wait and
-language settings use the FlareSolverr defaults: one second and no explicit
-browser language.
+logs can include POST data, including tracker credentials. Jackett uses
+FlareSolverr at `127.0.0.1:8191`. Prowlarr's RuTracker proxy uses Byparr at
+`127.0.0.1:8192`; Byparr uses Camoufox and speaks the FlareSolverr API. Both
+endpoints are loopback-only and must not be exposed publicly.
 
-Rico routes all outbound IPv4 traffic from both Jackett and FlareSolverr through
-the same AmneziaWG tunnel, including Cloudflare challenge resources such as
-`challenges.cloudflare.com`. There is no per-domain split tunnel for either
-service. The [FlareSolverr troubleshooting guide](https://github.com/FlareSolverr/FlareSolverr/wiki/Troubleshooting)
-requires the solver and requesting application to use the same IP, so this
-keeps challenge cookies and follow-up tracker requests on one egress address.
+Rico routes all outbound IPv4 traffic from Jackett, Prowlarr, FlareSolverr, and
+Byparr through the same AmneziaWG tunnel, including Cloudflare challenge
+resources such as `challenges.cloudflare.com`. There is no per-domain split
+tunnel. Both solvers use the same service UID and VPN egress as their requesting
+applications, so challenge cookies and follow-up tracker requests share one
+public address.
 Export a client from
 AmneziaVPN in its `.vpn` sharing format. The service extracts the AmneziaWG
 configuration from the selected container at startup; no desktop client is
 needed on Rico.
 
-Opening the RuTracker setup form makes Jackett fetch RuTracker's login page and
-captcha. A direct request through FlareSolverr timed out at both 120 seconds
-and 10 minutes on version 3.5.2, including with an explicit
-`maxTimeout: 600000`. The temporary longer timeouts, five-second browser wait,
-and browser-language overrides were reverted. Jackett now uses its default
-55-second timeout; FlareSolverr's API default is 60 seconds, and its browser
-wait default is one second. Pomerium still allows 150 seconds for Jackett's
-request. See the [Jackett FlareSolverr guide](https://github.com/Jackett/Jackett#configuring-flaresolverr)
-and [FlareSolverr environment variables and request defaults](https://github.com/FlareSolverr/FlareSolverr#environment-variables).
+FlareSolverr 3.5.2 timed out on RuTracker's `login.php` challenge even with a
+120-second timeout. Byparr 3.0.4 passed the same login page, and Prowlarr's
+RuTracker indexer test then succeeded. Byparr runs at `127.0.0.1:8192` with a
+Russian browser locale; its image is pinned in NixOS. FlareSolverr remains on
+`127.0.0.1:8191` for Jackett. Jackett uses its default 55-second timeout;
+Prowlarr uses 60 seconds. Pomerium allows 150 seconds for Jackett's request.
+See the [Jackett FlareSolverr guide](https://github.com/Jackett/Jackett#configuring-flaresolverr),
+[FlareSolverr environment variables](https://github.com/FlareSolverr/FlareSolverr#environment-variables),
+and [Byparr](https://github.com/ThePhaseless/Byparr).
 
 If RuTracker setup still fails, check the page response through FlareSolverr's
 VPN route:
@@ -277,9 +283,9 @@ VPN route:
 sudo -u flaresolverr curl -4sS -D - -o /dev/null --max-time 20 \
   https://rutracker.org/forum/login.php | grep -Ei '^(HTTP/|server:|cf-ray:|cf-mitigated:)'
 
-curl -sS --max-time 70 -H 'Content-Type: application/json' \
-  -d '{"cmd":"request.get","url":"https://rutracker.org/forum/login.php","maxTimeout":60000}' \
-  http://127.0.0.1:8191/v1 | jq '{status,message,version,http_status:.solution.status}'
+curl -sS --max-time 140 -H 'Content-Type: application/json' \
+  -d '{"cmd":"request.get","url":"https://rutracker.org/forum/login.php","maxTimeout":120000}' \
+  http://127.0.0.1:8192/v1 | jq '{status,message,version,http_status:.solution.status}'
 ```
 
 The raw `curl` check can receive `HTTP 403` from Cloudflare because it does not
@@ -291,13 +297,15 @@ exit while FlareSolverr's headless browser still times out. This is a reported
 FlareSolverr failure mode for managed challenges, including cases where the
 normal browser works on the same network
 ([upstream issue #1675](https://github.com/FlareSolverr/FlareSolverr/issues/1675)).
-The current network checks confirm Jackett and FlareSolverr run on the same
-host, use the same VPN egress address, and have no IPv6 default route. Jackett
-points to the local FlareSolverr API. The troubleshooting guide also suggests
+The current network checks confirm Jackett, Prowlarr, and both solvers run on
+the same host, use the same VPN egress address, and have no IPv6 default route.
+Jackett points to the local FlareSolverr API; the tagged RuTracker indexer in
+Prowlarr points to Byparr. The troubleshooting guide also
+suggests
 a test without a VPN; Rico keeps the VPN because RuTracker is only reachable
 through it, so that test would prevent access to the tracker. Longer timeouts
-did not resolve the challenge, so test through FlareSolverr itself before
-changing the VPN exit, and keep Jackett and FlareSolverr on the same egress
+did not resolve the challenge, so test through Byparr before changing the VPN
+exit, and keep both solvers and requesting applications on the same egress
 address so challenge cookies and follow-up requests share one public address.
 Pomerium's [route timeout reference](https://www.pomerium.com/docs/reference/routes/timeouts)
 documents the 30-second default and per-route override.
@@ -314,8 +322,8 @@ ssh root@192.168.0.4 \
 
 The service extracts the embedded AmneziaWG config into `/run`, then removes
 default-route, DNS, and hook directives, plus empty optional `I1`–`I5` fields,
-before starting the tunnel. All outbound IPv4 traffic from Jackett and
-FlareSolverr uses the VPN. Jellyfin is narrower: only addresses returned for
+before starting the tunnel. All outbound IPv4 traffic from Jackett, FlareSolverr,
+and Byparr uses the VPN. Jellyfin is narrower: only addresses returned for
 `image.tmdb.org`, and only traffic from the Jellyfin service user, use the VPN.
 Its other outbound traffic uses Rico's ordinary route; its proxy connection
 and responses to Caddy stay on loopback.
@@ -336,9 +344,11 @@ Verify the tunnel and route after loading the client configuration:
 ```bash
 ssh root@192.168.0.4 'systemctl status vpn.service; awg show vpn0'
 ssh root@192.168.0.4 'systemctl status flaresolverr.service; curl -fsS http://127.0.0.1:8191/'
+ssh root@192.168.0.4 'systemctl status docker-byparr.service; curl -fsS -o /dev/null -w "HTTP %{http_code}\\n" http://127.0.0.1:8192/docs'
 ssh root@192.168.0.4 '
   ip -4 route get 1.1.1.1 uid "$(id -u flaresolverr)"
   ip -4 route get 1.1.1.1 uid "$(id -u jackett)"
+  ip -4 route get 1.1.1.1 uid "$(id -u prowlarr)"
   runuser -u jackett -- curl -4 --connect-timeout 10 --max-time 20 \
     -sS -o /dev/null -w "HTTP %{http_code}\\n" https://rutracker.org/
   artwork_ip=$(getent ahostsv4 image.tmdb.org | head -1 | cut -d " " -f 1)
@@ -347,10 +357,11 @@ ssh root@192.168.0.4 '
 '
 ```
 
-FlareSolverr's and Jackett's routes and the artwork IP route should show
-`dev vpn0`; Jellyfin's route to `1.1.1.1` should use Rico's ordinary gateway.
-The FlareSolverr health request should return a JSON ready response, and the
-tracker curl should return an HTTP status. If the exported configuration
+FlareSolverr's, Byparr's, Jackett's, and Prowlarr's routes and the artwork IP
+route should show `dev vpn0`; Jellyfin's route to `1.1.1.1` should use Rico's
+ordinary gateway. The FlareSolverr health request should return a JSON ready
+response, Byparr's `/docs` should return HTTP 200, and the tracker curl should
+return an HTTP status. If the exported configuration
 changes, replace the file and run
 `systemctl restart vpn.service`. The service skips startup until `client.vpn`
 exists.

@@ -556,14 +556,16 @@ lib.mkIf (config.server.secrets.enable or false) {
     enable = true;
     openFirewall = false;
   };
-  users.groups.flaresolverr = { };
+  users.groups.flaresolverr.gid = 984;
   users.users.flaresolverr = {
     isSystemUser = true;
+    uid = 983;
     group = "flaresolverr";
   };
   systemd.services.flaresolverr = {
     environment = {
       HOST = "127.0.0.1";
+      LANG = "ru_RU.UTF-8";
       LOG_LEVEL = "error";
     };
     serviceConfig = {
@@ -579,6 +581,17 @@ lib.mkIf (config.server.secrets.enable or false) {
       server.port = 9696;
       auth.method = "External";
     };
+  };
+  users.groups.prowlarr = { };
+  users.users.prowlarr = {
+    isSystemUser = true;
+    group = "prowlarr";
+  };
+  systemd.services.prowlarr.serviceConfig = {
+    DynamicUser = lib.mkForce false;
+    User = "prowlarr";
+    Group = "prowlarr";
+    ExecStartPre = [ "+${pkgs.coreutils}/bin/chown -R prowlarr:prowlarr /var/lib/prowlarr" ];
   };
   services.streamline = {
     enable = true;
@@ -637,7 +650,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         series_path = "${mediaRoot}/library/tv";
         download_path = "${mediaRoot}/downloads/complete/streamline";
         allowed_download_roots = [ "${mediaRoot}/downloads/complete/streamline" ];
-        import_mode = "copy";
+        import_mode = "hardlink";
       };
       download_clients = [
         {
@@ -742,6 +755,11 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
   };
   systemd.services.streamline = {
+    # Keep downloads and library in one mount namespace so mergerfs can hardlink across them.
+    serviceConfig.ReadWritePaths = lib.mkForce [
+      mediaRoot
+      "/var/lib/streamline"
+    ];
     after = [
       "jackett.service"
       "prowlarr.service"
@@ -823,7 +841,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   environment.systemPackages = [ pkgs.jq ];
 
   virtualisation.oci-containers.containers.bindery = {
-    image = "ghcr.io/vavallee/bindery:1.39.0";
+    image = "ghcr.io/vavallee/bindery:1.39.0@sha256:1d9ce80605de95e18c25d680906d4247b3cd0abda056ab0fa16230bb00b6b39a";
     extraOptions = [
       "--network=host"
       "--user=2001:2000"
@@ -957,7 +975,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   virtualisation.oci-containers.containers.immich-analyze = {
-    image = "ghcr.io/timasoft/immich-analyze:v0.5.1";
+    image = "ghcr.io/timasoft/immich-analyze:v0.5.1@sha256:6162d6507664769198f4ab5cc8aec76390faa090004aa82b234fd55556993aa1";
     extraOptions = [ "--network=host" ];
     environmentFiles = [
       llmCredentialsFile
@@ -1002,6 +1020,20 @@ lib.mkIf (config.server.secrets.enable or false) {
   virtualisation.docker.enable = true;
   virtualisation.oci-containers = {
     backend = "docker";
+    containers.byparr = {
+      image = "ghcr.io/thephaseless/byparr:3.0.4@sha256:874f719518f617d03a60e03411fc5d090647e1a877041e81f8dc965927c7deb6";
+      extraOptions = [
+        "--network=host"
+        "--user=983:984"
+        "--shm-size=512m"
+        "--tmpfs=/tmp:rw,exec,nosuid,size=512m"
+      ];
+      environment = {
+        HOST = "127.0.0.1";
+        PORT = "8192";
+        BROWSER_LOCALE = "ru-RU";
+      };
+    };
     containers.nocodb = {
       image = "nocodb/nocodb:2026.09.0@sha256:5c9296e0b554b9dce431d62fda224388a3ce33c06215cec04bc4ec5c67a76295";
       ports = [ "127.0.0.1:8085:8080" ];
