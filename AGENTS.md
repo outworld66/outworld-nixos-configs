@@ -152,6 +152,63 @@ arguments.
 - Preserve host differences and state versions. Do not copy settings between
   `tpx13` and `majesty` without checking whether they are hardware-specific.
 
+## Opt-in service access audit
+
+The service access audit covers all services on the requested host that have
+accounts, user-facing access controls, or privileged API/admin interfaces. It
+is an on-demand, read-only review. Run it only when the user explicitly asks;
+do not include it in routine code review, validation, deployment, or server
+health checks. The audit can require inspecting several identity providers and
+application databases, so report findings without exposing tokens, client
+secrets, password hashes, or user file contents.
+
+For each in-scope service, review its NixOS configuration and operator guide,
+then record:
+
+- Public and internal endpoints, authentication method, whether sign-up or
+  automatic account creation is enabled, and whether access also exists
+  through a direct API, mobile client, or local login.
+- Every identity source, including Pocket ID or another OIDC/LDAP provider,
+  application-local accounts, bootstrap administrators, service databases,
+  and any service-specific user registry. Do not assume IdP membership is the
+  complete list of accounts in an application.
+- The account identifier mapping (for example, OIDC `preferred_username`),
+  enabled/disabled state, groups and role mappings, admin status, and every
+  resource-level permission or scope that affects effective access.
+- Group and policy rules at the service, reverse proxy, API, and storage
+  layers. Resolve the combined effective access; a UI restriction does not
+  imply that a direct API or mounted filesystem has the same restriction.
+- What a first-time or newly registered user receives: eligibility
+  requirements, automatic versus manual provisioning, default roles/groups,
+  resources, scopes, permissions, and any setup step before access works.
+
+Enumerate services from the requested host profile, shared server modules,
+Homepage entries, reverse-proxy virtual hosts, and direct service/API access.
+Summarize the result as one row per service with its identity sources, account
+inventory, roles/groups, effective resources, first-login behavior, and any
+discrepancies. Include services with local accounts even when they do not use
+Pocket ID.
+
+Compare account inventories in both directions: eligible IdP users without an
+application account, application accounts without a current eligible IdP
+identity, local accounts that bypass the IdP, and identities duplicated under
+different names. Report unexpected administrators, overly broad or stale
+group rules, permissions beyond the intended policy, orphaned accounts, and
+the expected first-login behavior. Do not create, delete, disable, or modify
+accounts or permissions during the audit. Keep it read-only and run it only on
+the user's explicit request.
+
+For example, a Rico File Browser review includes
+`hosts/rico/filebrowser.nix`, the Pocket ID user/group and client configuration,
+and `/var/lib/filebrowser/filebrowser.sqlite`. Inspect the File Browser
+`users`, `groups`, and `access_rules` tables, plus only the relevant account
+fields in `user_data.backendScopes` and
+`user_data.backendSourcePermissions`. Check that non-admin scopes point to
+`/srv/filebrowser/users/<preferred_username>`, that only `media-admin` can
+access read-only `Media files`, and that first OIDC login applies those same
+defaults. Do not dump all of `user_data` or copy the database into the
+repository.
+
 ## Change conventions
 
 - Put shared NixOS behavior in `nixos/modules/` and host-only behavior in the

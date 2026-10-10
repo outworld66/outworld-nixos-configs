@@ -8,6 +8,10 @@ let
   domain = "filebrowser.outworld66.ru";
   image = "ghcr.io/gtsteffaniak/filebrowser:stable@sha256:9d42f635e32913d7daf05259428b6c70061cfdca3affc9602b4c31717e0a4bae";
   sharedPath = "/srv/media";
+  personalFilesPath = "/srv/filebrowser/users";
+  personalScopeBootstrap = pkgs.writeText "filebrowser-personal-scope-bootstrap.py" (
+    builtins.readFile ./filebrowser-personal-scope-bootstrap.py
+  );
   configFile = pkgs.writeText "filebrowser-config.yaml" (
     builtins.toJSON {
       server = {
@@ -16,11 +20,10 @@ let
         sources = [
           {
             name = "Personal files";
-            path = "/home/filebrowser/data/users";
+            path = personalFilesPath;
             config = {
               defaultEnabled = true;
               defaultUserScope = "/";
-              createUserDir = true;
               defaultPermissions = {
                 view = true;
                 download = true;
@@ -32,7 +35,7 @@ let
             };
           }
           {
-            name = "Torrents and Streamline";
+            name = "Media files";
             path = "/srv/shared-media";
             config = {
               denyByDefault = true;
@@ -81,6 +84,8 @@ lib.mkIf (config.server.secrets.enable or false) {
   systemd.tmpfiles.rules = [
     "d /var/lib/filebrowser 0750 filebrowser media -"
     "d /var/lib/filebrowser/users 0750 filebrowser media -"
+    "d /srv/filebrowser 0750 filebrowser media -"
+    "d ${personalFilesPath} 0750 filebrowser media -"
   ];
 
   virtualisation.oci-containers.containers.filebrowser = {
@@ -91,26 +96,38 @@ lib.mkIf (config.server.secrets.enable or false) {
     volumes = [
       "${configFile}:/home/filebrowser/config.yaml:ro"
       "/var/lib/filebrowser:/home/filebrowser/data"
+      "${personalFilesPath}:${personalFilesPath}"
       "${sharedPath}:/srv/shared-media:ro"
     ];
     extraOptions = [ "--user=2002:2000" ];
   };
 
   systemd.services.filebrowser-access-bootstrap = {
-    description = "Restrict the shared File Browser source to media admins";
+    description = "Reconcile File Browser personal scopes and media access";
     requires = [ "docker.service" ];
     after = [ "docker.service" ];
+    requiresMountsFor = [
+      personalFilesPath
+      sharedPath
+    ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = pkgs.writeShellScript "filebrowser-access-bootstrap" ''
+        ${pkgs.python3}/bin/python3 ${personalScopeBootstrap} \
+          /var/lib/filebrowser/filebrowser.sqlite \
+          ${personalFilesPath} \
+          ${personalFilesPath} \
+          /home/filebrowser/data/users \
+          /var/lib/filebrowser/users
         ${config.virtualisation.docker.package}/bin/docker run --rm --pull=missing --network=host \
           --user=2002:2000 \
           --volume=${configFile}:/home/filebrowser/config.yaml:ro \
           --volume=/var/lib/filebrowser:/home/filebrowser/data \
+          --volume=${personalFilesPath}:${personalFilesPath} \
           --volume=${sharedPath}:/srv/shared-media:ro \
           --entrypoint=/home/filebrowser/filebrowser \
           ${image} set rule \
-          --source="Torrents and Streamline" \
+          --source="Media files" \
           --path=/ \
           --role=group \
           --value=media-admin \
