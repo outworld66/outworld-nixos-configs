@@ -1,0 +1,230 @@
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  matrixDomain = "matrix.outworld66.ru";
+  elementDomain = "chat.outworld66.ru";
+  rtcDomain = "matrix-rtc.outworld66.ru";
+  elementWeb = pkgs.element-web.override {
+    conf = {
+      default_server_name = matrixDomain;
+      default_server_config = {
+        "m.homeserver" = {
+          base_url = "https://${matrixDomain}";
+        };
+        "m.identity_server" = {
+          base_url = "";
+        };
+      };
+      disable_custom_urls = true;
+      disable_guests = true;
+      element_call.use_exclusively = true;
+      features.feature_element_call_video_rooms = true;
+    };
+  };
+in
+lib.mkIf (config.server.secrets.enable or false) {
+  services.postgresql = {
+    enable = true;
+    ensureDatabases = [ "matrix-synapse" ];
+    ensureUsers = [
+      {
+        name = "matrix-synapse";
+        ensureDBOwnership = true;
+      }
+    ];
+  };
+
+  services.matrix-synapse = {
+    enable = true;
+    dataDir = "/var/lib/matrix-synapse";
+    settings = {
+      server_name = matrixDomain;
+      public_baseurl = "https://${matrixDomain}/";
+      enable_registration = false;
+      federation_enabled = false;
+      password_config.enabled = false;
+      database = {
+        name = "psycopg2";
+        args = {
+          database = "matrix-synapse";
+          host = "/run/postgresql";
+          user = "matrix-synapse";
+        };
+      };
+      listeners = [
+        {
+          port = 8008;
+          bind_addresses = [ "127.0.0.1" ];
+          type = "http";
+          tls = false;
+          x_forwarded = true;
+          resources = [
+            {
+              names = [
+                "client"
+                "openid"
+              ];
+              compress = false;
+            }
+          ];
+        }
+      ];
+      oidc_providers = [
+        {
+          idp_id = "pocket-id";
+          idp_name = "Pocket ID";
+          issuer = "https://id.outworld66.ru";
+          client_id = "matrix";
+          client_secret_path = "/var/lib/matrix-synapse/oidc-client-secret";
+          scopes = [
+            "openid"
+            "profile"
+            "email"
+          ];
+          allow_existing_users = true;
+          user_mapping_provider.config = {
+            localpart_template = "{{ user.preferred_username }}";
+            display_name_template = "{{ user.name }}";
+            email_template = "{{ user.email }}";
+          };
+        }
+      ];
+      experimental_features = {
+        msc3266_enabled = true;
+        msc4143_enabled = true;
+        msc4222_enabled = true;
+      };
+      max_event_delay_duration = "24h";
+      rc_message = {
+        per_second = 0.5;
+        burst_count = 30;
+      };
+      rc_delayed_event_mgmt = {
+        per_second = 1;
+        burst_count = 20;
+      };
+      matrix_rtc.transports = [
+        {
+          type = "livekit";
+          livekit_service_url = "https://${rtcDomain}/livekit/jwt";
+        }
+      ];
+    };
+  };
+
+  systemd.services.matrix-synapse = {
+    requires = [
+      "pocket-id-oidc-provision.service"
+      "postgresql.service"
+    ];
+    after = [
+      "pocket-id-oidc-provision.service"
+      "postgresql.service"
+    ];
+  };
+
+  systemd.services.livekit-secret = {
+    description = "Create persistent LiveKit credentials for MatrixRTC";
+    wantedBy = [ "multi-user.target" ];
+    before = [
+      "livekit.service"
+      "lk-jwt-service.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "livekit-secret" ''
+        install -d -m 0700 /var/lib/livekit
+        if [ ! -s /var/lib/livekit/keys ]; then
+          umask 077
+          printf 'matrixrtc: %s\n' "$(${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64 -w0)" > /var/lib/livekit/keys
+        fi
+        chmod 0400 /var/lib/livekit/keys
+      '';
+    };
+  };
+
+  services.livekit = {
+    enable = true;
+    keyFile = "/var/lib/livekit/keys";
+    settings = {
+      port = 7880;
+      rtc = {
+        tcp_port = 7881;
+        udp_port = 7882;
+        use_external_ip = true;
+      };
+    };
+  };
+  systemd.services.livekit = {
+    requires = [ "livekit-secret.service" ];
+    after = [ "livekit-secret.service" ];
+  };
+
+  services.lk-jwt-service = {
+    enable = true;
+    livekitUrl = "wss://${rtcDomain}/livekit/sfu";
+    keyFile = "/var/lib/livekit/keys";
+    port = 8088;
+  };
+  systemd.services.lk-jwt-service = {
+    requires = [ "livekit-secret.service" ];
+    after = [ "livekit-secret.service" ];
+  };
+
+  networking.firewall = {
+    allowedTCPPorts = [ 7881 ];
+    allowedUDPPorts = [ 7882 ];
+  };
+
+  services.homepage-dashboard.services = lib.mkAfter [
+    {
+      Social = [
+        {
+          "Element" = {
+            href = "https://${elementDomain}";
+            icon = "element.png";
+            description = "Private Rico Matrix chat and group calls";
+          };
+        }
+      ];
+    }
+  ];
+
+  services.caddy.virtualHosts = {
+    ${matrixDomain}.extraConfig = ''
+      @matrixWellKnown path /.well-known/matrix/client
+      handle @matrixWellKnown {
+        header Content-Type application/json
+        header Access-Control-Allow-Origin *
+        respond '{"m.homeserver":{"base_url":"https://${matrixDomain}"}}' 200
+      }
+      handle {
+        reverse_proxy 127.0.0.1:8008
+      }
+    '';
+
+    ${elementDomain}.extraConfig = ''
+      root * ${elementWeb}
+      try_files {path} /index.html
+      file_server
+    '';
+
+    ${rtcDomain}.extraConfig = ''
+      @jwtService path /livekit/jwt/sfu/get /livekit/jwt/healthz
+      handle @jwtService {
+        uri strip_prefix /livekit/jwt
+        reverse_proxy 127.0.0.1:8088
+      }
+      @livekit path /livekit/sfu /livekit/sfu/*
+      handle @livekit {
+        uri strip_prefix /livekit/sfu
+        reverse_proxy 127.0.0.1:7880
+      }
+      respond 404
+    '';
+  };
+}

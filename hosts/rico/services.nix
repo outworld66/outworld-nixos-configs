@@ -455,6 +455,13 @@ lib.mkIf (config.server.secrets.enable or false) {
               description = "Cloud file storage";
             };
           }
+          {
+            "File Browser" = {
+              href = "https://filebrowser.outworld66.ru";
+              icon = "filebrowser.png";
+              description = "Read-only view of completed torrents and Streamline files";
+            };
+          }
         ];
       }
       {
@@ -485,6 +492,13 @@ lib.mkIf (config.server.secrets.enable or false) {
               href = "https://${mailHostname}";
               icon = "mdi-email-outline";
               description = "Stalwart mail server";
+            };
+          }
+          {
+            "openGym" = {
+              href = "https://gym.outworld66.ru";
+              icon = "mdi-dumbbell";
+              description = "Workout and body-weight tracker";
             };
           }
         ];
