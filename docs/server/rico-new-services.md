@@ -6,7 +6,7 @@ These services are configured in NixOS and deployed with `task server-update -- 
 
 Open File Browser at `https://filebrowser.outworld66.ru`. It uses Pocket ID OIDC. Users must belong to the Pocket ID `media-admin` or `media-user` group; `media-admin` users receive File Browser administrator rights. Each account gets a writable `Personal files` source scoped to its own directory under `/var/lib/filebrowser/users/<preferred_username>`.
 
-`Torrents and Streamline` is one read-only source backed by `/srv/media/downloads/complete`; the `streamline/` directory remains inside it. A deny-by-default access rule allows only the Pocket ID `media-admin` group to browse or download this source. A startup service reapplies that rule before File Browser starts. Its SQLite database, cache, and per-user folders live under `/var/lib/filebrowser`.
+`Torrents and Streamline` is one read-only source backed by `/srv/media`; the `downloads/complete/streamline/` directory remains inside it. A deny-by-default access rule allows only the Pocket ID `media-admin` group to browse or download this source. A startup service reapplies that rule before File Browser starts. Its SQLite database, cache, and per-user folders live under `/var/lib/filebrowser`.
 
 Verify the ACL bootstrap with `systemctl status filebrowser-access-bootstrap` and `journalctl -u filebrowser-access-bootstrap`. Test with one `media-user` account: its personal folder should be writable, and the shared source should contain no accessible files. A `media-admin` account should be able to browse and download the shared files, but the source remains read-only.
 
