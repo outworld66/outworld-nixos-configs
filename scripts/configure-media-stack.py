@@ -191,6 +191,9 @@ def configure_prowlarr_download_client():
 
 
 def configure_prowlarr_indexers():
+    marker = Path("/var/lib/prowlarr/jackett-indexers-imported")
+    if marker.exists():
+        return
     base = "http://127.0.0.1:9696"
     config = ET.parse("/var/lib/prowlarr/config.xml").getroot()
     api_key = config.findtext("ApiKey")
@@ -347,6 +350,8 @@ def configure_prowlarr_indexers():
                 print(f"Prowlarr indexer {name} was not added: {error}")
                 continue
         print(f"Prowlarr indexer {name} is configured")
+    marker.write_text("Imported supported Jackett indexers.\n")
+    marker.chmod(0o600)
 
 
 def jackett_api(key, indexer, **params):
