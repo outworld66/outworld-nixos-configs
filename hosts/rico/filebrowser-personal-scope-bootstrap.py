@@ -8,9 +8,14 @@ from pathlib import Path, PurePosixPath
 
 
 def main() -> None:
-    database_path, users_path, source_path, old_source_path, old_users_path = map(
-        Path, sys.argv[1:]
-    )
+    (
+        database_path,
+        users_path,
+        source_path,
+        old_source_path,
+        old_users_path,
+    ) = map(Path, sys.argv[1:6])
+    media_source_path = sys.argv[6]
     users_path.mkdir(mode=0o750, parents=True, exist_ok=True)
     old_users_path.mkdir(mode=0o750, parents=True, exist_ok=True)
     connection = sqlite3.connect(database_path)
@@ -98,7 +103,20 @@ def main() -> None:
                 raise FileExistsError("Personal file migration destination already exists")
             shutil.move(str(old_item), str(destination))
 
-        if updates:
+        expected_rule = json.dumps(
+            {
+                "Deny": {"Users": {}, "Groups": {}},
+                "Allow": {"Users": {}, "Groups": {"media-admin": {}}},
+            },
+            separators=(",", ":"),
+        ).encode()
+        current_rule = connection.execute(
+            "SELECT rule_data FROM access_rules WHERE source = ? AND path = ?",
+            (media_source_path, "/"),
+        ).fetchone()
+        rule_changed = current_rule is None or current_rule[0] != expected_rule
+
+        if updates or rule_changed:
             backup_path = database_path.with_name(
                 "filebrowser.sqlite.before-personal-scope"
             )
@@ -113,6 +131,15 @@ def main() -> None:
             with connection:
                 connection.executemany(
                     "UPDATE users SET user_data = ? WHERE username = ?", updates
+                )
+                connection.execute(
+                    """
+                    INSERT INTO access_rules (source, path, rule_data)
+                    VALUES (?, '/', ?)
+                    ON CONFLICT(source, path)
+                    DO UPDATE SET rule_data = excluded.rule_data
+                    """,
+                    (media_source_path, sqlite3.Binary(expected_rule)),
                 )
     finally:
         connection.close()
