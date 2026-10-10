@@ -14,15 +14,7 @@ The `Completed torrents` and `Streamline` sources are mounted read-only from `/s
 - Matrix homeserver: `https://matrix.outworld66.ru`
 - User IDs: `@name:matrix.outworld66.ru`
 
-Pocket ID handles Matrix login. Assign each user to `media-admin` or `media-user` before they sign in. The first administrator account must be created manually; later allowed users are created on their first OIDC login. Federation is disabled, so users on other Matrix servers cannot join or message this server.
-
-Before the first OIDC login, create the first administrator using the same local name as the user's Pocket ID `preferred_username`:
-
-```sh
-sudo matrix-synapse-register_new_matrix_user --admin --user <preferred_username>
-```
-
-The command prompts for an initial password. Synapse password login is disabled; after this account is linked by the Pocket ID login, authenticate through OIDC. Existing Synapse accounts can be promoted through the Synapse Admin API once an administrator token is available.
+Pocket ID handles Matrix login. Its `matrix-admin` and `matrix-user` groups are the only groups allowed by the Matrix OIDC client. The verified Pocket ID account `outworld66@gmail.com` is assigned `matrix-admin`, and the `matrix-admin-bootstrap` service creates `@outworld66:matrix.outworld66.ru` as a Synapse server administrator. Pocket ID's `preferred_username` for this account is `outworld66`, so its first OIDC login matches that account. Other allowed users are created on their first OIDC login. Federation is disabled, so users on other Matrix servers cannot join or message this server.
 
 Element's in-app group calls use MatrixRTC and the local LiveKit server. Rico's host firewall allows LiveKit media on UDP `7882` and TCP `7881`. Forward both ports on the home router to `192.168.0.4`; without this NAT forwarding, call signaling may work while audio/video media cannot reach Rico. HTTPS signaling uses `matrix-rtc.outworld66.ru` through Caddy.
 

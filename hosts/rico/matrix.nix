@@ -123,6 +123,19 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
   };
 
+  services.pocket-id = {
+    managedGroups = [
+      "matrix-admin"
+      "matrix-user"
+    ];
+    userGroupMappings = [
+      {
+        email = "outworld66@gmail.com";
+        groups = [ "matrix-admin" ];
+      }
+    ];
+  };
+
   systemd.services.matrix-synapse = {
     requires = [
       "matrix-synapse-secret.service"
@@ -146,11 +159,53 @@ lib.mkIf (config.server.secrets.enable or false) {
         install -d -m 0750 -o matrix-synapse -g matrix-synapse /var/lib/matrix-synapse
         if [ ! -s /var/lib/matrix-synapse/secrets.yaml ]; then
           umask 077
-          printf "macaroon_secret_key: '%s'\\n" "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
+          printf "macaroon_secret_key: '%s'\\nregistration_shared_secret: '%s'\\n" \
+            "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
+            "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
             > /var/lib/matrix-synapse/secrets.yaml
-          chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/secrets.yaml
-          chmod 0400 /var/lib/matrix-synapse/secrets.yaml
         fi
+        if ! grep -q '^registration_shared_secret:' /var/lib/matrix-synapse/secrets.yaml; then
+          umask 077
+          printf "registration_shared_secret: '%s'\\n" "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
+            >> /var/lib/matrix-synapse/secrets.yaml
+        fi
+        chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/secrets.yaml
+        chmod 0400 /var/lib/matrix-synapse/secrets.yaml
+      '';
+    };
+  };
+
+  systemd.services.matrix-admin-bootstrap = {
+    description = "Bootstrap the Matrix server administrator";
+    wantedBy = [ "multi-user.target" ];
+    requires = [
+      "matrix-synapse.service"
+      "pocket-id-oidc-provision.service"
+    ];
+    after = [
+      "matrix-synapse.service"
+      "pocket-id-oidc-provision.service"
+    ];
+    path = [
+      pkgs.coreutils
+      pkgs.openssl
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "matrix-admin-bootstrap" ''
+        set -eu
+        password_file=$(mktemp)
+        trap 'rm -f "$password_file"' EXIT
+        chmod 0600 "$password_file"
+        openssl rand -base64 48 > "$password_file"
+        ${config.services.matrix-synapse.package}/bin/register_new_matrix_user \
+          --admin \
+          --exists-ok \
+          --user outworld66 \
+          --password-file "$password_file" \
+          -c ${config.services.matrix-synapse.configFile} \
+          -c /var/lib/matrix-synapse/secrets.yaml \
+          http://127.0.0.1:8008/
       '';
     };
   };
