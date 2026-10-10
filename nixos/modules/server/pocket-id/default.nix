@@ -340,7 +340,7 @@ in
             provision_client matrix Matrix \
               '["https://matrix.outworld66.ru/_synapse/client/oidc/callback"]' \
               /var/lib/matrix-synapse/oidc-client-secret \
-              "" "" true '["media-admin","media-user"]'
+              "" "" true '["matrix-admin","matrix-user"]'
             chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/oidc-client-secret
             chmod 0400 /var/lib/matrix-synapse/oidc-client-secret
           ''}
