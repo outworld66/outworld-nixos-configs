@@ -66,6 +66,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   virtualisation.oci-containers.containers.filebrowser = {
     image = "ghcr.io/gtsteffaniak/filebrowser:stable@sha256:9d42f635e32913d7daf05259428b6c70061cfdca3affc9602b4c31717e0a4bae";
     ports = [ "127.0.0.1:8193:80" ];
+    environment.FILEBROWSER_CONFIG = "/home/filebrowser/config.yaml";
     environmentFiles = [ "/var/lib/filebrowser/oidc.env" ];
     volumes = [
       "${configFile}:/home/filebrowser/config.yaml:ro"
