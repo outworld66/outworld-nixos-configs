@@ -137,6 +137,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   systemd.services.matrix-synapse = {
+    restartTriggers = [ config.systemd.services.matrix-synapse-secret.serviceConfig.ExecStart ];
     requires = [
       "matrix-synapse-secret.service"
       "pocket-id-oidc-provision.service"
