@@ -91,6 +91,7 @@ lib.mkIf (config.server.secrets.enable or false) {
             "profile"
             "email"
           ];
+          enable_registration = true;
           allow_existing_users = true;
           user_mapping_provider.config = {
             localpart_template = "{{ user.preferred_username }}";

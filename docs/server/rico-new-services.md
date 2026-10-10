@@ -14,7 +14,7 @@ The `Completed torrents` and `Streamline` sources are mounted read-only from `/s
 - Matrix homeserver: `https://matrix.outworld66.ru`
 - User IDs: `@name:matrix.outworld66.ru`
 
-Pocket ID handles Matrix login. Assign each user to `media-admin` or `media-user` before they sign in. Federation is disabled, so users on other Matrix servers cannot join or message this server.
+Pocket ID handles Matrix login. Assign each user to `media-admin` or `media-user` before they sign in. The first administrator account must be created manually; later allowed users are created on their first OIDC login. Federation is disabled, so users on other Matrix servers cannot join or message this server.
 
 Before the first OIDC login, create the first administrator using the same local name as the user's Pocket ID `preferred_username`:
 
