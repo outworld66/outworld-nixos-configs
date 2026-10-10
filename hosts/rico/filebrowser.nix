@@ -9,6 +9,7 @@ let
   image = "ghcr.io/gtsteffaniak/filebrowser:stable@sha256:9d42f635e32913d7daf05259428b6c70061cfdca3affc9602b4c31717e0a4bae";
   sharedPath = "/srv/media";
   personalFilesPath = "/srv/filebrowser/users";
+  mediaSourcePath = "/srv/shared-media";
   personalScopeBootstrap = pkgs.writeText "filebrowser-personal-scope-bootstrap.py" (
     builtins.readFile ./filebrowser-personal-scope-bootstrap.py
   );
@@ -36,7 +37,7 @@ let
           }
           {
             name = "Media files";
-            path = "/srv/shared-media";
+            path = mediaSourcePath;
             config = {
               denyByDefault = true;
               defaultEnabled = true;
@@ -97,15 +98,13 @@ lib.mkIf (config.server.secrets.enable or false) {
       "${configFile}:/home/filebrowser/config.yaml:ro"
       "/var/lib/filebrowser:/home/filebrowser/data"
       "${personalFilesPath}:${personalFilesPath}"
-      "${sharedPath}:/srv/shared-media:ro"
+      "${sharedPath}:${mediaSourcePath}:ro"
     ];
     extraOptions = [ "--user=2002:2000" ];
   };
 
   systemd.services.filebrowser-access-bootstrap = {
     description = "Reconcile File Browser personal scopes and media access";
-    requires = [ "docker.service" ];
-    after = [ "docker.service" ];
     unitConfig.RequiresMountsFor = [
       personalFilesPath
       sharedPath
@@ -118,21 +117,8 @@ lib.mkIf (config.server.secrets.enable or false) {
           ${personalFilesPath} \
           ${personalFilesPath} \
           /home/filebrowser/data/users \
-          /var/lib/filebrowser/users
-        ${config.virtualisation.docker.package}/bin/docker run --rm --pull=missing --network=host \
-          --user=2002:2000 \
-          --volume=${configFile}:/home/filebrowser/config.yaml:ro \
-          --volume=/var/lib/filebrowser:/home/filebrowser/data \
-          --volume=${personalFilesPath}:${personalFilesPath} \
-          --volume=${sharedPath}:/srv/shared-media:ro \
-          --entrypoint=/home/filebrowser/filebrowser \
-          ${image} set rule \
-          --source="Media files" \
-          --path=/ \
-          --role=group \
-          --value=media-admin \
-          --allow \
-          --config=/home/filebrowser/config.yaml
+          /var/lib/filebrowser/users \
+          ${mediaSourcePath}
       '';
     };
   };
