@@ -820,12 +820,14 @@ lib.mkIf (config.server.secrets.enable or false) {
     wantedBy = [ "multi-user.target" ];
     requires = [
       "qbittorrent.service"
+      "prowlarr.service"
       "jackett.service"
       "jellyfin.service"
       "docker-bindery.service"
     ];
     after = [
       "qbittorrent.service"
+      "prowlarr.service"
       "jackett.service"
       "jellyfin-bootstrap.service"
       "docker-bindery.service"

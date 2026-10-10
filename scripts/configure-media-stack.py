@@ -10,6 +10,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 MEDIA_ROOT = "/srv/media"
@@ -136,6 +137,57 @@ def configure_qbittorrent():
                 {"category": category, "savePath": save_path},
             )
     print("qBittorrent credentials, paths, and categories are configured")
+
+
+def configure_prowlarr_download_client():
+    config = ET.parse("/var/lib/prowlarr/config.xml").getroot()
+    api_key = config.findtext("ApiKey")
+    if not api_key:
+        raise RuntimeError("Prowlarr API key is missing")
+    headers = {"X-Api-Key": api_key}
+    base = "http://127.0.0.1:9696"
+    schema = request(base, "/api/v1/downloadclient/schema", headers=headers)
+    client = next(item for item in schema if item["implementation"] == "QBittorrent")
+    values = {
+        "host": "127.0.0.1",
+        "port": 8181,
+        "username": "admin",
+        "password": secret("qbittorrent-webui-password"),
+        "category": "",
+    }
+    client.update(
+        name="qBittorrent",
+        enable=True,
+        priority=1,
+        tags=[],
+        fields=[
+            {"name": field["name"], "value": values.get(field["name"], field["value"])}
+            for field in client["fields"]
+        ],
+    )
+    request(base, "/api/v1/downloadclient/test", method="POST", data=client, headers=headers)
+    existing = request(base, "/api/v1/downloadclient", headers=headers)
+    match = next(
+        (
+            item
+            for item in existing
+            if item["name"] == "qBittorrent"
+            and item["implementation"] == "QBittorrent"
+        ),
+        None,
+    )
+    if match:
+        client["id"] = match["id"]
+        request(
+            base,
+            f"/api/v1/downloadclient/{match['id']}",
+            method="PUT",
+            data=client,
+            headers=headers,
+        )
+    else:
+        request(base, "/api/v1/downloadclient", method="POST", data=client, headers=headers)
+    print("Prowlarr qBittorrent download client is configured")
 
 
 def jackett_api(key, indexer, **params):
@@ -304,6 +356,7 @@ def configure_bindery():
 
 def main():
     configure_qbittorrent()
+    configure_prowlarr_download_client()
     configure_jellyfin()
     configure_bindery()
 
