@@ -21,6 +21,7 @@ let
       };
       disable_custom_urls = true;
       disable_guests = true;
+      permalink_prefix = "https://${elementDomain}";
       element_call.use_exclusively = true;
       features.feature_element_call_video_rooms = true;
     };
