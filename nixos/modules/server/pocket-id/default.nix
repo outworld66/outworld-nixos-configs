@@ -328,6 +328,21 @@ in
               '["https://streamline.outworld66.ru/auth/oidc/pocket-id/callback"]' \
               /var/lib/streamline/oidc-client-secret \
               "" "" true '["media-admin","media-user"]'
+            provision_client filebrowser FileBrowser \
+              '["https://filebrowser.outworld66.ru/api/auth/oidc/callback"]' \
+              /var/lib/filebrowser/oidc-client-secret \
+              "" "" true '["media-admin","media-user"]'
+            umask 077
+            printf '%s\n' \
+              "FILEBROWSER_OIDC_CLIENT_SECRET=$(cat /var/lib/filebrowser/oidc-client-secret)" \
+              > /var/lib/filebrowser/oidc.env
+            chmod 0400 /var/lib/filebrowser/oidc.env
+            provision_client matrix Matrix \
+              '["https://matrix.outworld66.ru/_synapse/client/oidc/callback"]' \
+              /var/lib/matrix-synapse/oidc-client-secret \
+              "" "" true '["media-admin","media-user"]'
+            chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/oidc-client-secret
+            chmod 0400 /var/lib/matrix-synapse/oidc-client-secret
           ''}
 
           install -d -m 0750 /var/lib/pomerium

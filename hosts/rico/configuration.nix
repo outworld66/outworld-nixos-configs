@@ -14,6 +14,9 @@
     ./disko.nix
     ../../nixos/modules/server/services.nix
     ./services.nix
+    ./filebrowser.nix
+    ./opengym.nix
+    ./matrix.nix
     ./vpn.nix
     ../../nixos/modules/zapret.nix
   ];
