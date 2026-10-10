@@ -10,6 +10,7 @@ let
   sourceConfig = "/var/lib/vpn/client.vpn";
   runtimeConfig = "${runtimeDir}/${interface}.conf";
   routeTable = "168";
+  prowlarrRulePriority = "1097";
   flaresolverrRulePriority = "1098";
   jackettRulePriority = "1099";
   jellyfinRulePriority = "1100";
@@ -75,12 +76,19 @@ let
     set -euo pipefail
     flaresolverr_uid="$(${pkgs.coreutils}/bin/id -u flaresolverr)"
     jackett_uid="$(${pkgs.coreutils}/bin/id -u jackett)"
+    prowlarr_uid="$(${pkgs.coreutils}/bin/id -u prowlarr)"
     jellyfin_uid="$(${pkgs.coreutils}/bin/id -u jellyfin)"
     old_jellyfin_addresses="$(${pkgs.coreutils}/bin/cat ${jellyfinRouteState} 2>/dev/null || true)"
+    for stale_uidrange in $(${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gawk}/bin/awk -v priority="${prowlarrRulePriority}:" '$1 == priority { for (i = 1; i <= NF; i++) if ($i == "uidrange") print $(i + 1) }'); do
+      if [ "$stale_uidrange" != "$prowlarr_uid-$prowlarr_uid" ]; then
+        ${pkgs.iproute2}/bin/ip -4 rule del priority ${prowlarrRulePriority} uidrange "$stale_uidrange" table ${routeTable}
+      fi
+    done
 
     if [ "''${1:-}" = down ]; then
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${flaresolverrRulePriority} uidrange "$flaresolverr_uid-$flaresolverr_uid" table ${routeTable} || true
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable} || true
+      ${pkgs.iproute2}/bin/ip -4 rule del priority ${prowlarrRulePriority} uidrange "$prowlarr_uid-$prowlarr_uid" table ${routeTable} || true
       for address in $old_jellyfin_addresses; do
         ${pkgs.iproute2}/bin/ip -4 rule del priority ${jellyfinRulePriority} to "$address" uidrange "$jellyfin_uid-$jellyfin_uid" table ${routeTable} || true
       done
@@ -99,6 +107,9 @@ let
     fi
     if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $jackett_uid-$jackett_uid lookup ${routeTable}"; then
       ${pkgs.iproute2}/bin/ip -4 rule add priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable}
+    fi
+    if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $prowlarr_uid-$prowlarr_uid lookup ${routeTable}"; then
+      ${pkgs.iproute2}/bin/ip -4 rule add priority ${prowlarrRulePriority} uidrange "$prowlarr_uid-$prowlarr_uid" table ${routeTable}
     fi
     # Only route Jellyfin's TMDB artwork CDN addresses through the VPN.
     new_jellyfin_addresses="$(
@@ -166,6 +177,18 @@ in
   };
 
   systemd.services.flaresolverr = {
+    after = [ "vpn.service" ];
+    requires = [ "vpn.service" ];
+    partOf = [ "vpn.service" ];
+  };
+
+  systemd.services.docker-byparr = {
+    after = [ "vpn.service" ];
+    requires = [ "vpn.service" ];
+    partOf = [ "vpn.service" ];
+  };
+
+  systemd.services.prowlarr = {
     after = [ "vpn.service" ];
     requires = [ "vpn.service" ];
     partOf = [ "vpn.service" ];
