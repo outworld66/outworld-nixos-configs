@@ -288,12 +288,12 @@ lib.mkIf (config.server.secrets.enable or false) {
       handle @matrixWellKnown {
         header Content-Type application/json
         header Access-Control-Allow-Origin *
-        respond '{"m.homeserver":{"base_url":"https://${matrixDomain}"}}' 200
+        respond "{\"m.homeserver\":{\"base_url\":\"https://${matrixDomain}\"}}" 200
       }
       @matrixServerWellKnown path /.well-known/matrix/server
       handle @matrixServerWellKnown {
         header Content-Type application/json
-        respond '{"m.server":"${matrixDomain}:443"}' 200
+        respond "{\"m.server\":\"${matrixDomain}:443\"}" 200
       }
       handle {
         reverse_proxy 127.0.0.1:8008
