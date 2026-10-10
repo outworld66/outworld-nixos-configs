@@ -76,6 +76,9 @@ Run checks from the repository root.
 - On hosts with a mergerfs pool, configure applications and user-facing docs
   to use the merged mount path for shared data. Refer to backing disk mount
   paths only in the mount and storage configuration itself.
+- For media imports, prefer hardlinks so torrents can keep seeding without
+  duplicating storage. Do not use copy or move unless the user asks; report
+  hardlink failures instead of silently falling back to either mode.
 - For a new web service, manage its administrator password through SOPS when
   the service supports it. Enable native OIDC when available; otherwise put
   the public UI behind Pomerium by default. Document any exception and why

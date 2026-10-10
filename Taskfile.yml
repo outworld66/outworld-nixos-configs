@@ -52,6 +52,60 @@ tasks:
         nix flake check --no-build --print-build-logs "$@"
         nh os build . "$@"
 
+  cve:
+    desc: Scan NixOS closures and configured OCI images for known CVEs
+    vars:
+      CVE_HOST: '{{.CVE_HOST | default "all"}}'
+    cmds:
+      - |
+        set -eu
+        nix develop --no-write-lock-file \
+          --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}" \
+          --override-input private "path:{{.PRIVATE_FLAKE_DIR}}" \
+          --command bash -euc '
+            requested_host="$1"
+            private_dir="$2"
+            packages_dir="$3"
+            input_args=(--no-write-lock-file \
+              --override-input outworld-packages "path:$packages_dir" \
+              --override-input private "path:$private_dir")
+            available_hosts="$(nix eval --json "${input_args[@]}" .#nixosConfigurations --apply builtins.attrNames | jq -r ".[]")"
+            if [ "$requested_host" = all ]; then
+              hosts="$available_hosts"
+            else
+              printf '%s\n' "$available_hosts" | grep -Fxq "$requested_host" || {
+                echo "Unknown NixOS host: $requested_host" >&2
+                echo "Available hosts: $available_hosts" >&2
+                exit 2
+              }
+              hosts="$requested_host"
+            fi
+
+            status=0
+            for host in $hosts; do
+              echo "=== Building NixOS closure: $host ==="
+              system="$(nix build --no-link --print-out-paths \
+                "${input_args[@]}" ".#nixosConfigurations.$host.config.system.build.toplevel")"
+              echo "=== Scanning NixOS closure: $host ==="
+              if ! vulnix --closure "$system"; then
+                status=1
+              fi
+
+              echo "=== Scanning OCI images: $host ==="
+              images="$(nix eval --json "${input_args[@]}" \
+                ".#nixosConfigurations.$host.config.virtualisation.oci-containers.containers" \
+                --apply "containers: builtins.attrValues (builtins.mapAttrs (_: container: container.image) containers)")"
+              while IFS= read -r image; do
+                [ -n "$image" ] || continue
+                echo "--- $image"
+                if ! trivy image --scanners vuln --image-src remote --exit-code 1 "$image"; then
+                  status=1
+                fi
+              done < <(printf "%s" "$images" | jq -r ".[]")
+            done
+            exit "$status"
+          ' cve '{{.CVE_HOST}}' '{{.PRIVATE_FLAKE_DIR}}' '{{.PACKAGES_FLAKE_DIR}}'
+
   switch:
     desc: Activate the current host, with private settings when available
     deps:
