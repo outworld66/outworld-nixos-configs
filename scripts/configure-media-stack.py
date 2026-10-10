@@ -165,7 +165,6 @@ def configure_prowlarr_download_client():
             for field in client["fields"]
         ],
     )
-    request(base, "/api/v1/downloadclient/test", method="POST", data=client, headers=headers)
     existing = request(base, "/api/v1/downloadclient", headers=headers)
     match = next(
         (
@@ -186,6 +185,7 @@ def configure_prowlarr_download_client():
             headers=headers,
         )
     else:
+        request(base, "/api/v1/downloadclient/test", method="POST", data=client, headers=headers)
         request(base, "/api/v1/downloadclient", method="POST", data=client, headers=headers)
     print("Prowlarr qBittorrent download client is configured")
 
