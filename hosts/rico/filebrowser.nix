@@ -106,7 +106,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     description = "Reconcile File Browser personal scopes and media access";
     requires = [ "docker.service" ];
     after = [ "docker.service" ];
-    requiresMountsFor = [
+    unitConfig.RequiresMountsFor = [
       personalFilesPath
       sharedPath
     ];
