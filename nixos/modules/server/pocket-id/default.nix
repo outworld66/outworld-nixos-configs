@@ -328,10 +328,11 @@ in
               '["https://streamline.outworld66.ru/auth/oidc/pocket-id/callback"]' \
               /var/lib/streamline/oidc-client-secret \
               "" "" true '["media-admin","media-user"]'
+            # File Browser's OIDC flow does not send a PKCE code challenge.
             provision_client filebrowser FileBrowser \
               '["https://filebrowser.outworld66.ru/api/auth/oidc/callback"]' \
               /var/lib/filebrowser/oidc-client-secret \
-              "" "" true '["media-admin","media-user"]'
+              "" "" false '["media-admin","media-user"]'
             umask 077
             printf '%s\n' \
               "FILEBROWSER_OIDC_CLIENT_SECRET=$(cat /var/lib/filebrowser/oidc-client-secret)" \
