@@ -190,6 +190,165 @@ def configure_prowlarr_download_client():
     print("Prowlarr qBittorrent download client is configured")
 
 
+def configure_prowlarr_indexers():
+    base = "http://127.0.0.1:9696"
+    config = ET.parse("/var/lib/prowlarr/config.xml").getroot()
+    api_key = config.findtext("ApiKey")
+    if not api_key:
+        raise RuntimeError("Prowlarr API key is missing")
+    headers = {"X-Api-Key": api_key}
+    source_dir = Path("/var/lib/jackett/.config/Jackett/Indexers")
+    definitions = {
+        "bigfangroup": ("BigFANGroup", "sort", "type"),
+        "megapeer": ("MegaPeer", "sort", "type"),
+        "newstudio": ("NewStudio", "sort", "type"),
+        "noname-club": ("NoNaMe Club", "sort", "type"),
+        "rutor": ("RuTor", "sort", None),
+        "torrentby": ("TorrentByte", None, None),
+    }
+    schemas = request(base, "/api/v1/indexer/schema", headers=headers)
+    existing = request(base, "/api/v1/indexer", headers=headers)
+    schema_by_name = {item["name"]: item for item in schemas}
+    existing_by_name = {item["name"]: item for item in existing}
+    profile_id = next(
+        item["id"]
+        for item in request(base, "/api/v1/appprofile", headers=headers)
+        if item["name"] == "Standard"
+    )
+
+    tags = request(base, "/api/v1/tag", headers=headers)
+    proxy_tag = next((tag for tag in tags if tag["label"] == "flaresolverr"), None)
+    if proxy_tag is None:
+        proxy_tag = request(
+            base, "/api/v1/tag", method="POST", data={"label": "flaresolverr"}, headers=headers
+        )
+    proxy_schema = next(
+        item
+        for item in request(base, "/api/v1/indexerproxy/schema", headers=headers)
+        if item["implementation"] == "FlareSolverr"
+    )
+    proxy_schema.update(
+        name="FlareSolverr",
+        enable=True,
+        tags=[proxy_tag["id"]],
+        fields=[
+            {
+                "name": field["name"],
+                "value": {"host": "http://127.0.0.1:8191/", "requestTimeout": 60}.get(
+                    field["name"], field.get("value")
+                ),
+            }
+            for field in proxy_schema["fields"]
+        ],
+    )
+    proxy = next(
+        (item for item in request(base, "/api/v1/indexerproxy", headers=headers) if item["name"] == "FlareSolverr"),
+        None,
+    )
+    if proxy:
+        proxy_schema["id"] = proxy["id"]
+        request(
+            base,
+            f"/api/v1/indexerproxy/{proxy['id']}",
+            method="PUT",
+            data=proxy_schema,
+            headers=headers,
+        )
+    else:
+        request(base, "/api/v1/indexerproxy", method="POST", data=proxy_schema, headers=headers)
+
+    for source_id, (name, sort_field, order_field) in definitions.items():
+        source = json.loads((source_dir / f"{source_id}.json").read_text())
+        source_fields = {field["id"]: field for field in source}
+        schema = json.loads(json.dumps(schema_by_name[name]))
+        values = {"baseUrl": source_fields["sitelink"]["value"]}
+        for source_field, target_field in (
+            ("stripcyrillicletters", "stripcyrillic"),
+            (
+                "addrustoendofalltitlestoimprovelanguagedetectionbysonarrandradarr.willcauseenglish-onlyresultstobemisidentified.",
+                "addrussiantotitle",
+            ),
+        ):
+            if source_field in source_fields and any(
+                field["name"] == target_field for field in schema["fields"]
+            ):
+                values[target_field] = source_fields[source_field]["value"]
+
+        if sort_field:
+            source_sort = next(
+                field
+                for key, field in source_fields.items()
+                if key.startswith("sortrequestedfromsite")
+            )
+            sort_name = source_sort["options"][str(source_sort["value"])]
+            if source_id != "rutor":
+                sort_name = sort_name.split()[0]
+            sort_options = next(
+                field["selectOptions"]
+                for field in schema["fields"]
+                if field["name"] == sort_field
+            )
+            values[sort_field] = next(
+                item["value"] for item in sort_options if item["name"] == sort_name
+            )
+        if order_field:
+            source_order = source_fields["orderrequestedfromsite"]
+            order_name = source_order["options"][str(source_order["value"])]
+            order_options = next(
+                field["selectOptions"]
+                for field in schema["fields"]
+                if field["name"] == order_field
+            )
+            values[order_field] = next(
+                item["value"] for item in order_options if item["name"] == order_name
+            )
+
+        indexer_tags = [proxy_tag["id"]] if source_id in ("megapeer", "torrentby") else []
+        schema.update(
+            name=name,
+            enable=True,
+            appProfileId=profile_id,
+            priority=1,
+            tags=indexer_tags,
+            fields=[
+                {
+                    "name": field["name"],
+                    "value": values.get(field["name"], field.get("value")),
+                }
+                for field in schema["fields"]
+            ],
+        )
+        try:
+            if name not in existing_by_name:
+                request(
+                    base,
+                    "/api/v1/indexer/test",
+                    method="POST",
+                    data=schema,
+                    headers=headers,
+                    retries=1,
+                )
+        except RuntimeError as error:
+            print(f"Prowlarr indexer {name} test failed: {error}")
+        current = existing_by_name.get(name)
+        if current:
+            schema["id"] = current["id"]
+            request(
+                base,
+                f"/api/v1/indexer/{current['id']}",
+                method="PUT",
+                data=schema,
+                headers=headers,
+            )
+        else:
+            try:
+                request(base, "/api/v1/indexer", method="POST", data=schema, headers=headers)
+            except RuntimeError as error:
+                print(f"Prowlarr indexer {name} was not added: {error}")
+                continue
+        print(f"Prowlarr indexer {name} is configured")
+
+
 def jackett_api(key, indexer, **params):
     query = urllib.parse.urlencode({"apikey": key, **params})
     path = f"/api/v2.0/indexers/{indexer}/results/torznab/api?{query}"
@@ -357,6 +516,7 @@ def configure_bindery():
 def main():
     configure_qbittorrent()
     configure_prowlarr_download_client()
+    configure_prowlarr_indexers()
     configure_jellyfin()
     configure_bindery()
 
