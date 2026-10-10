@@ -29,6 +29,11 @@ in
 lib.mkIf (config.server.secrets.enable or false) {
   services.postgresql = {
     enable = true;
+    initialScript = pkgs.writeText "matrix-database.sql" ''
+      SELECT $$CREATE DATABASE matrix-synapse TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'$$
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'matrix-synapse')
+      \gexec
+    '';
     ensureDatabases = [ "matrix-synapse" ];
     ensureUsers = [
       {
@@ -41,6 +46,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   services.matrix-synapse = {
     enable = true;
     dataDir = "/var/lib/matrix-synapse";
+    extraConfigFiles = [ "/var/lib/matrix-synapse/secrets.yaml" ];
     settings = {
       server_name = matrixDomain;
       public_baseurl = "https://${matrixDomain}/";
@@ -118,13 +124,34 @@ lib.mkIf (config.server.secrets.enable or false) {
 
   systemd.services.matrix-synapse = {
     requires = [
+      "matrix-synapse-secret.service"
       "pocket-id-oidc-provision.service"
       "postgresql.service"
     ];
     after = [
+      "matrix-synapse-secret.service"
       "pocket-id-oidc-provision.service"
       "postgresql.service"
     ];
+  };
+
+  systemd.services.matrix-synapse-secret = {
+    description = "Create persistent Synapse secret configuration";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "matrix-synapse.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "matrix-synapse-secret" ''
+        install -d -m 0750 -o matrix-synapse -g matrix-synapse /var/lib/matrix-synapse
+        if [ ! -s /var/lib/matrix-synapse/secrets.yaml ]; then
+          umask 077
+          printf "macaroon_secret_key: '%s'\\n" "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
+            > /var/lib/matrix-synapse/secrets.yaml
+          chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/secrets.yaml
+          chmod 0400 /var/lib/matrix-synapse/secrets.yaml
+        fi
+      '';
+    };
   };
 
   systemd.services.livekit-secret = {
