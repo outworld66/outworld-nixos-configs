@@ -309,12 +309,15 @@
 
       formatter.${system} = treefmtEval.config.build.wrapper;
 
-      # `nix develop` provides the task runner and safe NixOS rebuild frontend.
+      # `nix develop` provides task, rebuild tools and security scanners pinned by nixpkgs.
       devShells.${system}.default = pkgs.mkShellNoCC {
         packages = [
           pkgs.go-task
           pkgs.gitleaks
+          pkgs.jq
           pkgs.nh
+          pkgs.trivy
+          pkgs.vulnix
         ];
       };
 

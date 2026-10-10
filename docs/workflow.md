@@ -24,7 +24,12 @@ task fmt       format and lint Nix code
 task ci        run secret scan and flake checks
 task build     build the selected host
 task switch    check and activate the selected host
+task cve       scan NixOS closures and configured OCI images for CVEs
 ```
+
+The CVE task scans every NixOS configuration by default and may build large
+system closures. To scan only one host, run `CVE_HOST=rico task cve`. See
+[`security-scanning.md`](security-scanning.md) for coverage and limitations.
 
 If the private repository is not a sibling checkout, provide its path:
 
