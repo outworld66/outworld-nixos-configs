@@ -27,7 +27,8 @@ let
         "encryption_key = \"qcuMA+ssxhMyKaNAKBGFfryfFtUH8NDlamQyDwGW6fU=\""
         "access_key_id = \"minioautumn\""
         "secret_access_key = \"minioautumn\""
-        "video = true"
+        "[hosts.livekit]\n\n[rabbit]"
+        "[api.livekit.nodes]\n"
       ]
       [
         "production = true"
@@ -44,7 +45,8 @@ let
         "encryption_key = \"\""
         "access_key_id = \"stoat\""
         "secret_access_key = \"\""
-        "video = false"
+        "[hosts.livekit]\nworldwide = \"wss://stoat.outworld66.ru/livekit\"\n\n[rabbit]"
+        "[api.livekit.nodes.worldwide]\nurl = \"http://livekit:7880\"\nlat = 0.0\nlon = 0.0\nkey = \"stoat\"\nsecret = \"\"\n"
       ]
       baseConfig
   );
@@ -69,6 +71,8 @@ lib.mkIf (config.server.secrets.enable or false) {
     path = [
       pkgs.openssl
       pkgs.coreutils
+      pkgs.gnugrep
+      pkgs.gnused
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -96,6 +100,29 @@ lib.mkIf (config.server.secrets.enable or false) {
         EOF
           chmod 0400 ${secretFile} ${stateDir}/vapid.pem
         fi
+        if ! grep -q '^REVOLT__API__LIVEKIT__NODES__WORLDWIDE__SECRET=' ${secretFile}; then
+          printf 'REVOLT__API__LIVEKIT__NODES__WORLDWIDE__SECRET=%s\n' "$(openssl rand -hex 32)" >> ${secretFile}
+          chmod 0400 ${secretFile}
+        fi
+        livekit_secret=$(sed -n 's/^REVOLT__API__LIVEKIT__NODES__WORLDWIDE__SECRET=//p' ${secretFile})
+        cat > ${stateDir}/livekit.yml <<EOF
+        rtc:
+          use_external_ip: true
+          port_range_start: 50000
+          port_range_end: 50100
+          tcp_port: 7881
+        redis:
+          address: redis:6379
+        turn:
+          enabled: false
+        keys:
+          stoat: $livekit_secret
+        webhook:
+          api_key: stoat
+          urls:
+            - http://voice-ingress:8500/worldwide
+        EOF
+        chmod 0400 ${stateDir}/livekit.yml
       '';
     };
   };
@@ -152,6 +179,16 @@ lib.mkIf (config.server.secrets.enable or false) {
     }
   ];
 
+  networking.firewall = {
+    allowedTCPPorts = [ 7881 ];
+    allowedUDPPortRanges = [
+      {
+        from = 50000;
+        to = 50100;
+      }
+    ];
+  };
+
   services.caddy.extraConfig = lib.mkAfter ''
     http://127.0.0.1:15000 {
       route /.well-known/stoat {
@@ -188,6 +225,10 @@ lib.mkIf (config.server.secrets.enable or false) {
         reverse_proxy 127.0.0.1:14706 {
           header_down Location "^/" "/gifbox/"
         }
+      }
+      route /livekit* {
+        uri strip_prefix /livekit
+        reverse_proxy 127.0.0.1:14710
       }
       reverse_proxy 127.0.0.1:15080
     }

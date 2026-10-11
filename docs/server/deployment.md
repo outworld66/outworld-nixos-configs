@@ -152,7 +152,7 @@ service recovery steps.
 For the Rico torrent, book, and media-request services, see
 [`rico-media.md`](rico-media.md) for shared paths and first-run setup.
 
-For File Browser, Matrix/Element, and openGym, see
+For File Browser and openGym, see
 [`rico-new-services.md`](rico-new-services.md) for access, setup, and recovery.
 
 The host name is selected from the flake's `lib.serverHosts` output. A host is

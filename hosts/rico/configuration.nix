@@ -16,7 +16,6 @@
     ./services.nix
     ./filebrowser.nix
     ./opengym.nix
-    ./matrix.nix
     ./stoat.nix
     ./vpn.nix
     ../../nixos/modules/zapret.nix

@@ -338,12 +338,6 @@ in
               "FILEBROWSER_OIDC_CLIENT_SECRET=$(cat /var/lib/filebrowser/oidc-client-secret)" \
               > /var/lib/filebrowser/oidc.env
             chmod 0400 /var/lib/filebrowser/oidc.env
-            provision_client matrix Matrix \
-              '["https://matrix.outworld66.ru/_synapse/client/oidc/callback"]' \
-              /var/lib/matrix-synapse/oidc-client-secret \
-              "" "" true '["matrix-admin","matrix-user"]'
-            chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/oidc-client-secret
-            chmod 0400 /var/lib/matrix-synapse/oidc-client-secret
             provision_client stoat Stoat \
               '["https://stoat.outworld66.ru/api/auth/session/oidc/callback"]' \
               /var/lib/stoat/oidc-client-secret
