@@ -344,6 +344,19 @@ in
               "" "" true '["matrix-admin","matrix-user"]'
             chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/oidc-client-secret
             chmod 0400 /var/lib/matrix-synapse/oidc-client-secret
+            provision_client stoat Stoat \
+              '["https://stoat.outworld66.ru/api/auth/session/oidc/callback"]' \
+              /var/lib/stoat/oidc-client-secret
+            umask 077
+            printf '%s\n' \
+              "REVOLT__API__OIDC__CLIENT_SECRET=$(cat /var/lib/stoat/oidc-client-secret)" \
+              > /var/lib/stoat/oidc.env.new
+            chmod 0400 /var/lib/stoat/oidc.env.new
+            if ! cmp -s /var/lib/stoat/oidc.env.new /var/lib/stoat/oidc.env; then
+              mv /var/lib/stoat/oidc.env.new /var/lib/stoat/oidc.env
+            else
+              rm /var/lib/stoat/oidc.env.new
+            fi
           ''}
 
           install -d -m 0750 /var/lib/pomerium

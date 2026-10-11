@@ -613,6 +613,7 @@
         "pocket-id": "pocket-id",
         "private": "private",
         "sops-nix": "sops-nix",
+        "stoat-backend": "stoat-backend",
         "streamline": "streamline",
         "treefmt-nix": "treefmt-nix_2",
         "umbriel": "umbriel",
@@ -653,6 +654,23 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
+        "type": "github"
+      }
+    },
+    "stoat-backend": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791716073,
+        "narHash": "sha256-DTTv8VQlbFN6yRgpa/iKs+0N/fyvci9hrIh1PsOb1PE=",
+        "owner": "outworld66",
+        "repo": "stoatchat",
+        "rev": "aa9260534d6e530064904dd6dccede1bc0ced2b4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "outworld66",
+        "ref": "aa926053",
+        "repo": "stoatchat",
         "type": "github"
       }
     },

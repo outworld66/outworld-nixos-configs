@@ -1,0 +1,164 @@
+services:
+  database:
+    image: mongo:8
+    restart: always
+    volumes:
+      - /var/lib/stoat/database:/data/db
+    healthcheck:
+      test: [CMD-SHELL, "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: valkey/valkey:9-alpine
+    restart: always
+
+  rabbit:
+    image: rabbitmq:4
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    volumes:
+      - /var/lib/stoat/rabbit:/var/lib/rabbitmq
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  minio:
+    image: pgsty/silo
+    command: [server, /data]
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    environment:
+      MINIO_DOMAIN: minio
+    volumes:
+      - /srv/stoat/files:/data
+    networks:
+      default:
+        aliases:
+          - revolt-uploads.minio
+          - attachments.minio
+          - avatars.minio
+          - backgrounds.minio
+          - icons.minio
+          - banners.minio
+          - emojis.minio
+
+  createbuckets:
+    image: pgsty/mc
+    depends_on:
+      minio:
+        condition: service_started
+    env_file: /var/lib/stoat/secrets.env
+    entrypoint: [/bin/sh, -c]
+    command: >-
+      until mc alias set minio http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 1; done;
+      mc mb --ignore-existing minio/revolt-uploads
+
+  api:
+    image: ghcr.io/outworld66/stoat-api:oidc-aa926053
+    restart: always
+    env_file:
+      - /var/lib/stoat/secrets.env
+      - /var/lib/stoat/oidc.env
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+    ports:
+      - 127.0.0.1:14702:14702
+
+  events:
+    image: ghcr.io/stoatchat/events:v0.15.5
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+    ports:
+      - 127.0.0.1:14703:14703
+
+  autumn:
+    image: ghcr.io/stoatchat/file-server:v0.15.5
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    depends_on:
+      database:
+        condition: service_healthy
+      createbuckets:
+        condition: service_started
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+    ports:
+      - 127.0.0.1:14704:14704
+
+  january:
+    image: ghcr.io/stoatchat/proxy:v0.15.5
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+    ports:
+      - 127.0.0.1:14705:14705
+
+  gifbox:
+    image: ghcr.io/stoatchat/gifbox:v0.15.5
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+    ports:
+      - 127.0.0.1:14706:14706
+
+  crond:
+    image: ghcr.io/stoatchat/crond:v0.15.5
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    depends_on:
+      database:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+
+  pushd:
+    image: ghcr.io/stoatchat/pushd:v0.15.5
+    restart: always
+    env_file: /var/lib/stoat/secrets.env
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
+    volumes:
+      - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
+
+  web:
+    image: ghcr.io/outworld66/for-web:oidc-7b4847ce099eb919765deeac406162ab0b2a8b4d@sha256:2f48fa39482be05c3e77779f3ea0eb597fc4e3fa379d7e62e4666688df7cda02
+    restart: always
+    environment:
+      HOST: https://stoat.outworld66.ru
+      VITE_HOST: stoat.outworld66.ru
+      VITE_API_URL: https://stoat.outworld66.ru/api
+      VITE_DEV_WS_URL: wss://stoat.outworld66.ru/ws
+      VITE_DEV_MEDIA_URL: https://stoat.outworld66.ru/autumn
+      VITE_DEV_PROXY_URL: https://stoat.outworld66.ru/january
+      VITE_DEV_GIFBOX_URL: https://stoat.outworld66.ru/gifbox
+    ports:
+      - 127.0.0.1:15080:5000
