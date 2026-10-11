@@ -182,7 +182,7 @@ services:
     image: ghcr.io/outworld66/for-web:oidc-7b4847ce099eb919765deeac406162ab0b2a8b4d@sha256:2f48fa39482be05c3e77779f3ea0eb597fc4e3fa379d7e62e4666688df7cda02
     restart: always
     environment:
-      HOST: https://stoat.outworld66.ru
+      HOST: 0.0.0.0
       VITE_HOST: stoat.outworld66.ru
       VITE_API_URL: https://stoat.outworld66.ru/api
       VITE_DEV_WS_URL: wss://stoat.outworld66.ru/ws
