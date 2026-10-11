@@ -62,6 +62,7 @@ services:
   api:
     image: ghcr.io/outworld66/stoat-api:oidc-aa926053
     restart: always
+    user: "65532:65532"
     env_file:
       - /var/lib/stoat/secrets.env
       - /var/lib/stoat/oidc.env

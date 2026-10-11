@@ -74,7 +74,7 @@ lib.mkIf (config.server.secrets.enable or false) {
       Type = "oneshot";
       ExecStart = pkgs.writeShellScript "stoat-secrets" ''
         install -d -m 0750 ${stateDir} /var/lib/stoat/database /var/lib/stoat/rabbit /srv/stoat/files
-        install -m 0440 ${configFile} ${stateDir}/Revolt.toml
+        install -m 0444 ${configFile} ${stateDir}/Revolt.toml
         if [ ! -s ${secretFile} ]; then
           umask 077
           rabbit_password=$(openssl rand -hex 32)
