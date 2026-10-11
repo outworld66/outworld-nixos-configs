@@ -18,7 +18,7 @@ The application data is stored under `/var/lib/opengym` and should be included i
 
 ## Deployment and recovery
 
-Matrix and Element have been removed from Rico's active configuration. Their PostgreSQL data and files under `/var/lib/matrix-synapse` and `/var/lib/livekit` are left on disk and are not automatically deleted. PostgreSQL and the Matrix/LiveKit systemd services are no longer started.
+Matrix and Element have been removed from Rico's active configuration, and the Matrix OIDC client has been deleted from Pocket ID. The `matrix-synapse` PostgreSQL database and role have also been deleted. Remaining files under `/var/lib/matrix-synapse` and `/var/lib/livekit` are left on disk. The Matrix/LiveKit systemd services are stopped; PostgreSQL remains active for other Rico applications.
 
 Run the standard update workflow from the repository root:
 
