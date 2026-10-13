@@ -37,7 +37,7 @@ let
             mode "3440x1440@49.998"
             scale 1
             transform "normal"
-            position x=0 y=-2880
+            position x=0 y=-1440
         }
       ''
     else
