@@ -266,12 +266,6 @@ lib.mkIf (config.server.secrets.enable or false) {
           policy = aiAdminPolicy;
         }
         {
-          from = "https://${openhandsDomain}";
-          to = "http://127.0.0.1:8000";
-          allow_websockets = true;
-          policy = aiPortalPolicy;
-        }
-        {
           from = "https://${elengrabDomain}";
           to = "http://127.0.0.1:8084";
           set_request_headers = {
@@ -1108,7 +1102,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         log {
           output file /var/log/caddy/access.log
         }
-        reverse_proxy 127.0.0.1:8443
+        reverse_proxy 127.0.0.1:8000
       '';
     };
 
