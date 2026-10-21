@@ -78,14 +78,14 @@ let
   cloudreveDomain = "cloudreve.outworld66.ru";
   nocodbDomain = "nocodb.outworld66.ru";
   speedtestDomain = "speedtest.outworld66.ru";
-  pocketIdDomain = "id.outworld66.ru";
+  identityRedirectDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
   jellyfinDomain = "jellyfin.outworld66.ru";
   torrentDomain = "torrent.outworld66.ru";
   jackettDomain = "jackett.outworld66.ru";
   binderyDomain = "books.outworld66.ru";
-  streamlineDomain = "streamline.outworld66.ru";
   llmDomain = "llm.outworld66.ru";
+  openhandsDomain = "openhands.outworld66.ru";
   llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
   immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
   aiPortalPolicy = [
@@ -125,13 +125,13 @@ in
 lib.mkIf (config.server.secrets.enable or false) {
   services.pomerium = {
     enable = true;
-    secretsFile = "/var/lib/pomerium/environment";
+    secretsFile = "/var/lib/pomerium/authentik-environment";
     settings = {
       address = "127.0.0.1:8443";
       insecure_server = true;
       authenticate_service_url = "https://${authDomain}";
       idp_provider = "oidc";
-      idp_provider_url = "https://id.outworld66.ru";
+      idp_provider_url = "https://identity.outworld66.ru/application/o/pomerium/";
       idp_client_id = "pomerium";
       idp_scopes = [
         "openid"
@@ -266,6 +266,12 @@ lib.mkIf (config.server.secrets.enable or false) {
           policy = aiAdminPolicy;
         }
         {
+          from = "https://${openhandsDomain}";
+          to = "http://127.0.0.1:8000";
+          allow_websockets = true;
+          policy = aiPortalPolicy;
+        }
+        {
           from = "https://${elengrabDomain}";
           to = "http://127.0.0.1:8084";
           set_request_headers = {
@@ -300,6 +306,11 @@ lib.mkIf (config.server.secrets.enable or false) {
         }
       ];
     };
+  };
+
+  systemd.services.pomerium = {
+    requires = [ "authentik-secret.service" ];
+    after = [ "authentik-secret.service" ];
   };
 
   services.caddy.globalConfig = ''
@@ -350,10 +361,10 @@ lib.mkIf (config.server.secrets.enable or false) {
       {
         Infrastructure = [
           {
-            "Pocket ID" = {
-              href = "https://${pocketIdDomain}";
-              icon = "pocket-id.png";
-              description = "OIDC identity provider";
+            Authentik = {
+              href = "https://identity.outworld66.ru";
+              icon = "authentik.png";
+              description = "Identity provider";
             };
           }
           {
@@ -368,6 +379,13 @@ lib.mkIf (config.server.secrets.enable or false) {
               href = "https://${llmDomain}/ui";
               icon = "ollama.png";
               description = "LLM gateway and model hub";
+            };
+          }
+          {
+            "OpenHands" = {
+              href = "https://${openhandsDomain}";
+              icon = "si-openhands";
+              description = "Remote Codex agent workspace";
             };
           }
         ];
@@ -410,17 +428,17 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
-            "Streamline" = {
-              href = "https://${streamlineDomain}";
-              icon = "mdi-movie-open-cog";
-              description = "Unified media library and requests";
-            };
-          }
-          {
             "Jellyfin" = {
               href = "https://${jellyfinDomain}";
               icon = "jellyfin.png";
               description = "Movies and TV";
+            };
+          }
+          {
+            Arrmada = {
+              href = "https://arrmada.outworld66.ru";
+              icon = "mdi-movie-open-cog";
+              description = "Media library catalog and requests";
             };
           }
         ];
@@ -455,6 +473,13 @@ lib.mkIf (config.server.secrets.enable or false) {
               description = "Cloud file storage";
             };
           }
+          {
+            "File Browser" = {
+              href = "https://filebrowser.outworld66.ru";
+              icon = "filebrowser.png";
+              description = "Read-only view of completed torrents and Streamline files";
+            };
+          }
         ];
       }
       {
@@ -485,6 +510,13 @@ lib.mkIf (config.server.secrets.enable or false) {
               href = "https://${mailHostname}";
               icon = "mdi-email-outline";
               description = "Stalwart mail server";
+            };
+          }
+          {
+            "openGym" = {
+              href = "https://gym.outworld66.ru";
+              icon = "mdi-dumbbell";
+              description = "Workout and body-weight tracker";
             };
           }
         ];
@@ -531,6 +563,8 @@ lib.mkIf (config.server.secrets.enable or false) {
     serverConfig = {
       LegalNotice.Accepted = true;
       Preferences.WebUI.Address = "127.0.0.1";
+      Preferences.WebUI.AuthSubnetWhitelistEnabled = true;
+      Preferences.WebUI.AuthSubnetWhitelist = "127.0.0.1/32,::1/128";
       Downloads = {
         SavePath = "${mediaRoot}/downloads/complete";
         TempPath = "${mediaRoot}/downloads/incomplete";
@@ -556,14 +590,16 @@ lib.mkIf (config.server.secrets.enable or false) {
     enable = true;
     openFirewall = false;
   };
-  users.groups.flaresolverr = { };
+  users.groups.flaresolverr.gid = 984;
   users.users.flaresolverr = {
     isSystemUser = true;
+    uid = 983;
     group = "flaresolverr";
   };
   systemd.services.flaresolverr = {
     environment = {
       HOST = "127.0.0.1";
+      LANG = "ru_RU.UTF-8";
       LOG_LEVEL = "error";
     };
     serviceConfig = {
@@ -580,213 +616,23 @@ lib.mkIf (config.server.secrets.enable or false) {
       auth.method = "External";
     };
   };
-  services.streamline = {
-    enable = true;
-    package = inputs.streamline.packages.${pkgs.system}.streamline;
-    mutableSettings = false;
-    group = "media";
-    credentials = {
-      admin-password = config.sops.secrets."media/streamline-admin-password".path;
-      jackett-api-key = "/var/lib/streamline/jackett-api-key";
-      prowlarr-api-key = "/var/lib/streamline/prowlarr-api-key";
-      pocket-id-client-secret = "/var/lib/streamline/oidc-client-secret";
-      qbittorrent-password = config.sops.secrets."media/qbittorrent-webui-password".path;
-      jellyfin-api-key = "/var/lib/streamline/jellyfin-api-key";
-      tmdb-api-key = config.sops.secrets."media/streamline-tmdb-api-key".path;
-      tvdb-api-key = config.sops.secrets."media/streamline-tvdb-api-key".path;
-    };
-    settings = {
-      server = {
-        host = "127.0.0.1";
-        port = 8097;
-        trusted_proxies = [ "127.0.0.1/32" ];
-      };
-      auth = {
-        registration_mode = "invite";
-        default_role = "member";
-        seed_admin = {
-          email = "outworld66@gmail.com";
-          password_file = "/run/credentials/streamline.service/admin-password";
-        };
-        oidc = [
-          {
-            name = "pocket-id";
-            issuer = "https://id.outworld66.ru";
-            client_id = "streamline";
-            client_secret_file = "/run/credentials/streamline.service/pocket-id-client-secret";
-            email_linking = "all";
-            auto_provision = true;
-          }
-        ];
-      };
-      metadata = {
-        tmdb_api_key_file = "/run/credentials/streamline.service/tmdb-api-key";
-        tvdb_api_key_file = "/run/credentials/streamline.service/tvdb-api-key";
-      };
-      media_server.servers = [
-        {
-          name = "Jellyfin";
-          server_type = "jellyfin";
-          host = "https://${jellyfinDomain}";
-          api_key_file = "/run/credentials/streamline.service/jellyfin-api-key";
-          enabled = true;
-        }
-      ];
-      library = {
-        movie_path = "${mediaRoot}/library/movies";
-        series_path = "${mediaRoot}/library/tv";
-        download_path = "${mediaRoot}/downloads/complete/streamline";
-        allowed_download_roots = [ "${mediaRoot}/downloads/complete/streamline" ];
-        import_mode = "copy";
-      };
-      download_clients = [
-        {
-          name = "qBittorrent";
-          client_type = "qbittorrent";
-          host = "127.0.0.1";
-          port = 8181;
-          auth_method = "password";
-          username = "admin";
-          password_file = "/run/credentials/streamline.service/qbittorrent-password";
-          download_dir = "${mediaRoot}/downloads/complete/streamline";
-          enabled = true;
-        }
-      ];
-      indexers = [
-        {
-          name = "Jackett (all)";
-          host = "127.0.0.1";
-          port = 9117;
-          path = "/api/v2.0/indexers/all/results/torznab/api";
-          protocol = "torznab";
-          api_key_file = "/run/credentials/streamline.service/jackett-api-key";
-          enabled = true;
-        }
-        {
-          name = "Bitmagnet";
-          host = "127.0.0.1";
-          port = 3333;
-          path = "/torznab";
-          protocol = "torznab";
-          api_key_file = "/dev/null";
-          priority = 2;
-          enabled = true;
-        }
-        {
-          name = "Prowlarr";
-          host = "127.0.0.1";
-          port = 9696;
-          protocol = "prowlarr";
-          api_key_file = "/run/credentials/streamline.service/prowlarr-api-key";
-          priority = 3;
-          enabled = true;
-        }
-      ];
-    };
+  users.groups.prowlarr = { };
+  users.users.prowlarr = {
+    isSystemUser = true;
+    group = "prowlarr";
   };
-  systemd.services.streamline-jackett-key = {
-    description = "Provide Streamline with Jackett's current API key";
-    after = [ "jackett.service" ];
-    requires = [ "jackett.service" ];
-    before = [ "streamline.service" ];
-    partOf = [ "jackett.service" ];
-    path = [
-      pkgs.coreutils
-      pkgs.jq
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = pkgs.writeShellScript "streamline-jackett-key" ''
-        set -euo pipefail
-        key=$(jq -er '.APIKey | select(type == "string" and length > 0)' \
-          /var/lib/jackett/.config/Jackett/ServerConfig.json)
-        install -d -m 0750 /var/lib/streamline
-        printf '%s' "$key" > /var/lib/streamline/jackett-api-key.new
-        chmod 0400 /var/lib/streamline/jackett-api-key.new
-        mv /var/lib/streamline/jackett-api-key.new /var/lib/streamline/jackett-api-key
-      '';
-    };
-  };
-  systemd.services.streamline-prowlarr-key = {
-    description = "Provide Streamline with Prowlarr's current API key";
-    after = [ "prowlarr.service" ];
-    requires = [ "prowlarr.service" ];
-    before = [ "streamline.service" ];
-    partOf = [ "prowlarr.service" ];
-    path = [
-      pkgs.coreutils
-      pkgs.curl
-      pkgs.gnugrep
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = pkgs.writeShellScript "streamline-prowlarr-key" ''
-        set -euo pipefail
-        key=""
-        for _ in {1..60}; do
-          if [ -r /var/lib/prowlarr/config.xml ]; then
-            key=$(grep -oP '<ApiKey>\K[^<]+' /var/lib/prowlarr/config.xml | head -n1 || true)
-            if [ -n "$key" ] && curl --silent --max-time 2 --output /dev/null http://127.0.0.1:9696; then
-              break
-            fi
-          fi
-          sleep 1
-        done
-        test -n "$key"
-        curl --silent --max-time 2 --output /dev/null http://127.0.0.1:9696
-        install -d -m 0750 /var/lib/streamline
-        printf '%s' "$key" > /var/lib/streamline/prowlarr-api-key.new
-        chmod 0400 /var/lib/streamline/prowlarr-api-key.new
-        mv /var/lib/streamline/prowlarr-api-key.new /var/lib/streamline/prowlarr-api-key
-      '';
-    };
-  };
-  systemd.services.streamline = {
-    after = [
-      "jackett.service"
-      "prowlarr.service"
-      "pocket-id-oidc-provision.service"
-      "streamline-jackett-key.service"
-      "streamline-prowlarr-key.service"
-      "streamline-jellyfin-key.service"
-    ];
-    requires = [
-      "jackett.service"
-      "prowlarr.service"
-      "pocket-id-oidc-provision.service"
-      "streamline-jackett-key.service"
-      "streamline-prowlarr-key.service"
-      "streamline-jellyfin-key.service"
-    ];
-    partOf = [
-      "streamline-jackett-key.service"
-      "streamline-prowlarr-key.service"
-    ];
-    environment.STREAMLINE_PUBLIC_URL = "https://${streamlineDomain}";
-  };
-  systemd.services.streamline-jellyfin-key = {
-    description = "Provide Streamline with a Jellyfin API key";
-    wantedBy = [ "multi-user.target" ];
-    before = [ "streamline.service" ];
-    requires = [
-      "jellyfin.service"
-      "jellyfin-bootstrap.service"
-    ];
-    after = [
-      "jellyfin.service"
-      "jellyfin-bootstrap.service"
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.python3}/bin/python3 ${../../scripts/configure-media-stack.py} --streamline-jellyfin-key";
-      UMask = "0077";
-    };
+  systemd.services.prowlarr.serviceConfig = {
+    DynamicUser = lib.mkForce false;
+    User = "prowlarr";
+    Group = "prowlarr";
+    ExecStartPre = [ "+${pkgs.coreutils}/bin/chown -R prowlarr:prowlarr /var/lib/prowlarr" ];
   };
   services.jellyfin = {
     enable = true;
     group = "media";
   };
   systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
+
   systemd.services.jellyfin-bootstrap = {
     description = "Create the initial Jellyfin administrator from SOPS";
     wantedBy = [ "multi-user.target" ];
@@ -802,13 +648,17 @@ lib.mkIf (config.server.secrets.enable or false) {
     wantedBy = [ "multi-user.target" ];
     requires = [
       "qbittorrent.service"
+      "prowlarr.service"
       "jackett.service"
+      "bitmagnet.service"
       "jellyfin.service"
       "docker-bindery.service"
     ];
     after = [
       "qbittorrent.service"
+      "prowlarr.service"
       "jackett.service"
+      "bitmagnet.service"
       "jellyfin-bootstrap.service"
       "docker-bindery.service"
     ];
@@ -823,7 +673,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   environment.systemPackages = [ pkgs.jq ];
 
   virtualisation.oci-containers.containers.bindery = {
-    image = "ghcr.io/vavallee/bindery:1.39.0";
+    image = "ghcr.io/vavallee/bindery:1.39.0@sha256:1d9ce80605de95e18c25d680906d4247b3cd0abda056ab0fa16230bb00b6b39a";
     extraOptions = [
       "--network=host"
       "--user=2001:2000"
@@ -957,7 +807,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   virtualisation.oci-containers.containers.immich-analyze = {
-    image = "ghcr.io/timasoft/immich-analyze:v0.5.1";
+    image = "ghcr.io/timasoft/immich-analyze:v0.5.1@sha256:6162d6507664769198f4ab5cc8aec76390faa090004aa82b234fd55556993aa1";
     extraOptions = [ "--network=host" ];
     environmentFiles = [
       llmCredentialsFile
@@ -1002,6 +852,20 @@ lib.mkIf (config.server.secrets.enable or false) {
   virtualisation.docker.enable = true;
   virtualisation.oci-containers = {
     backend = "docker";
+    containers.byparr = {
+      image = "ghcr.io/thephaseless/byparr:3.0.4@sha256:874f719518f617d03a60e03411fc5d090647e1a877041e81f8dc965927c7deb6";
+      extraOptions = [
+        "--network=host"
+        "--user=983:984"
+        "--shm-size=512m"
+        "--tmpfs=/tmp:rw,exec,nosuid,size=512m"
+      ];
+      environment = {
+        HOST = "127.0.0.1";
+        PORT = "8192";
+        BROWSER_LOCALE = "ru-RU";
+      };
+    };
     containers.nocodb = {
       image = "nocodb/nocodb:2026.09.0@sha256:5c9296e0b554b9dce431d62fda224388a3ce33c06215cec04bc4ec5c67a76295";
       ports = [ "127.0.0.1:8085:8080" ];
@@ -1078,7 +942,7 @@ lib.mkIf (config.server.secrets.enable or false) {
       '';
     };
 
-    ${pocketIdDomain} = {
+    ${identityRedirectDomain} = {
       extraConfig = ''
         log {
           output file /var/log/caddy/access.log
@@ -1099,7 +963,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         HTML 200
         }
         handle {
-          reverse_proxy 127.0.0.1:1411
+          redir https://identity.outworld66.ru{uri} 302
         }
       '';
     };
@@ -1157,18 +1021,6 @@ lib.mkIf (config.server.secrets.enable or false) {
     ${binderyDomain} = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:8443
-      '';
-    };
-
-    ${streamlineDomain} = {
-      extraConfig = ''
-        @streamlineLogin path /login
-        redir @streamlineLogin /auth/oidc/pocket-id/start?next={query.next} 302
-
-        @streamlineLocalAuth path /auth/login /auth/register
-        respond @streamlineLocalAuth "Sign in with Pocket ID." 403
-
-        reverse_proxy 127.0.0.1:8097
       '';
     };
 
@@ -1248,6 +1100,15 @@ lib.mkIf (config.server.secrets.enable or false) {
         handle {
           reverse_proxy 127.0.0.1:8443
         }
+      '';
+    };
+
+    ${openhandsDomain} = {
+      extraConfig = ''
+        log {
+          output file /var/log/caddy/access.log
+        }
+        reverse_proxy 127.0.0.1:8443
       '';
     };
 
