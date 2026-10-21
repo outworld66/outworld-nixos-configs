@@ -568,23 +568,6 @@
         "type": "github"
       }
     },
-    "pocket-id": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790884209,
-        "narHash": "sha256-FmLu6X/q+TDzcXLNRa3ut6MjjcXf6o8v0DW9Qc+ZKl0=",
-        "owner": "pocket-id",
-        "repo": "pocket-id",
-        "rev": "1abc0186fcbf0a31b51d90adb24f9b4c9cea1be6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "pocket-id",
-        "ref": "v2.17.0",
-        "repo": "pocket-id",
-        "type": "github"
-      }
-    },
     "private": {
       "locked": {
         "path": "./defaults/private",
@@ -610,7 +593,6 @@
         "noctalia": "noctalia",
         "noctalia-greeter": "noctalia-greeter",
         "outworld-packages": "outworld-packages",
-        "pocket-id": "pocket-id",
         "private": "private",
         "sops-nix": "sops-nix",
         "streamline": "streamline",

@@ -55,11 +55,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    pocket-id = {
-      url = "github:pocket-id/pocket-id/v2.17.0";
-      flake = false;
-    };
-
     drawio-skill = {
       url = "github:Agents365-ai/drawio-skill";
       flake = false;
