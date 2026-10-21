@@ -55,6 +55,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    authentik-nix = {
+      url = "github:nix-community/authentik-nix/version/2026.8.3";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.authentik-src.follows = "authentik-src";
+    };
+
+    authentik-src = {
+      url = "github:outworld66/authentik-agent-accounts/2334e0352c19fca59ae46d71f874e1e101b7bdd1";
+      flake = false;
+    };
+
     drawio-skill = {
       url = "github:Agents365-ai/drawio-skill";
       flake = false;
