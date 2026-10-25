@@ -7,6 +7,13 @@
 
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    streamline.url = "github:outworld66/streamline?ref=fix-jackett-tmdbid-fallback";
+
+    stoat-backend = {
+      url = "github:outworld66/stoatchat/aa926053";
+      flake = false;
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";

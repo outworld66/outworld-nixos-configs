@@ -8,9 +8,10 @@ The setup uses three checkouts:
 
 ## Manual deployment from a workstation
 
-This is the recommended mode for now. The server does not need GitHub access:
-the workstation updates both repositories and deploys the evaluated
-configuration over SSH.
+This section deploys the `private` host at `192.168.0.3`. Rico is a separate
+host at `192.168.0.4`; deploy it with `task server-update -- rico`. The server
+does not need GitHub access: the workstation updates both repositories and
+deploys the evaluated configuration over SSH.
 
 ```bash
 cd ~/nix/outworld-nixos-private
@@ -152,18 +153,25 @@ service recovery steps.
 For the Rico torrent, book, and media-request services, see
 [`rico-media.md`](rico-media.md) for shared paths and first-run setup.
 
-For File Browser, Matrix/Element, and openGym, see
+For File Browser, Stoat, and openGym, see
 [`rico-new-services.md`](rico-new-services.md) for access, setup, and recovery.
+
+For OpenHands Agent Canvas, Codex access, MCP servers, and skills, see
+[`openhands.md`](openhands.md).
 
 The host name is selected from the flake's `lib.serverHosts` output. A host is
 included when its host entry uses `./nixos/modules/server`. Task requires `--`
 before task arguments; `task server-update private` would mean two task names
 instead of selecting `private`.
 
-The update task pulls both sibling repositories and the public configuration
-with `git pull --ff-only --autostash`, evaluates the complete flake using the
-local package and private checkouts, and activates the selected host over SSH.
-Existing tracked changes are restored after each pull. Override the target or
+Activation tasks and the installation script refuse to apply a configuration
+unless the public checkout and any local private/package checkouts are on
+`main`. Review branches can be evaluated, but must be merged before deployment.
+
+The update task requires clean `main` checkouts for the public, private, and
+package repositories, each synchronized with `origin/main`. It pulls with
+`--ff-only`, evaluates the complete flake using the local package and private
+checkouts, and activates the selected host over SSH. Override the target or
 checkout paths when needed:
 
 ```bash

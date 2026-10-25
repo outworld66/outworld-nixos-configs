@@ -429,10 +429,10 @@ lib.mkIf (config.server.secrets.enable or false) {
             };
           }
           {
-            Arrmada = {
-              href = "https://arrmada.outworld66.ru";
+            Streamline = {
+              href = "https://streamline.outworld66.ru";
               icon = "mdi-movie-open-cog";
-              description = "Media library catalog and requests";
+              description = "Movies and TV requests";
             };
           }
         ];

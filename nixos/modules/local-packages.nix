@@ -8,5 +8,6 @@
 
     go-task
     git-credential-manager
+    sops
   ];
 }

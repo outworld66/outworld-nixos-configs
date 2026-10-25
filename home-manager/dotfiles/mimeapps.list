@@ -3,9 +3,10 @@ x-scheme-handler/mailto=userapp-Thunderbird-LRKOS3.desktop;userapp-Thunderbird-1
 x-scheme-handler/mid=userapp-Thunderbird-LRKOS3.desktop;userapp-Thunderbird-16FPS3.desktop;
 message/rfc822=userapp-Thunderbird-16FPS3.desktop;userapp-Thunderbird-LRKOS3.desktop;
 x-scheme-handler/net.thunderbird=userapp-Thunderbird-YT9NS3.desktop;userapp-Thunderbird-2G8NS3.desktop;
-x-scheme-handler/tg=org.telegram.desktop.desktop;
-x-scheme-handler/tonsite=org.telegram.desktop.desktop;
+x-scheme-handler/tg=org.telegram.desktop.desktop;userapp-Telegram Desktop-UVJSX3.desktop;
+x-scheme-handler/tonsite=org.telegram.desktop.desktop;userapp-Telegram Desktop-J5ZSX3.desktop;
 video/mp4=vlc.desktop;
+x-scheme-handler/ton=userapp-Telegram Desktop-N23RX3.desktop;
 
 [Default Applications]
 application/json=sublime_text.desktop
@@ -144,7 +145,7 @@ video/x-sgi-movie=mpv.desktop
 x-scheme-handler/discord=legcord.desktop
 x-scheme-handler/http=helium.desktop
 x-scheme-handler/https=helium.desktop
-x-scheme-handler/tg=org.telegram.desktop.desktop
+x-scheme-handler/tg=userapp-Telegram Desktop-UVJSX3.desktop
 x-scheme-handler/about=helium.desktop
 x-scheme-handler/unknown=helium.desktop
 x-scheme-handler/mailto=userapp-Thunderbird-LRKOS3.desktop
@@ -152,8 +153,9 @@ x-scheme-handler/mid=userapp-Thunderbird-LRKOS3.desktop
 message/rfc822=userapp-Thunderbird-LRKOS3.desktop
 x-scheme-handler/net.thunderbird=userapp-Thunderbird-YT9NS3.desktop
 x-scheme-handler/bruno=bruno.desktop
-x-scheme-handler/tonsite=org.telegram.desktop.desktop
+x-scheme-handler/tonsite=userapp-Telegram Desktop-J5ZSX3.desktop
 x-scheme-handler/webcal=google-chrome.desktop
 x-scheme-handler/zcode=zcode.desktop
+x-scheme-handler/ton=userapp-Telegram Desktop-N23RX3.desktop
 
 [Removed Associations]

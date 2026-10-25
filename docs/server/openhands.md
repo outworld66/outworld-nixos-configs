@@ -1,12 +1,15 @@
 # OpenHands Agent Canvas
 
 Rico runs OpenHands Agent Canvas at `https://openhands.outworld66.ru`. NixOS
-installs Agent Canvas `1.27.0`, Codex ACP, Node.js, Python 3.14, and the
+installs Agent Canvas `1.28.1`, its matching Agent Server container `1.56.0`,
+Codex ACP, Node.js, Python 3.14, and the
 `openhands` service from Nix derivations. Agent Server is installed by `uvx`
 from the pinned `outworld66/software-agent-sdk` commit configured in
 `hosts/rico/openhands.nix`; its packages are cached in
 `/var/lib/openhands/.cache/uv`, outside the Nix store. Conversations use the
-fork's dedicated rootless Docker daemon; Rico's other services continue using
+release-matched `ghcr.io/openhands/agent-server:1.56.0-python` image, which
+is pulled at service startup when absent, and the fork's dedicated rootless
+Docker daemon; Rico's other services continue using
 the system Docker daemon. Codex and ACP traffic uses the AmneziaVPN route.
 
 The public URL is protected by OpenHands native OIDC with Authentik. Members
@@ -83,6 +86,12 @@ systemctl status openhands.service vpn.service
 journalctl -u openhands.service -e
 ip -4 route get 1.1.1.1 uid "$(id -u openhands)"
 ```
+
+For a conversation-creation `422`, the journal records sanitized validation
+field paths and messages without request values.
+
+For personal ChatGPT subscriptions and administrator-managed shared access,
+see [openhands-chatgpt-access.md](openhands-chatgpt-access.md).
 
 The route lookup must show `dev vpn0`. Restart with
 `systemctl restart openhands.service`. Recover the previous NixOS generation

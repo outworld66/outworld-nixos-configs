@@ -16,6 +16,7 @@ result-*
 *.sock
 secret.key
 credentials.json
+.playwright-cli
 home-manager/dotfiles/gtk-3.0/bookmarks
 home-manager/dotfiles/gtk-3.0/assets
 home-manager/dotfiles/gtk-4.0/assets

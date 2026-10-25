@@ -57,5 +57,6 @@
     htop
     vim
     go-task
+    sops
   ];
 }

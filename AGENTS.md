@@ -13,6 +13,12 @@ and add extra modules.
 
 ## Repository map
 
+### Workspace cleanup
+
+- Keep `~/nix/` limited to `outworld-nixos-configs/`, `outworld-nixos-private/`, and `outworld-nixos-packages/`.
+- Clone unrelated repositories and create temporary worktrees outside `~/nix/`; remove task-created checkouts when the task is finished.
+- Never delete or move an existing workspace directory unless the user explicitly asks for that directory. Preserve dirty worktrees and local commits.
+
 The workspace may open one directory above this checkout. Before running
 repository commands, confirm the checkout with `git rev-parse --show-toplevel`
 and change to that directory; the flake root is the directory containing
@@ -240,11 +246,13 @@ repository.
 
 ## Commits and pushes
 
-Do not commit or push by default. A single explicit user authorization to
-commit and push applies to subsequent tasks in all three repositories until
-the user explicitly revokes it. When authorized, stage only the task's files,
-run the mandatory secret check below, commit with a concise message, and push
-only to the existing upstream. Never force-push.
+Always commit and push completed task changes to the existing upstream. Before
+staging, run the formatting and validation required for the files changed,
+review formatter changes, and run `git diff --check`. Stage only the task's
+files, then run the mandatory secret check below before committing. Inspect the
+commits that the push will publish; if the current branch contains unrelated
+commits, use an isolated task branch so the push contains only the task's
+commit. Use a concise commit message and never force-push.
 
 ### Mandatory secret check (after staging, before committing)
 

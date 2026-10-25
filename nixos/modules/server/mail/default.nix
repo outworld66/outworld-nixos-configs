@@ -120,15 +120,34 @@ let
       | ${pkgs.jq}/bin/jq -er --arg domain "$domain" 'select(.name==$domain)|.id')
     tmp=$(${pkgs.coreutils}/bin/mktemp -d)
     trap '${pkgs.coreutils}/bin/rm -rf "$tmp"' EXIT
-    ${pkgs.openldap}/bin/ldapsearch -LLL -o ldif-wrap=no -x \
-      -H ldap://127.0.0.1:3389 \
-      -D "cn=stalwart-ldap,ou=users,$base_dn" \
-      -y /var/lib/authentik/ldap-search-password \
-      -b "ou=users,$base_dn" \
-      '(&(objectClass=user)(ak-active=true)(|(memberOf=cn=mail-admin,ou=groups,dc=outworld66,dc=ru)(memberOf=cn=mail-user,ou=groups,dc=outworld66,dc=ru)))' \
-      mail | ${pkgs.gnused}/bin/sed -n 's/^mail: //p' \
-      | while IFS= read -r email; do printf '%s\n' "''${email%%@*}@$domain"; done \
-      > "$tmp/desired"
+    : > "$tmp/desired"
+    ${pkgs.coreutils}/bin/tr -d '\r\n' < /var/lib/authentik/ldap-search-password > "$tmp/ldap-password"
+    ldap_ready=0
+    for attempt in $(${pkgs.coreutils}/bin/seq 1 60); do
+      if ${pkgs.openldap}/bin/ldapsearch -LLL -o ldif-wrap=no -x \
+        -H ldap://127.0.0.1:3389 \
+        -D "cn=stalwart-ldap,ou=users,$base_dn" \
+        -y "$tmp/ldap-password" \
+        -b "ou=users,$base_dn" \
+        '(&(objectClass=user)(ak-active=true)(|(memberOf=cn=mail-admin,ou=groups,dc=outworld66,dc=ru)(memberOf=cn=mail-user,ou=groups,dc=outworld66,dc=ru)))' mail \
+        > "$tmp/ldap" 2> "$tmp/ldap-error"; then
+        ldap_ready=1
+        break
+      fi
+      ${pkgs.coreutils}/bin/sleep 2
+    done
+    if [ "$ldap_ready" -ne 1 ]; then
+      echo "Authentik LDAP did not accept the Stalwart bind" >&2
+      exit 1
+    fi
+    ${pkgs.gnused}/bin/sed -n 's/^mail: //p' "$tmp/ldap" \
+      | while IFS= read -r email; do
+        [ -n "$email" ] && printf '%s\n' "''${email%%@*}@$domain"
+      done | ${pkgs.coreutils}/bin/sort -u > "$tmp/desired"
+    if [ ! -s "$tmp/desired" ]; then
+      echo "Authentik LDAP returned no mail-enabled users; refusing to disable accounts" >&2
+      exit 1
+    fi
 
     current=$(${cli}/bin/stalwart-cli query Account --json --fields id,emailAddress,permissions)
     while IFS= read -r mailbox; do
@@ -296,10 +315,11 @@ in
       cli
       provisionScript
       dkimDnsScript
+      pkgs.openldap
     ];
 
     systemd.services.stalwart-provision-authentik-users = {
-      description = "Provision active Authentik mail users in Stalwart";
+      description = "Provision mail-enabled Authentik users in Stalwart";
       after = [
         "stalwart.service"
         "authentik-ldap.service"

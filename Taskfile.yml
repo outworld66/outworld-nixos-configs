@@ -139,9 +139,12 @@ tasks:
       - |
         set -eu
         private_flake="{{.PRIVATE_FLAKE_DIR}}/flake.nix"
+        packages_dir="{{.PACKAGES_FLAKE_DIR}}"
         host="{{.SERVER_HOST}}"
         target="{{.SERVER_TARGET}}"
         test -f "$private_flake"
+        test -f "$packages_dir/flake.nix"
+        scripts/require-main-branches . "${private_flake%/flake.nix}" "$packages_dir"
         test -n "$host"
         case "$host" in
           *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;

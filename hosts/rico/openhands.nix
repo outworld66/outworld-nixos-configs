@@ -6,6 +6,7 @@
 }:
 let
   stateDirectory = "/var/lib/openhands";
+  conversationImage = "ghcr.io/openhands/agent-server:1.56.0-python";
   oldCodexAuth = "/var/lib/codex-web-panel/codex-home/auth.json";
   codex = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex;
   codexAcpNpx = pkgs.writeShellScriptBin "npx" ''
@@ -50,6 +51,12 @@ let
     done
     echo "OpenHands rootless Docker daemon is unavailable" >&2
     exit 1
+  '';
+  conversationImageCheck = pkgs.writeShellScript "ensure-openhands-agent-image" ''
+    set -eu
+    if ! ${pkgs.docker}/bin/docker image inspect ${conversationImage} >/dev/null 2>&1; then
+      ${pkgs.docker}/bin/docker pull ${conversationImage}
+    fi
   '';
 in
 {
@@ -146,13 +153,16 @@ in
       LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
       NPM_CONFIG_UPDATE_NOTIFIER = "false";
       DOCKER_HOST = "unix:///run/user/980/docker.sock";
-      OH_AGENT_SERVER_GIT_REF = "4a1bf8ff960181d5732b6294a4ebfbe49d5ce4b5";
+      OH_AGENT_SERVER_GIT_REPO = "https://github.com/outworld66/software-agent-sdk";
+      OH_AGENT_SERVER_GIT_REF = "090eba8ef735502009e528d7d329bf762e489ba6";
       OH_CONVERSATION_RUNTIME = "docker";
+      OH_CONVERSATION_IMAGE = conversationImage;
       OH_OIDC_ISSUER_URL = "https://identity.outworld66.ru/application/o/openhands/";
       OH_OIDC_CLIENT_ID = "openhands";
       OH_OIDC_ALLOWED_GROUPS_0 = "ai-admin";
       OH_OIDC_ALLOWED_GROUPS_1 = "ai-user";
       OH_OIDC_ADMIN_GROUPS_0 = "ai-admin";
+      OH_TRUST_FORWARDED_HEADERS = "true";
       UV_PYTHON_DOWNLOADS = "never";
     };
     serviceConfig = {
@@ -163,6 +173,7 @@ in
       ExecStartPre = [
         vpnRouteCheck
         rootlessDockerCheck
+        conversationImageCheck
       ];
       ExecStart = "${pkgs.openhands-agent-canvas}/bin/agent-canvas --public";
       Restart = "on-failure";

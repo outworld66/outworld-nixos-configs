@@ -45,7 +45,7 @@ let
       # Leave its outputs to niri's automatic discovery instead of forcing
       # the laptop panel configuration used by tpx13.
       ''
-        output "Xiaomi Corporation Mi Monitor 0000000000000" {
+        output "Xiaomi Corporation Mi Monitor Unknown" {
             mode "3440x1440@144.000"
             scale 1
             transform "normal"

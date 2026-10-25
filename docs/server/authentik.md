@@ -88,6 +88,26 @@ corresponding service groups directly to each user. Identity-provider
 administrator access is managed through Authentik's built-in administrators
 group, separately from service access groups.
 
+## Stoat OIDC test accounts
+
+The `Outworld directory and LDAP` blueprint provisions three active,
+email-verified accounts for Stoat OIDC testing:
+
+| Username | Groups | Expected access |
+| --- | --- | --- |
+| `stoat-test-admin` | `registered`, `stoat-admin` | Stoat administrator |
+| `stoat-test-user` | `registered`, `stoat-user` | Regular Stoat user |
+| `stoat-test-registered` | `registered` | No Stoat role; newly registered account |
+
+Their passwords are encrypted in the private SOPS file under
+`authentik/stoat-test-*-password`. Retrieve a specific password locally with
+`sops --decrypt --extract '["authentik"]["stoat-test-admin-password"]' ../outworld-nixos-private/secrets/private.yaml`
+(replace the key for the other accounts). The blueprint reads the decrypted
+files at `/run/secrets/authentik/`; only the Authentik worker can read them.
+The accounts are active, so the OIDC `email_verified` claim is true without
+sending mail to reserved test addresses. The admin account has Stoat
+administrator access only; it is not an Authentik superuser.
+
 ## Registration and reserved access
 
 The blueprint creates the low-privilege `registered` group and enrollment

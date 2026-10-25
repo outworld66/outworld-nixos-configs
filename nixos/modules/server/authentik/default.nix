@@ -202,6 +202,11 @@ in
           requires = [ "authentik-secret.service" ];
           after = [ "authentik-secret.service" ];
           restartTriggers = [ blueprints ];
+          serviceConfig.LoadCredential = [
+            "stoat-test-admin-password:/run/secrets/authentik/stoat-test-admin-password"
+            "stoat-test-user-password:/run/secrets/authentik/stoat-test-user-password"
+            "stoat-test-registered-password:/run/secrets/authentik/stoat-test-registered-password"
+          ];
           serviceConfig.EnvironmentFile = [
             "/var/lib/authentik/environment"
             "/var/lib/authentik/oidc-clients-environment"
@@ -253,6 +258,8 @@ in
           log {
             output file /var/log/caddy/access.log
           }
+          @frontendEntry path /static/dist/admin/AdminInterface-*.js /static/dist/user/UserInterface-*.js /static/dist/flow/FlowInterface-*.js /static/dist/poly-*.js
+          header @frontendEntry Cache-Control "no-cache, max-age=0, must-revalidate"
           reverse_proxy 127.0.0.1:9000
         '';
       };

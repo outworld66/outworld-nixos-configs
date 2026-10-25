@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eu
+
+for repo in "$@"; do
+  branch=$(git -C "$repo" branch --show-current) || exit 1
+  if [ "$branch" != main ]; then
+    printf 'Refusing to apply NixOS configuration: %s is on branch %s, expected main.\n' \
+      "$repo" "${branch:-detached HEAD}" >&2
+    exit 1
+  fi
+done

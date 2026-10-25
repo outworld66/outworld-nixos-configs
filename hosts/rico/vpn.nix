@@ -7,9 +7,10 @@ let
   awgPackages = inputs.nixpkgs-unstable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
   interface = "vpn0";
   runtimeDir = "/run/vpn";
-  sourceConfig = "/var/lib/vpn/client.vpn";
+  sourceConfig = "/run/secrets/vpn/client-config";
   runtimeConfig = "${runtimeDir}/${interface}.conf";
   routeTable = "168";
+  openhandsRulePriority = "1096";
   prowlarrRulePriority = "1097";
   flaresolverrRulePriority = "1098";
   jackettRulePriority = "1099";
@@ -78,14 +79,17 @@ let
     jackett_uid="$(${pkgs.coreutils}/bin/id -u jackett)"
     prowlarr_uid="$(${pkgs.coreutils}/bin/id -u prowlarr)"
     jellyfin_uid="$(${pkgs.coreutils}/bin/id -u jellyfin)"
+    openhands_uid="$(${pkgs.coreutils}/bin/id -u openhands)"
     old_jellyfin_addresses="$(${pkgs.coreutils}/bin/cat ${jellyfinRouteState} 2>/dev/null || true)"
     for stale_uidrange in $(${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gawk}/bin/awk -v priority="${prowlarrRulePriority}:" '$1 == priority { for (i = 1; i <= NF; i++) if ($i == "uidrange") print $(i + 1) }'); do
       if [ "$stale_uidrange" != "$prowlarr_uid-$prowlarr_uid" ]; then
         ${pkgs.iproute2}/bin/ip -4 rule del priority ${prowlarrRulePriority} uidrange "$stale_uidrange" table ${routeTable}
       fi
     done
-
     if [ "''${1:-}" = down ]; then
+      for stale_uidrange in $(${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gawk}/bin/awk -v priority="${openhandsRulePriority}:" '$1 == priority { for (i = 1; i <= NF; i++) if ($i == "uidrange") print $(i + 1) }'); do
+        ${pkgs.iproute2}/bin/ip -4 rule del priority ${openhandsRulePriority} uidrange "$stale_uidrange" table ${routeTable} || true
+      done
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${flaresolverrRulePriority} uidrange "$flaresolverr_uid-$flaresolverr_uid" table ${routeTable} || true
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${jackettRulePriority} uidrange "$jackett_uid-$jackett_uid" table ${routeTable} || true
       ${pkgs.iproute2}/bin/ip -4 rule del priority ${prowlarrRulePriority} uidrange "$prowlarr_uid-$prowlarr_uid" table ${routeTable} || true
@@ -102,6 +106,14 @@ let
     # The unreachable route prevents fallback to the ordinary gateway if the tunnel disappears.
     ${pkgs.iproute2}/bin/ip -4 route replace unreachable default table ${routeTable} metric 10000
     ${pkgs.iproute2}/bin/ip -4 route replace default dev ${interface} table ${routeTable} metric 100
+    for stale_uidrange in $(${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gawk}/bin/awk -v priority="${openhandsRulePriority}:" '$1 == priority { for (i = 1; i <= NF; i++) if ($i == "uidrange") print $(i + 1) }'); do
+      if [ "$stale_uidrange" != "$openhands_uid-$openhands_uid" ]; then
+        ${pkgs.iproute2}/bin/ip -4 rule del priority ${openhandsRulePriority} uidrange "$stale_uidrange" table ${routeTable}
+      fi
+    done
+    if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $openhands_uid-$openhands_uid lookup ${routeTable}"; then
+      ${pkgs.iproute2}/bin/ip -4 rule add priority ${openhandsRulePriority} uidrange "$openhands_uid-$openhands_uid" table ${routeTable}
+    fi
     if ! ${pkgs.iproute2}/bin/ip -4 rule show | ${pkgs.gnugrep}/bin/grep -Fq "uidrange $flaresolverr_uid-$flaresolverr_uid lookup ${routeTable}"; then
       ${pkgs.iproute2}/bin/ip -4 rule add priority ${flaresolverrRulePriority} uidrange "$flaresolverr_uid-$flaresolverr_uid" table ${routeTable}
     fi
@@ -135,6 +147,7 @@ let
     else
       echo "No IPv4 records for ${jellyfinArtworkHost}; keeping the current artwork routes" >&2
     fi
+
   '';
 in
 {

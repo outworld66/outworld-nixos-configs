@@ -69,6 +69,8 @@ if [[ ! -f "$flake_dir/flake.nix" ]]; then
   exit 2
 fi
 
+"$flake_dir/scripts/require-main-branches" "$flake_dir"
+
 host_config="$flake_dir/hosts/$hostname/configuration.nix"
 hardware_config="$flake_dir/hosts/$hostname/hardware-configuration.nix"
 host_disko_config="$flake_dir/hosts/$hostname/disko.nix"

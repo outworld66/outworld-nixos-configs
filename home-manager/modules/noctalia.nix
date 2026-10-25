@@ -30,7 +30,7 @@ in
       theme = {
         mode = "dark";
         source = "wallpaper";
-        wallpaper_scheme = "m3-monochrome";
+        wallpaper_scheme = "m3-content";
 
         templates = {
           enable_builtin_templates = true;

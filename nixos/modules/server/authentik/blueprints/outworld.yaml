@@ -60,6 +60,38 @@ entries:
 - model: authentik_core.group
   identifiers:
     name: stoat-user
+- model: authentik_core.user
+  identifiers:
+    username: stoat-test-admin
+  attrs:
+    name: Stoat OIDC Test Admin
+    email: stoat-test-admin@outworld66.ru
+    is_active: true
+    password: !File /run/credentials/authentik-worker.service/stoat-test-admin-password
+    groups:
+    - !KeyOf registered
+    - !Find [authentik_core.group, [name, stoat-admin]]
+- model: authentik_core.user
+  identifiers:
+    username: stoat-test-user
+  attrs:
+    name: Stoat OIDC Test User
+    email: stoat-test-user@outworld66.ru
+    is_active: true
+    password: !File /run/credentials/authentik-worker.service/stoat-test-user-password
+    groups:
+    - !KeyOf registered
+    - !Find [authentik_core.group, [name, stoat-user]]
+- model: authentik_core.user
+  identifiers:
+    username: stoat-test-registered
+  attrs:
+    name: Stoat OIDC Test Registered
+    email: stoat-test-registered@outworld66.ru
+    is_active: true
+    password: !File /run/credentials/authentik-worker.service/stoat-test-registered-password
+    groups:
+    - !KeyOf registered
 - model: authentik_rbac.role
   id: ldap-directory-reader-role
   identifiers:
@@ -307,6 +339,13 @@ entries:
   attrs:
     expression: |
       return request.user.groups.filter(name__in=["media-admin", "media-user"]).exists()
+- model: authentik_policies_expression.expressionpolicy
+  id: stoat-user-app-policy
+  identifiers:
+    name: Outworld Stoat application access
+  attrs:
+    expression: |
+      return request.user.groups.filter(name__in=["stoat-admin", "stoat-user"]).exists()
 - model: authentik_core.application
   id: gotify-application
   identifiers:
@@ -339,6 +378,7 @@ entries:
   attrs:
     name: Stoat
     provider: !KeyOf stoat-oidc-provider
+    policy_engine_mode: all
 - model: authentik_core.application
   id: openhands-application
   identifiers: {slug: openhands}
@@ -350,6 +390,11 @@ entries:
     order: 0
     policy: !KeyOf media-user-app-policy
     target: !KeyOf filebrowser-application
+- model: authentik_policies.policybinding
+  identifiers:
+    order: 0
+    policy: !KeyOf stoat-user-app-policy
+    target: !KeyOf stoat-application
 - model: authentik_flows.flow
   id: outworld-enrollment
   identifiers:
