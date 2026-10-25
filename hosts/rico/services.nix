@@ -226,7 +226,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         }
         {
           from = "https://${streamlineDomain}";
-          to = "http://127.0.0.1:8086";
+          to = "http://127.0.0.1:8097";
           policy = mediaAdminPolicy;
         }
         {
@@ -648,7 +648,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     settings = {
       server = {
         host = "127.0.0.1";
-        port = 8086;
+        port = 8097;
       };
       auth = {
         registration_mode = "disabled";
