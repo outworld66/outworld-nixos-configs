@@ -636,6 +636,11 @@ lib.mkIf (config.server.secrets.enable or false) {
     enable = true;
     group = "media";
     credentials = {
+      pocket-id-client-secret = "/var/lib/streamline/oidc-client-secret";
+      qbittorrent-password = config.sops.secrets."media/qbittorrent-webui-password".path;
+      jackett-api-key = "/var/lib/streamline/jackett-api-key";
+      prowlarr-api-key = "/var/lib/streamline/prowlarr-api-key";
+      jellyfin-api-key = "/var/lib/streamline/jellyfin-api-key";
       seed-password = config.sops.secrets."media/streamline-admin-password".path;
       tmdb-key = config.sops.secrets."media/streamline-tmdb-api-key".path;
       tvdb-key = config.sops.secrets."media/streamline-tvdb-api-key".path;
