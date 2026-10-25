@@ -42,19 +42,26 @@ in
       environment = {
         GOTIFY_SERVER_PORT = 8090;
         GOTIFY_DATABASE_DIALECT = "sqlite3";
+        GOTIFY_OIDC_ENABLED = "true";
+        GOTIFY_OIDC_ISSUER = "https://identity.outworld66.ru/application/o/gotify/";
+        GOTIFY_OIDC_CLIENTID = "gotify";
+        GOTIFY_OIDC_REDIRECTURL = "https://gotify.outworld66.ru/auth/oidc/callback";
+        GOTIFY_OIDC_AUTOREGISTER = "true";
+        GOTIFY_OIDC_USERNAMECLAIM = "preferred_username";
+        GOTIFY_OIDC_SCOPES = "openid,profile,email,groups";
+        GOTIFY_OIDC_GROUPS_CLAIM = "groups";
+        GOTIFY_OIDC_GROUPS_USER = "gotify-user";
+        GOTIFY_OIDC_GROUPS_ADMIN = "gotify-admin";
       };
       environmentFiles = [
         "/var/lib/gotify/default.env"
-        "/var/lib/gotify/oidc.env"
+        "/var/lib/authentik/gotify-oidc-environment"
       ];
     };
 
     systemd.services.gotify-default-password = {
       description = "Generate the Gotify bootstrap password";
-      before = [
-        "gotify-server.service"
-        "pocket-id-oidc-provision.service"
-      ];
+      before = [ "gotify-server.service" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
@@ -78,16 +85,14 @@ in
       };
     };
 
-    systemd.services.pocket-id-oidc-provision = {
-      after = [ "gotify-default-password.service" ];
-      requires = [ "gotify-default-password.service" ];
-    };
-
     systemd.services.gotify-server = {
-      after = [ "pocket-id-oidc-provision.service" ];
+      after = [
+        "gotify-default-password.service"
+        "authentik-secret.service"
+      ];
       requires = [
         "gotify-default-password.service"
-        "pocket-id-oidc-provision.service"
+        "authentik-secret.service"
       ];
       serviceConfig = {
         DynamicUser = lib.mkForce false;

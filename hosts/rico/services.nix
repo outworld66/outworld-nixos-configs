@@ -266,12 +266,6 @@ lib.mkIf (config.server.secrets.enable or false) {
           policy = aiAdminPolicy;
         }
         {
-          from = "https://${openhandsDomain}";
-          to = "http://127.0.0.1:8000";
-          allow_websockets = true;
-          policy = aiPortalPolicy;
-        }
-        {
           from = "https://${elengrabDomain}";
           to = "http://127.0.0.1:8084";
           set_request_headers = {
@@ -477,7 +471,7 @@ lib.mkIf (config.server.secrets.enable or false) {
             "File Browser" = {
               href = "https://filebrowser.outworld66.ru";
               icon = "filebrowser.png";
-              description = "Read-only view of completed torrents and Streamline files";
+              description = "Read-only view of completed torrents and media files";
             };
           }
         ];
@@ -763,7 +757,6 @@ lib.mkIf (config.server.secrets.enable or false) {
     "d ${mediaRoot}/downloads/complete/movies 2770 root media -"
     "d ${mediaRoot}/downloads/complete/tv 2770 root media -"
     "d ${mediaRoot}/downloads/complete/books 2770 root media -"
-    "d ${mediaRoot}/downloads/complete/streamline 2770 root media -"
     "d ${mediaRoot}/library 2770 root media -"
     "d ${mediaRoot}/library/movies 2770 root media -"
     "d ${mediaRoot}/library/tv 2770 root media -"
@@ -1108,7 +1101,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         log {
           output file /var/log/caddy/access.log
         }
-        reverse_proxy 127.0.0.1:8443
+        reverse_proxy 127.0.0.1:8000
       '';
     };
 

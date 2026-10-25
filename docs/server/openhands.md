@@ -9,12 +9,11 @@ from the pinned `outworld66/software-agent-sdk` commit configured in
 fork's dedicated rootless Docker daemon; Rico's other services continue using
 the system Docker daemon. Codex and ACP traffic uses the AmneziaVPN route.
 
-The public URL is protected by Pomerium and Authentik, and Agent Server also
-uses native OIDC with Authentik. Members of `ai-admin` and `ai-user` can sign
-in; `ai-admin` receives the administrator role. Agent Server limits accounts
-to their own conversations and workspaces. The backend listens on loopback and
-sends its outbound traffic through Rico's AmneziaVPN tunnel; it refuses to
-start without that route.
+The public URL is protected by OpenHands native OIDC with Authentik. Members
+of `ai-admin` and `ai-user` can sign in; `ai-admin` receives the administrator
+role. Agent Server limits accounts to their own conversations and workspaces.
+The backend listens on loopback and sends its outbound traffic through Rico's
+AmneziaVPN tunnel; it refuses to start without that route.
 
 OpenHands starts as the `openhands` system user. Its first Codex ACP session
 uses the Codex CLI OAuth login already present on Rico. On first start, a

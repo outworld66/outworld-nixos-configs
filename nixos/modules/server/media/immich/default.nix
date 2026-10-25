@@ -22,7 +22,7 @@ in
       media-admin = "admin";
       media-user = "user";
     };
-    description = "Map Pocket ID groups from the groups claim to Immich roles.";
+    description = "Map Authentik groups from the groups claim to Immich roles.";
   };
   config = lib.mkIf cfg.enable {
     services.immich = {
@@ -54,11 +54,11 @@ in
         };
         oauth = {
           enabled = true;
-          issuerUrl = "https://id.outworld66.ru";
+          issuerUrl = "https://identity.outworld66.ru/application/o/immich/";
           clientId = "immich";
           clientSecret._secret = "/var/lib/immich/oidc-client-secret";
           scope = "openid email profile groups";
-          buttonText = "Login with Pocket ID";
+          buttonText = "Login with Authentik";
           autoRegister = true;
           autoLaunch = false;
           mobileOverrideEnabled = true;
@@ -92,11 +92,11 @@ in
     systemd.services.immich-server = {
       after = [
         "immich-storage-migration.service"
-        "pocket-id-oidc-provision.service"
+        "authentik-secret.service"
       ];
       requires = [
         "immich-storage-migration.service"
-        "pocket-id-oidc-provision.service"
+        "authentik-secret.service"
       ];
     };
   };

@@ -112,30 +112,23 @@ let
 
     exec ${stalwart}/bin/stalwart --config=${configFile}
   '';
-  provisionScript = pkgs.writeShellScriptBin "stalwart-provision-pocket-users" ''
+  provisionScript = pkgs.writeShellScriptBin "stalwart-provision-authentik-users" ''
     set -euo pipefail
-    : "''${POCKET_ID_API_KEY_FILE:?set POCKET_ID_API_KEY_FILE}"
-    api_key=$(${pkgs.coreutils}/bin/cat "$POCKET_ID_API_KEY_FILE")
-    pocket_api="''${POCKET_ID_URL:-http://127.0.0.1:1411}/api"
-    allowed_groups="''${STALWART_ALLOWED_GROUPS:-mail-admin,mail-user}"
     domain="''${STALWART_DOMAIN:-${cfg.primaryDomain}}"
+    base_dn='dc=outworld66,dc=ru'
     domain_id=$(${cli}/bin/stalwart-cli query Domain --json --fields id,name \
       | ${pkgs.jq}/bin/jq -er --arg domain "$domain" 'select(.name==$domain)|.id')
     tmp=$(${pkgs.coreutils}/bin/mktemp -d)
     trap '${pkgs.coreutils}/bin/rm -rf "$tmp"' EXIT
-    : > "$tmp/desired"
-    ${pkgs.curl}/bin/curl --fail --silent --show-error -H "X-API-KEY: $api_key" \
-      "$pocket_api/users?pagination%5Blimit%5D=1000" \
-      | ${pkgs.jq}/bin/jq -c '.data[] | select(.emailVerified == true) | {email,id}' \
-      | while IFS= read -r user; do
-        email=$(printf '%s' "$user" | ${pkgs.jq}/bin/jq -er .email)
-        user_id=$(printf '%s' "$user" | ${pkgs.jq}/bin/jq -er .id)
-        groups=$(${pkgs.curl}/bin/curl --fail --silent --show-error -H "X-API-KEY: $api_key" "$pocket_api/users/$user_id/groups")
-        if printf '%s' "$groups" | ${pkgs.jq}/bin/jq -e --arg allowed "$allowed_groups" \
-          '($allowed | split(",")) as $names | any(.[]; .name as $name | $names | index($name))' >/dev/null; then
-          printf '%s\n' "''${email%%@*}@$domain" >> "$tmp/desired"
-        fi
-      done
+    ${pkgs.openldap}/bin/ldapsearch -LLL -o ldif-wrap=no -x \
+      -H ldap://127.0.0.1:3389 \
+      -D "cn=stalwart-ldap,ou=users,$base_dn" \
+      -y /var/lib/authentik/ldap-search-password \
+      -b "ou=users,$base_dn" \
+      '(&(objectClass=user)(ak-active=true)(|(memberOf=cn=mail-admin,ou=groups,dc=outworld66,dc=ru)(memberOf=cn=mail-user,ou=groups,dc=outworld66,dc=ru)))' \
+      mail | ${pkgs.gnused}/bin/sed -n 's/^mail: //p' \
+      | while IFS= read -r email; do printf '%s\n' "''${email%%@*}@$domain"; done \
+      > "$tmp/desired"
 
     current=$(${cli}/bin/stalwart-cli query Account --json --fields id,emailAddress,permissions)
     while IFS= read -r mailbox; do
@@ -170,7 +163,7 @@ let
 
     printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -r '.emailAddress // empty' | while IFS= read -r email; do
       [ "$email" = "admin@${cfg.primaryDomain}" ] && continue
-      [ "$email" = "pocket-id@${cfg.primaryDomain}" ] && continue
+      [ "$email" = "id@${cfg.primaryDomain}" ] && continue
       if ! ${pkgs.gnugrep}/bin/grep -Fqx "$email" "$tmp/desired"; then
         id=$(printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -er --arg email "$email" 'select(.emailAddress==$email)|.id')
         ${cli}/bin/stalwart-cli update Account "$id" --json \
@@ -305,34 +298,33 @@ in
       dkimDnsScript
     ];
 
-    systemd.services.stalwart-provision-pocket-users = {
-      description = "Provision verified Pocket ID users in Stalwart";
+    systemd.services.stalwart-provision-authentik-users = {
+      description = "Provision active Authentik mail users in Stalwart";
       after = [
         "stalwart.service"
-        "pocket-id.service"
+        "authentik-ldap.service"
       ];
       requires = [
         "stalwart.service"
-        "pocket-id.service"
+        "authentik-ldap.service"
       ];
       serviceConfig = {
         Type = "oneshot";
         Environment = [
           "XDG_CACHE_HOME=/var/cache/stalwart"
-          "POCKET_ID_API_KEY_FILE=/var/lib/pocket-id/static-api-key"
           "STALWART_URL=http://127.0.0.1:8080"
           "STALWART_USER=admin@${cfg.primaryDomain}"
           "STALWART_PASSWORD_FILE=${cfg.adminPasswordFile}"
         ];
-        ExecStart = pkgs.writeShellScript "stalwart-provision-pocket-users" ''
+        ExecStart = pkgs.writeShellScript "stalwart-provision-authentik-users" ''
           set -eu
           export STALWART_PASSWORD=$(${pkgs.coreutils}/bin/cat "$STALWART_PASSWORD_FILE")
-          exec ${provisionScript}/bin/stalwart-provision-pocket-users
+          exec ${provisionScript}/bin/stalwart-provision-authentik-users
         '';
       };
     };
 
-    systemd.timers.stalwart-provision-pocket-users = {
+    systemd.timers.stalwart-provision-authentik-users = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";

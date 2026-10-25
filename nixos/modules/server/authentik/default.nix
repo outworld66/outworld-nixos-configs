@@ -100,7 +100,7 @@ in
           group = "root";
           mode = "0400";
           content = ''
-            AUTHENTIK_EMAIL__PASSWORD=${config.sops.placeholder."mail/pocket-id-password"}
+            AUTHENTIK_EMAIL__PASSWORD=${config.sops.placeholder."authentik/smtp-password"}
           '';
         };
 

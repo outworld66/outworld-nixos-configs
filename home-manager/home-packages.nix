@@ -67,6 +67,9 @@
       kubectl-cnpg # CloudNativePG plugin for kubectl
       kubelogin-oidc # OIDC authentication plugin for kubectl
       openstackclient-full # Command-line client for OpenStack services
+      # gcx is absent from the stable nixpkgs channel; it lives in the
+      # outworld-packages library and is exposed here via the overlay.
+      gcx # Grafana CLI (github.com/grafana/gcx)
       s3cmd
 
       # Data formats, networking, and security tools

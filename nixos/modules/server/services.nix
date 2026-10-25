@@ -1,7 +1,9 @@
-{ ... }:
+{ inputs, ... }:
 {
   imports = [
+    inputs.authentik-nix.nixosModules.default
     ./caddy
+    ./authentik
     ./gobackup
     ./goaccess
     ./mail
@@ -11,7 +13,6 @@
     ./media/cloudreve
     ./gotify
     ./media/immich
-    ./pocket-id
   ];
 
   networking.firewall.allowedTCPPorts = [ 443 ];

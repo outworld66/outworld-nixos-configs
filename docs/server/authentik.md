@@ -3,10 +3,11 @@
 Authentik is deployed at `https://identity.outworld66.ru`. All configured
 web-service OIDC clients, including Stoat, use Authentik. Existing application
 links may use different subject identifiers from the previous identity
-provider, so verify account linking per app. Pocket ID's service configuration
-has been removed; its persistent data directory is retained for rollback and
-has no active service. `https://id.outworld66.ru` redirects to Authentik to keep
-old identity links working; the Pomerium global-sign-out page remains there.
+provider, so verify account linking per app. The previous identity provider's
+service configuration has been removed; its persistent data directory is
+retained for rollback and has no active service. `https://id.outworld66.ru`
+redirects to Authentik to keep old identity links working; the Pomerium
+global-sign-out page remains there.
 
 Authentik's database is the identity and group directory. The repository
 blueprint declares service groups, the LDAP provider, and its outpost; the
@@ -117,8 +118,8 @@ registration, no invitation is present, so the account receives only
 These configured services now use Authentik OIDC, with client secrets stored
 outside the Nix store:
 
-- Pomerium, File Browser, Immich, Donetick, Gotify, Cloudreve, Streamline,
-  Stoat, and OpenHands
+- Pomerium, File Browser, Immich, Donetick, Gotify, Cloudreve, Stoat, and
+  OpenHands
 
 Stoat is declared in `hosts/rico/stoat.nix` and uses a pinned Outworld backend
 fork with OIDC support. Its callback is
@@ -130,9 +131,9 @@ Stalwart account reconciliation now reads verified, active users and their
 `mail-admin` or `mail-user` memberships from the local Authentik LDAP outpost.
 IMAP and SMTP clients continue to use Stalwart credentials directly.
 
-The Pocket ID service, package input, and client-provisioning job have been
-removed. Its state directory remains on disk as a rollback copy; remove it only
-after the Authentik sign-in and account-link checks are complete and the backup
+The previous identity service, package input, and client-provisioning job have
+been removed. Its state directory remains on disk as a rollback copy; remove it
+only after Authentik sign-in and account-link checks are complete and the backup
 retention window has passed.
 
 ## Recovery
