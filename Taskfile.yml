@@ -58,6 +58,18 @@ tasks:
       - fmt
     cmds:
       - |
+        set -eu
+        private_dir="{{.PRIVATE_FLAKE_DIR}}"
+        packages_dir="{{.PACKAGES_FLAKE_DIR}}"
+        for repo in . "$private_dir" "$packages_dir"; do
+          test -f "$repo/flake.nix" || continue
+          branch="$(git -C "$repo" branch --show-current)"
+          upstream="$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+          if test "$branch" != main || test "$upstream" != origin/main || test -n "$(git -C "$repo" status --porcelain --untracked-files=normal)"; then
+            echo "Refusing to activate: $repo must be a clean main checkout tracking origin/main" >&2
+            exit 1
+          fi
+        done
         set -- --no-write-lock-file
         if test -f "{{.PACKAGES_FLAKE_DIR}}/flake.nix"; then
           set -- "$@" --override-input outworld-packages "path:{{.PACKAGES_FLAKE_DIR}}"
@@ -80,6 +92,14 @@ tasks:
         case "$host" in
           *[!a-zA-Z0-9_-]*) echo "Invalid host name: $host" >&2; exit 2 ;;
         esac
+        for repo in . "{{.PRIVATE_FLAKE_DIR}}"; do
+          branch="$(git -C "$repo" branch --show-current)"
+          upstream="$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+          if test "$branch" != main || test "$upstream" != origin/main || test -n "$(git -C "$repo" status --porcelain --untracked-files=normal)"; then
+            echo "Refusing to activate: $repo must be a clean main checkout tracking origin/main" >&2
+            exit 1
+          fi
+        done
         if test -z "$target"; then
           target="$(task --silent server-target -- "$host")"
         fi
@@ -92,7 +112,7 @@ tasks:
           /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}"
 
   server-bootstrap-finish:
-    desc: Add a host recipient, enable SOPS secrets, and deploy
+    desc: Add a host recipient and prepare SOPS settings for a main-branch deployment
     cmds:
       - |
         set -eu
@@ -111,10 +131,21 @@ tasks:
         if test -z "$target"; then
           target="$(task --silent server-target -- "$host")"
         fi
+        if test -z "$target"; then
+          target="$(task --silent server-target -- "$host")"
+        fi
         test -f "$sops_file"
         test -f "$sops_config"
         test -f "$private_flake"
         test -r "$key_file"
+        for repo in . "$private_dir"; do
+          branch="$(git -C "$repo" branch --show-current)"
+          upstream="$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+          if test "$branch" != main || test "$upstream" != origin/main || test -n "$(git -C "$repo" status --porcelain --untracked-files=normal)"; then
+            echo "Refusing bootstrap changes: $repo must be a clean main checkout tracking origin/main" >&2
+            exit 1
+          fi
+        done
 
         recipient="${SERVER_AGE_RECIPIENT:-$(ssh "$target" \
           /run/current-system/sw/bin/age-keygen -y "{{.SERVER_AGE_KEY}}")}"
@@ -158,7 +189,7 @@ tasks:
 
         nix flake check --no-build --no-write-lock-file \
           --override-input private "path:$private_dir"
-        PRIVATE_FLAKE="$private_dir" SERVER_TARGET="$target" task server-update -- "$host"
+        echo "Bootstrap settings are prepared on main. Commit and push the private changes, then run: task server-update -- $host"
 
   server-target:
     desc: Resolve the configured IPv4 SSH target for a host
@@ -203,9 +234,35 @@ tasks:
         test -f "$private_dir/flake.nix"
         test -f "$packages_dir/flake.nix"
 
-        git pull --ff-only --autostash
-        git -C "$private_dir" pull --ff-only --autostash
-        git -C "$packages_dir" pull --ff-only --autostash
+        check_main_checkout() {
+          repo="$1"
+          name="$2"
+          branch="$(git -C "$repo" branch --show-current)"
+          upstream="$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+          if test "$branch" != main || test "$upstream" != origin/main; then
+            echo "$name must be on main tracking origin/main (found $branch tracking ${upstream:-no upstream})" >&2
+            exit 1
+          fi
+          if test -n "$(git -C "$repo" status --porcelain --untracked-files=normal)"; then
+            echo "$name has uncommitted or untracked changes; refusing to deploy" >&2
+            exit 1
+          fi
+        }
+
+        check_main_checkout . "outworld-nixos-configs"
+        check_main_checkout "$private_dir" "outworld-nixos-private"
+        check_main_checkout "$packages_dir" "outworld-nixos-packages"
+
+        git pull --ff-only
+        git -C "$private_dir" pull --ff-only
+        git -C "$packages_dir" pull --ff-only
+
+        for repo in . "$private_dir" "$packages_dir"; do
+          if test "$(git -C "$repo" rev-parse HEAD)" != "$(git -C "$repo" rev-parse '@{upstream}')"; then
+            echo "Refusing to deploy: $repo main is not synchronized with origin/main" >&2
+            exit 1
+          fi
+        done
 
         if test -z "$target"; then
           target="$(task --silent server-target -- "$host")"

@@ -49,6 +49,15 @@ The sibling repositories use this same file as their instructions:
   `flake.nix` and `packages/<name>/default.nix`; it must stay independent of
   users, hosts and organization-specific configuration.
 
+## Main-branch configuration policy
+
+- Outworld NixOS configuration, private-library and package repositories must
+  be deployed only from clean `main` checkouts tracking `origin/main`.
+- Keep deployable configurations on those repositories' `main` branches. Do
+  not activate a feature branch or a checkout with local changes.
+- Software source inputs may remain pinned to release tags or commits; this
+  policy applies to the Outworld configuration repositories themselves.
+
 ## Validation
 
 Run checks from the repository root.
@@ -185,18 +194,29 @@ git diff --cached --name-only | grep -Ei \
   '(^|/)(\.env($|\.)|id_(rsa|ed25519|ecdsa)[^/]*|[^/]+\.(pem|key|p12|pfx)|secrets?)$'
 
 # suspicious content in the staged diff
-git diff --cached | grep -Ein \
+git diff --cached | grep -Ev \
+  -e '^[+-].*jackett-api-key.*"/var/lib/streamline/jackett-api-key";$' \
+  -e '^[+-].*prowlarr-api-key.*"/var/lib/streamline/prowlarr-api-key";$' \
+  -e '^[+-].*pocket-id-client-secret.*"/var/lib/streamline/oidc-client-secret";$' \
+  -e '^[+-].*jellyfin-api-key.*"/var/lib/streamline/jellyfin-api-key";$' \
+  -e '^[+-].*STATIC_API_KEY.*static-api-key";$' \
+  -e 'clientSecret._secret.*"/var/lib/immich/oidc-client-secret";$' \
+  | grep -Ein \
   -e 'BEGIN [A-Z ]*PRIVATE KEY' \
   -e '(api[_-]?key|secret|token|pass(word|phrase)?|credential)[^a-zA-Z0-9_-]*[=:][[:space:]]*"[^"$]{8,}"' \
   -e '(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{20}|github_pat_[A-Za-z0-9_]+|sk-[A-Za-z0-9]{20}|xox[abpr]-|glpat-[A-Za-z0-9_-]{20}|sk_live_[A-Za-z0-9]+|AIza[0-9A-Za-z_-]{20})'
 ```
+
+The listed runtime file-path assignments and Immich `_secret` file reference
+are paths, not key values; filter those exact lines as known non-secret
+exceptions. Keep all other suspicious matches blocking.
+
+Known non-secrets that do not block automation: `sha256-...` derivation
+hashes, `flake.lock` input hashes, and file-indirection references such as
+`passwordFile = "/path"` (no literal credential value).
 
 Exit status 1 from both greps means clean. On any match, or on any other
 suspicion of credential material in the diff (high-entropy literals,
 credentials embedded in URLs, pasted agent output), do nothing further: do
 not commit, do not push, and report the matching lines to the user. A
 confirmed false positive may be committed after the user clears it.
-
-Known non-secrets that do not block automation: `sha256-...` derivation
-hashes, `flake.lock` input hashes, and file-indirection references such as
-`passwordFile = "/path"` (no literal credential value).

@@ -5,7 +5,6 @@ import http.cookiejar
 import json
 import re
 import subprocess
-import sys
 import time
 import urllib.error
 import urllib.parse
@@ -121,7 +120,7 @@ def configure_qbittorrent():
             raise RuntimeError("qBittorrent did not accept its SOPS password")
 
     categories = json.loads(qbit_request(opener, "torrents/categories"))
-    for category in ("movies", "tv", "books", "streamline"):
+    for category in ("movies", "tv", "books"):
         save_path = f"{MEDIA_ROOT}/downloads/complete/{category}"
         if category not in categories:
             qbit_request(
@@ -208,43 +207,6 @@ def configure_jellyfin():
     return token
 
 
-def configure_streamline_jellyfin_key():
-    password = secret("jellyfin-admin-password")
-    auth = jellyfin_request(
-        "/Users/AuthenticateByName",
-        method="POST",
-        data={"Username": "admin", "Pw": password},
-        device_id="rico-streamline-jellyfin-key",
-    )
-    token = auth["AccessToken"]
-
-    def keys():
-        result = jellyfin_request(
-            "/Auth/Keys", token=token, device_id="rico-streamline-jellyfin-key"
-        )
-        return result if isinstance(result, list) else result.get("Items", [])
-
-    matches = [key for key in keys() if key.get("AppName") == "Streamline"]
-    if not matches:
-        jellyfin_request(
-            "/Auth/Keys?" + urllib.parse.urlencode({"app": "Streamline"}),
-            token=token,
-            method="POST",
-            device_id="rico-streamline-jellyfin-key",
-        )
-        matches = [key for key in keys() if key.get("AppName") == "Streamline"]
-    if not matches or not matches[0].get("AccessToken"):
-        raise RuntimeError("Jellyfin did not return the Streamline API key")
-
-    path = Path("/var/lib/streamline/jellyfin-api-key")
-    path.parent.mkdir(mode=0o750, parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".new")
-    temporary.write_text(matches[0]["AccessToken"] + "\n")
-    temporary.chmod(0o400)
-    temporary.replace(path)
-    print("Streamline Jellyfin API key is configured")
-
-
 def configure_bindery():
     base = "http://127.0.0.1:8787"
     cookies = http.cookiejar.CookieJar()
@@ -309,7 +271,4 @@ def main():
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] == ["--streamline-jellyfin-key"]:
-        configure_streamline_jellyfin_key()
-    else:
-        main()
+    main()

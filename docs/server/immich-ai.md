@@ -23,9 +23,9 @@ The same generated key is passed to `immich-analyze` as its model API key.
 
 The public `/v1` API remains available to clients with a valid Bearer key.
 The LiteLLM admin UI and Swagger (`/docs`) pass through Pomerium and require
-membership in the Pocket ID `ai-admin` group. The Model Hub page
+membership in the Authentik `ai-admin` group. The Model Hub page
 (`/ui/model_hub_table`) and its public metadata are available to `ai-admin` and
-`ai-user`. LiteLLM may also ask for its own admin UI password after Pocket ID
+`ai-user`. LiteLLM may also ask for its own admin UI password after Authentik
 login; this is the gateway master key in the root-owned credentials file. Do
 not expose or share that key.
 

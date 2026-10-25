@@ -7,8 +7,6 @@
 
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    streamline.url = "github:outworld66/streamline?ref=fix-jackett-tmdbid-fallback";
-
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -55,8 +53,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    pocket-id = {
-      url = "github:pocket-id/pocket-id/v2.17.0";
+    authentik-nix = {
+      url = "github:nix-community/authentik-nix/version/2026.8.3";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.authentik-src.follows = "authentik-src";
+    };
+
+    authentik-src = {
+      url = "github:outworld66/authentik-agent-accounts/2334e0352c19fca59ae46d71f874e1e101b7bdd1";
       flake = false;
     };
 
