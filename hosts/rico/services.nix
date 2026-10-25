@@ -83,6 +83,7 @@ let
   jellyfinDomain = "jellyfin.outworld66.ru";
   torrentDomain = "torrent.outworld66.ru";
   jackettDomain = "jackett.outworld66.ru";
+  streamlineDomain = "streamline.outworld66.ru";
   binderyDomain = "books.outworld66.ru";
   llmDomain = "llm.outworld66.ru";
   openhandsDomain = "openhands.outworld66.ru";
@@ -221,6 +222,11 @@ lib.mkIf (config.server.secrets.enable or false) {
         {
           from = "https://${binderyDomain}";
           to = "http://127.0.0.1:8787";
+          policy = mediaAdminPolicy;
+        }
+        {
+          from = "https://${streamlineDomain}";
+          to = "http://127.0.0.1:8086";
           policy = mediaAdminPolicy;
         }
         {
@@ -625,6 +631,39 @@ lib.mkIf (config.server.secrets.enable or false) {
     enable = true;
     group = "media";
   };
+
+  services.streamline = {
+    enable = true;
+    group = "media";
+    credentials = {
+      seed-password = config.sops.secrets."media/streamline-admin-password".path;
+      tmdb-key = config.sops.secrets."media/streamline-tmdb-api-key".path;
+      tvdb-key = config.sops.secrets."media/streamline-tvdb-api-key".path;
+    };
+    settings = {
+      server = {
+        host = "127.0.0.1";
+        port = 8086;
+      };
+      auth = {
+        registration_mode = "disabled";
+        seed_admin = {
+          email = "admin@streamline.local";
+          password_file = "/run/credentials/streamline.service/seed-password";
+        };
+      };
+      library = {
+        movie_path = "${mediaRoot}/library/movies";
+        series_path = "${mediaRoot}/library/tv";
+        download_path = "${mediaRoot}/downloads/complete";
+        import_mode = "hardlink";
+      };
+      metadata = {
+        tmdb_api_key_file = "/run/credentials/streamline.service/tmdb-key";
+        tvdb_api_key_file = "/run/credentials/streamline.service/tvdb-key";
+      };
+    };
+  };
   systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
 
   systemd.services.jellyfin-bootstrap = {
@@ -1012,6 +1051,12 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
 
     ${binderyDomain} = {
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8443
+      '';
+    };
+
+    ${streamlineDomain} = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:8443
       '';

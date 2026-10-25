@@ -10,6 +10,7 @@
 {
   imports = [
     inputs.disko.nixosModules.disko
+    inputs.streamline.nixosModules.default
     ./disko.nix
     ../../nixos/modules/server/services.nix
     ./services.nix
@@ -20,6 +21,8 @@
     ./vpn.nix
     ../../nixos/modules/zapret.nix
   ];
+
+  nixpkgs.overlays = [ inputs.streamline.overlays.default ];
 
   networking.hostName = hostname;
   services.caddy.enable = lib.mkForce (config.server.secrets.enable or false);
