@@ -649,6 +649,7 @@ lib.mkIf (config.server.secrets.enable or false) {
       server = {
         host = "127.0.0.1";
         port = 8097;
+        trusted_proxies = [ "127.0.0.1/32" ];
       };
       auth = {
         registration_mode = "disabled";
@@ -656,6 +657,22 @@ lib.mkIf (config.server.secrets.enable or false) {
           email = "admin@streamline.local";
           password_file = "/run/credentials/streamline.service/seed-password";
         };
+        oidc = [
+          {
+            name = "pocket-id";
+            issuer = "https://identity.outworld66.ru/application/o/streamline/";
+            client_id = "streamline";
+            client_secret_file = "/run/credentials/streamline.service/pocket-id-client-secret";
+            auto_provision = true;
+            email_linking = "all";
+            allow_admin = true;
+            role_claim = "groups";
+            role_mapping = {
+              media-admin = "admin";
+              media-user = "member";
+            };
+          }
+        ];
       };
       library = {
         movie_path = "${mediaRoot}/library/movies";
@@ -668,6 +685,10 @@ lib.mkIf (config.server.secrets.enable or false) {
         tvdb_api_key_file = "/run/credentials/streamline.service/tvdb-key";
       };
     };
+  };
+  systemd.services.streamline = {
+    requires = [ "authentik-secret.service" ];
+    after = [ "authentik-secret.service" ];
   };
   systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
 

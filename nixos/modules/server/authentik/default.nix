@@ -142,6 +142,12 @@ in
                 fi
                 done
               gotify_secret=$(cat /var/lib/authentik/oidc-gotify-secret)
+              install -d -m 0750 -o streamline -g media /var/lib/streamline
+              if [ ! -s /var/lib/streamline/oidc-client-secret ]; then
+                umask 077
+                ${pkgs.openssl}/bin/openssl rand -hex 32 > /var/lib/streamline/oidc-client-secret
+                chmod 0400 /var/lib/streamline/oidc-client-secret
+              fi
               umask 077
               for client in immich cloudreve pomerium donetick filebrowser stoat openhands; do
                 secret=$(cat "/var/lib/authentik/oidc-$client-secret")
@@ -149,6 +155,8 @@ in
                 printf 'AUTHENTIK_OIDC_%s_SECRET=%s\n' "$env_client" "$secret"
               done > /var/lib/authentik/oidc-clients-environment
               chmod 0400 /var/lib/authentik/oidc-clients-environment
+              printf 'AUTHENTIK_OIDC_STREAMLINE_SECRET=%s\n' "$(cat /var/lib/streamline/oidc-client-secret)" \
+                >> /var/lib/authentik/oidc-clients-environment
               printf 'AUTHENTIK_OIDC_GOTIFY_SECRET=%s\n' "$gotify_secret" \
                 >> /var/lib/authentik/oidc-clients-environment
               printf 'GOTIFY_OIDC_CLIENTSECRET=%s\n' "$gotify_secret" \
