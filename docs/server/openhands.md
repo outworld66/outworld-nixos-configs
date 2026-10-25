@@ -1,19 +1,22 @@
 # OpenHands Agent Canvas
 
 Rico runs OpenHands Agent Canvas at `https://openhands.outworld66.ru`. NixOS
-installs Agent Canvas `1.27.0`, Codex ACP, Node.js, Python 3.14, and the
-`openhands` service from Nix derivations. Agent Server is installed by `uvx`
-from the pinned `outworld66/software-agent-sdk` commit configured in
+installs Agent Canvas `1.28.1`, Codex ACP, Node.js, Python 3.14, and the
+`openhands` service from Nix derivations. Conversations run in the pinned
+`ghcr.io/openhands/agent-server:1.56.0-python` image. Agent Server is installed
+by `uvx` from the pinned `outworld66/software-agent-sdk` commit configured in
 `hosts/rico/openhands.nix`; its packages are cached in
 `/var/lib/openhands/.cache/uv`, outside the Nix store. Conversations use the
 fork's dedicated rootless Docker daemon; Rico's other services continue using
-the system Docker daemon. Codex and ACP traffic uses the AmneziaVPN route.
+the system Docker daemon. Agent and ACP traffic uses the AmneziaVPN route.
 
 The public URL is protected by OpenHands native OIDC with Authentik. Members
 of `ai-admin` and `ai-user` can sign in; `ai-admin` receives the administrator
 role. Agent Server limits accounts to their own conversations and workspaces.
-The backend listens on loopback and sends its outbound traffic through Rico's
-AmneziaVPN tunnel; it refuses to start without that route.
+Each OIDC user has isolated conversations, workspace files, and personal
+ChatGPT credentials. The backend listens on loopback and sends outbound
+traffic through Rico's AmneziaVPN tunnel; it refuses to start without that
+route.
 
 OpenHands starts as the `openhands` system user. Its first Codex ACP session
 uses the Codex CLI OAuth login already present on Rico. On first start, a
@@ -29,8 +32,9 @@ workspace and login are not deleted automatically.
 2. Agent Canvas asks for its local backend API key because it runs in public
    mode. On Rico, read the value from `/var/lib/openhands/environment` with
    root access. Keep it private; it grants access to the backend.
-3. In the onboarding dialog, select Codex. Leave API-key fields empty; the
-   backend reuses the migrated Codex login.
+3. Select the native OpenHands agent profile configured for ChatGPT subscription
+   authentication. An administrator connects the shared subscription; each
+   user can connect a personal subscription under **Settings → LLM Profiles**.
 4. Start a conversation and choose a repository or workspace.
 
 Nix installs the Codex ACP server and Python 3.14 in advance. When Agent
@@ -40,9 +44,9 @@ pinned dependencies are still bootstrapped by `uvx` and cached outside the Nix
 store. Rico uses the Tsinghua PyPI mirror because PyPI's wheel host does not
 respond through the AmneziaVPN route.
 
-The app uses the single Codex login on Rico, so all authorized admins use that
-account. If the login expires, sign in as the service user and keep the
-dedicated Codex home:
+Codex ACP uses a separate Codex CLI login and does not use the native OpenHands
+ChatGPT subscription. If that Codex login expires, sign in as the service user
+and keep the dedicated Codex home:
 
 ```bash
 sudo -u openhands env \
@@ -54,11 +58,11 @@ sudo -u openhands env \
 ## MCP servers and skills
 
 Agent Canvas stores `Customize > MCP Servers`, `Customize > Skills`, and
-`Settings > Secrets` per backend. With this one self-hosted backend, those
-settings apply to its conversations and are shared by every person allowed
-through Pomerium. Add MCP credentials under `Settings > Secrets`, not in a
-repository. Skills installed with `/add-skill <github-url>` are available to
-new conversations after starting a new conversation.
+`Settings > Secrets` per backend. Server configuration writes are restricted
+to administrators; user conversations and workspaces remain isolated. Add MCP
+credentials under `Settings > Secrets`, not in a repository. Skills installed
+with `/add-skill <github-url>` are available to new conversations after
+starting a new conversation.
 
 When using the Codex ACP agent, configure Codex itself:
 
@@ -87,3 +91,6 @@ ip -4 route get 1.1.1.1 uid "$(id -u openhands)"
 The route lookup must show `dev vpn0`. Restart with
 `systemctl restart openhands.service`. Recover the previous NixOS generation
 using the [server deployment guide](deployment.md).
+
+For personal ChatGPT subscriptions and administrator-managed shared access,
+see [openhands-chatgpt-access.md](openhands-chatgpt-access.md).
