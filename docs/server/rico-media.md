@@ -10,6 +10,10 @@ qBittorrent, Jackett, Prowlarr, and Bindery administration is routed through
 Caddy and Pomerium. Pomerium delegates sign-in to Pocket ID and restricts these
 interfaces to the `media-admin` group. Bitmagnet and Homepage also use
 Pomerium, with media access groups configured in `hosts/rico/services.nix`.
+Streamline (`https://streamline.outworld66.ru`) uses its native Pocket ID OIDC
+login directly through Caddy, without Pomerium. Pocket ID's `media-admin` and
+`media-user` groups map to Streamline's administrator and member roles. First
+OIDC login provisions an account automatically; local registration is disabled.
 Jellyfin uses its own accounts and is served directly by Caddy so TV and mobile
 clients can use its API and media streams.
 

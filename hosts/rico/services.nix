@@ -225,14 +225,6 @@ lib.mkIf (config.server.secrets.enable or false) {
           policy = mediaAdminPolicy;
         }
         {
-          from = "https://${streamlineDomain}";
-          to = "http://127.0.0.1:8097";
-          set_request_headers = {
-            "X-Forwarded-Proto" = "https";
-          };
-          policy = mediaAdminPolicy;
-        }
-        {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           prefix = "/ui/model_hub_table.html";
@@ -1093,7 +1085,7 @@ lib.mkIf (config.server.secrets.enable or false) {
 
     ${streamlineDomain} = {
       extraConfig = ''
-        reverse_proxy 127.0.0.1:8443
+        reverse_proxy 127.0.0.1:8097
       '';
     };
 
