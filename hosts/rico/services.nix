@@ -76,7 +76,6 @@ let
   elengrabDomain = "elengrab.outworld66.ru";
   donetickDomain = "donetick.outworld66.ru";
   cloudreveDomain = "cloudreve.outworld66.ru";
-  nocodbDomain = "nocodb.outworld66.ru";
   speedtestDomain = "speedtest.outworld66.ru";
   pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
@@ -284,21 +283,6 @@ lib.mkIf (config.server.secrets.enable or false) {
             }
           ];
         }
-        {
-          from = "https://${nocodbDomain}";
-          to = "http://127.0.0.1:8085";
-          allow_websockets = true;
-          preserve_host_header = true;
-          policy = [
-            {
-              allow = {
-                and = [
-                  { "claim/groups" = "media-admin"; }
-                ];
-              };
-            }
-          ];
-        }
       ];
     };
   };
@@ -491,13 +475,6 @@ lib.mkIf (config.server.secrets.enable or false) {
               href = "https://${donetickDomain}";
               icon = "donetick.png";
               description = "Tasks and reminders";
-            };
-          }
-          {
-            "NocoDB" = {
-              href = "https://${nocodbDomain}";
-              icon = "nocodb.png";
-              description = "Personal database and spreadsheet";
             };
           }
           {
@@ -825,7 +802,6 @@ lib.mkIf (config.server.secrets.enable or false) {
     "d /var/lib/bindery 0750 bindery media -"
     "d /var/lib/llm-gateway 0700 root root -"
     "d /var/lib/immich-analyze 0700 root root -"
-    "d /srv/nocodb 0750 root root -"
   ];
 
   systemd.services.llm-gateway-credentials = {
@@ -919,15 +895,6 @@ lib.mkIf (config.server.secrets.enable or false) {
         BROWSER_LOCALE = "ru-RU";
       };
     };
-    containers.nocodb = {
-      image = "nocodb/nocodb:2026.09.0@sha256:5c9296e0b554b9dce431d62fda224388a3ce33c06215cec04bc4ec5c67a76295";
-      ports = [ "127.0.0.1:8085:8080" ];
-      volumes = [ "/srv/nocodb:/usr/app/data" ];
-      environment = {
-        NC_APP_DATA_DIR = "/usr/app/data";
-        NC_SITE_URL = "https://${nocodbDomain}";
-      };
-    };
   };
 
   systemd.services.elengrab.environment.ELENGRAB_BASE_URL = "https://${elengrabDomain}";
@@ -1009,7 +976,6 @@ lib.mkIf (config.server.secrets.enable or false) {
         <iframe hidden src="https://${bitmagnetDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${homepageDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${elengrabDomain}/.pomerium/sign_out"></iframe>
-        <iframe hidden src="https://${nocodbDomain}/.pomerium/sign_out"></iframe>
         <iframe hidden src="https://${donetickDomain}/.pomerium/sign_out"></iframe>
         <script>setTimeout(() => location.replace("/"), 1500);</script>
         </body></html>
@@ -1129,15 +1095,6 @@ lib.mkIf (config.server.secrets.enable or false) {
     ${cloudreveDomain} = {
       extraConfig = ''
         reverse_proxy 127.0.0.1:5212
-      '';
-    };
-
-    ${nocodbDomain} = {
-      extraConfig = ''
-        log {
-          output file /var/log/caddy/access.log
-        }
-        reverse_proxy 127.0.0.1:8443
       '';
     };
 
