@@ -355,7 +355,7 @@ in
           provision_client openhands OpenHands \
             '["https://openhands.outworld66.ru/api/auth/oidc/callback"]' \
             /var/lib/openhands/oidc-client-secret \
-            "" "" true '["ai-admin","ai-user"]'
+            "" "" false '["ai-admin","ai-user"]'
           ${lib.optionalString (config.server.immich.enable or false) ''
             chown immich:immich /var/lib/immich/oidc-client-secret
           ''}
