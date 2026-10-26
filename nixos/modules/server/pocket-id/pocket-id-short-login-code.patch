@@ -1,0 +1,15 @@
+diff --git c/frontend/src/routes/login/alternative/code/+page.svelte w/frontend/src/routes/login/alternative/code/+page.svelte
+index 80810a0..c156a44 100644
+--- c/frontend/src/routes/login/alternative/code/+page.svelte
++++ w/frontend/src/routes/login/alternative/code/+page.svelte
+@@ -5,7 +5,6 @@
+ 	import * as InputOTP from '#lib/components/ui/input-otp/index.js';
+ 	import Input from '#lib/components/ui/input/input.svelte';
+ 	import { m } from '#lib/paraglide/messages.js';
+ 	import UserService from '#lib/services/user-service.ts';
+-	import appConfigStore from '#lib/stores/application-configuration-store.ts';
+ 	import userStore from '#lib/stores/user-store.js';
+ 	import { getAxiosErrorMessage } from '#lib/utils/error-util.ts';
+@@ -25 +24 @@
+-		code.length > shortCodeLength || !$appConfigStore.emailOneTimeAccessAsUnauthenticatedEnabled
++		code.length > shortCodeLength

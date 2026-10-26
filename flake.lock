@@ -568,16 +568,16 @@
     "pocket-id": {
       "flake": false,
       "locked": {
-        "lastModified": 1790884209,
-        "narHash": "sha256-FmLu6X/q+TDzcXLNRa3ut6MjjcXf6o8v0DW9Qc+ZKl0=",
+        "lastModified": 1792629788,
+        "narHash": "sha256-v+lPLUeEe8/FO7J/yz8rcb0OdocYoTiAEi24woY19CY=",
         "owner": "pocket-id",
         "repo": "pocket-id",
-        "rev": "1abc0186fcbf0a31b51d90adb24f9b4c9cea1be6",
+        "rev": "23c7f07f7ef80cd14b991541784f1182dbdaf249",
         "type": "github"
       },
       "original": {
         "owner": "pocket-id",
-        "ref": "v2.17.0",
+        "ref": "v2.19.1",
         "repo": "pocket-id",
         "type": "github"
       }

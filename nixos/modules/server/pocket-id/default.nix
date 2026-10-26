@@ -9,9 +9,12 @@ let
   cfg = config.services.pocket-id;
   stateDir = "/var/lib/pocket-id";
   pocketIdSource = pkgs.applyPatches {
-    name = "pocket-id-2.17.0-outworld-patches";
+    name = "pocket-id-2.19.1-outworld-patches";
     src = inputs.pocket-id;
-    patches = [ ./pocket-id-global-logout.patch ];
+    patches = [
+      ./pocket-id-global-logout.patch
+      ./pocket-id-short-login-code.patch
+    ];
   };
 in
 {
@@ -51,23 +54,31 @@ in
       };
       package = pkgs.pocket-id.overrideAttrs (old: {
         src = pocketIdSource;
-        version = "2.17.0";
-        goModules = old.goModules.overrideAttrs (_: {
+        version = "2.19.1";
+        nativeBuildInputs = [
+          inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.go_1_27
+        ]
+        ++ lib.filter (input: input != pkgs.go_1_27) old.nativeBuildInputs;
+        goModules = old.goModules.overrideAttrs (modules: {
+          nativeBuildInputs = [
+            inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}.go_1_27
+          ]
+          ++ lib.filter (input: input != pkgs.go_1_27) modules.nativeBuildInputs;
           src = pocketIdSource;
-          name = "pocket-id-2.17.0-go-modules";
-          outputHash = "sha256-7rgKhTVwTphjBL1UwLcffex1cZcB1fYFU8ST9H11FWA=";
+          name = "pocket-id-2.19.1-go-modules";
+          outputHash = "sha256-H7UCkkX71VXsfkYsacxSPRONvw+lqZOhQUg/2b5DxRI=";
           preBuild = "";
         });
         frontend = old.frontend.overrideAttrs (_frontendOld: {
           src = pocketIdSource;
-          version = "2.17.0";
+          version = "2.19.1";
           pnpmDeps = pkgs.fetchPnpmDeps {
             pname = "pocket-id-frontend";
-            version = "2.17.0";
+            version = "2.19.1";
             src = pocketIdSource;
             pnpm = pkgs.pnpm_10;
             fetcherVersion = 4;
-            hash = "sha256-UmQDpQywsr1e6G/qF2WYbjd4u0ZLhI4vIKuaGPNk+ZE=";
+            hash = "sha256-0RUOUMI7jllUAYF0v1Vuk5aiI7vStzOZp+KFwuv68D4=";
           };
         });
         preBuild = (old.preBuild or "") + ''
