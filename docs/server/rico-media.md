@@ -7,7 +7,7 @@ commands. Jellyfin reads `/srv/media/library/movies` and
 `/srv/media/downloads/complete`.
 
 qBittorrent, Jackett, Prowlarr, and Bindery administration is routed through
-Caddy and Pomerium. Pomerium delegates sign-in to Authentik and restricts these
+Caddy and Pomerium. Pomerium delegates sign-in to Pocket ID and restricts these
 interfaces to the `media-admin` group. Bitmagnet and Homepage also use
 Pomerium, with media access groups configured in `hosts/rico/services.nix`.
 Jellyfin uses its own accounts and is served directly by Caddy so TV and mobile

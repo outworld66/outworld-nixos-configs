@@ -1,9 +1,8 @@
-{ inputs, ... }:
+{ ... }:
 {
   imports = [
-    inputs.authentik-nix.nixosModules.default
     ./caddy
-    ./authentik
+    ./pocket-id
     ./gobackup
     ./goaccess
     ./mail

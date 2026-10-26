@@ -6,17 +6,17 @@
 }:
 let
   cfg = config.server.gotify;
-  authentikIssuer = "https://identity.outworld66.ru/application/o/gotify/";
-  authentikOidcReady = pkgs.writeShellScript "gotify-authentik-oidc-ready" ''
+  pocketIdIssuer = "https://id.outworld66.ru";
+  pocketIdOidcReady = pkgs.writeShellScript "gotify-pocket-id-oidc-ready" ''
     for _ in $(${pkgs.coreutils}/bin/seq 1 60); do
       if ${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 3 \
-        "${authentikIssuer}.well-known/openid-configuration" \
+        "${pocketIdIssuer}.well-known/openid-configuration" \
         | ${pkgs.jq}/bin/jq -e '.id_token_signing_alg_values_supported | index("RS256") != null' >/dev/null; then
         exit 0
       fi
       ${pkgs.coreutils}/bin/sleep 2
     done
-    echo "Authentik Gotify OIDC provider is not ready with RS256" >&2
+    echo "Pocket ID Gotify OIDC provider is not ready with RS256" >&2
     exit 1
   '';
   gotifySrc = pkgs.fetchFromGitHub {
@@ -57,7 +57,7 @@ in
         GOTIFY_SERVER_PORT = 8090;
         GOTIFY_DATABASE_DIALECT = "sqlite3";
         GOTIFY_OIDC_ENABLED = "true";
-        GOTIFY_OIDC_ISSUER = authentikIssuer;
+        GOTIFY_OIDC_ISSUER = pocketIdIssuer;
         GOTIFY_OIDC_CLIENTID = "gotify";
         GOTIFY_OIDC_REDIRECTURL = "https://gotify.outworld66.ru/auth/oidc/callback";
         GOTIFY_OIDC_AUTOREGISTER = "true";
@@ -71,7 +71,7 @@ in
       };
       environmentFiles = [
         "/var/lib/gotify/default.env"
-        "/var/lib/authentik/gotify-oidc-environment"
+        "/var/lib/gotify/oidc.env"
       ];
     };
 
@@ -105,15 +105,15 @@ in
     systemd.services.gotify-server = {
       after = [
         "gotify-default-password.service"
-        "authentik-secret.service"
-        "authentik.service"
+        "pocket-id-oidc-provision.service"
+        "pocket-id.service"
       ];
       requires = [
         "gotify-default-password.service"
-        "authentik-secret.service"
+        "pocket-id-oidc-provision.service"
         "gotify-default-password.service"
-        "authentik-secret.service"
-        "authentik.service"
+        "pocket-id-oidc-provision.service"
+        "pocket-id.service"
       ];
       serviceConfig = {
         DynamicUser = lib.mkForce false;
@@ -122,7 +122,7 @@ in
         RestartSec = "10s";
         ExecStartPre = [
           "+${pkgs.coreutils}/bin/chown -R gotify:gotify /var/lib/gotify-server"
-          authentikOidcReady
+          pocketIdOidcReady
         ];
       };
     };

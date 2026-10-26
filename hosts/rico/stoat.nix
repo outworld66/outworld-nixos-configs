@@ -9,8 +9,8 @@ let
   domain = "stoat.outworld66.ru";
   stateDir = "/var/lib/stoat";
   oidcEnvironment = "${stateDir}/oidc.env";
-  oidcIssuer = "https://identity.outworld66.ru/application/o/stoat/";
-  oidcReady = pkgs.writeShellScript "stoat-authentik-ready" ''
+  oidcIssuer = "https://id.outworld66.ru";
+  oidcReady = pkgs.writeShellScript "stoat-pocket-id-ready" ''
     for attempt in $(${pkgs.coreutils}/bin/seq 1 120); do
       if ${pkgs.curl}/bin/curl --fail --silent ${lib.escapeShellArg "${oidcIssuer}.well-known/openid-configuration"} \
         | ${pkgs.jq}/bin/jq -e --arg issuer ${lib.escapeShellArg oidcIssuer} \
@@ -19,7 +19,7 @@ let
       fi
       ${pkgs.coreutils}/bin/sleep 2
     done
-    echo "Authentik Stoat OIDC provider is not ready" >&2
+    echo "Pocket ID Stoat OIDC provider is not ready" >&2
     exit 1
   '';
   baseConfig = builtins.readFile "${inputs.stoat-backend}/crates/core/config/Revolt.toml";
@@ -83,7 +83,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         install -d -m 0750 ${stateDir} /var/lib/stoat/database /var/lib/stoat/rabbit /srv/stoat/files
         install -m 0444 ${configFile} ${stateDir}/Revolt.toml
         umask 077
-        printf 'REVOLT__API__OIDC__CLIENT_SECRET=%s\n' "$(cat /var/lib/authentik/oidc-stoat-secret)" > ${oidcEnvironment}.new
+        printf 'REVOLT__API__OIDC__CLIENT_SECRET=%s\n' "$(cat /var/lib/stoat/oidc-client-secret)" > ${oidcEnvironment}.new
         chmod 0400 ${oidcEnvironment}.new
         if ! cmp -s ${oidcEnvironment}.new ${oidcEnvironment}; then
           mv ${oidcEnvironment}.new ${oidcEnvironment}
@@ -136,8 +136,8 @@ lib.mkIf (config.server.secrets.enable or false) {
         chmod 0400 ${stateDir}/livekit.yml
       '';
     };
-    requires = [ "authentik-secret.service" ];
-    after = [ "authentik-secret.service" ];
+    requires = [ "pocket-id-oidc-provision.service" ];
+    after = [ "pocket-id-oidc-provision.service" ];
   };
 
   virtualisation.docker.enable = true;
@@ -152,14 +152,14 @@ lib.mkIf (config.server.secrets.enable or false) {
     requires = [
       "docker.service"
       "stoat-secrets.service"
-      "authentik.service"
-      "authentik-secret.service"
+      "pocket-id.service"
+      "pocket-id-oidc-provision.service"
     ];
     after = [
       "docker.service"
       "stoat-secrets.service"
-      "authentik.service"
-      "authentik-secret.service"
+      "pocket-id.service"
+      "pocket-id-oidc-provision.service"
     ];
     path = [ pkgs.docker-compose ];
     serviceConfig = {
@@ -185,6 +185,8 @@ lib.mkIf (config.server.secrets.enable or false) {
 
   services.caddy.extraConfig = lib.mkAfter ''
     http://127.0.0.1:15000 {
+      @accountCredentialChanges path /api/auth/account/change/email /api/auth/account/change/password
+      respond @accountCredentialChanges "Account credentials are managed by Pocket ID." 403
       route /.well-known/stoat {
         header Content-Type application/json
         header Access-Control-Allow-Origin *
@@ -245,7 +247,7 @@ lib.mkIf (config.server.secrets.enable or false) {
           Stoat = {
             href = "https://${domain}";
             icon = "si-discord";
-            description = "Private chat with Authentik sign-in";
+            description = "Private chat with Pocket ID sign-in";
           };
         }
       ];

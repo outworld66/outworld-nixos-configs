@@ -1,7 +1,7 @@
 # Mail server
 
 Rico runs Stalwart 0.16.22. Its NixOS module stores the database at
-`/var/lib/stalwart/db`, keeps the administrator and Authentik SMTP account
+`/var/lib/stalwart/db`, keeps the administrator and Pocket ID SMTP account
 passwords in SOPS, and applies the initial server configuration through
 `stalwart-cli`.
 The 0.15 database is not migrated during the 0.16 upgrade.
@@ -12,13 +12,13 @@ The Stalwart web interface is available at `https://mail.outworld66.ru`.
 The administrator account is `admin@outworld66.ru`. Its password comes from
 the private SOPS secret `mail/stalwart-admin-password`.
 
-The Authentik mail account is:
+The Pocket ID mail account is:
 
 ```text
 id@outworld66.ru
 ```
 
-Authentik uses this account to send verification mail through Stalwart on
+Pocket ID uses this account to send verification mail through Stalwart on
 submission port `587`.
 
 ## Public ports
@@ -33,20 +33,18 @@ The firewall and router continue to need the same mail ports:
 No new public port is required. Stalwart's HTTP listener is bound to
 `127.0.0.1:8080` and is published through Caddy on `443`.
 
-## Authentik account provisioning
+## Pocket ID account provisioning
 
-`stalwart-provision-authentik-users` reconciles local Stalwart accounts with
-active Authentik users in the `mail-admin` or `mail-user` groups through the
-local LDAP outpost. It creates missing accounts, re-enables matching accounts,
-and disables SMTP/IMAP authentication for accounts that leave the allowed set.
-It never deletes mailboxes.
+`stalwart-provision-pocket-id-users` reconciles local Stalwart accounts from
+the private Pocket ID user-group mapping. Users with `mail-admin` or `mail-user`
+are added; accounts that leave those groups have SMTP/IMAP authentication
+disabled. The helper preserves the explicit SOPS mailboxes and never deletes
+mailboxes.
 
-Run the helper on Rico as root. It reads the LDAP bind password from the
-Authentik runtime state and the Stalwart administrator password from its
-configured file:
+Run the helper on Rico as root. It reads the Stalwart administrator password from its configured file:
 
 ```bash
-ssh root@192.168.0.4 stalwart-provision-authentik-users
+ssh root@192.168.0.4 stalwart-provision-pocket-id-users
 ```
 
 The `outworld66@outworld66.ru` mailbox password is stored in the private
@@ -57,7 +55,8 @@ nix run nixpkgs#sops -- --decrypt --extract '["mail"]["outworld66-password"]' ..
 ```
 
 The helper reconciles account creation and login eligibility; IMAP and SMTP
-clients continue to authenticate with Stalwart passwords.
+clients continue to authenticate with Stalwart passwords. Pocket ID changes do
+not migrate Stalwart mailbox passwords.
 
 ## DKIM DNS record
 

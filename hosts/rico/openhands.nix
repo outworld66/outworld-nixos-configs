@@ -29,7 +29,7 @@ let
     umask 077
     [ -s ${stateDirectory}/environment ] || printf 'LOCAL_BACKEND_API_KEY=%s\n' "$(${pkgs.openssl}/bin/openssl rand -base64 32)" > ${stateDirectory}/environment
     grep -q '^OH_SECRET_KEY=.' ${stateDirectory}/environment || printf 'OH_SECRET_KEY=%s\n' "$(${pkgs.openssl}/bin/openssl rand -hex 32)" >> ${stateDirectory}/environment
-    printf 'OH_OIDC_CLIENT_SECRET=%s\n' "$(cat /var/lib/authentik/oidc-openhands-secret)" > ${stateDirectory}/oidc-environment
+    printf 'OH_OIDC_CLIENT_SECRET=%s\n' "$(cat /var/lib/openhands/oidc-client-secret)" > ${stateDirectory}/oidc-environment
     ${pkgs.coreutils}/bin/chmod 0400 ${stateDirectory}/environment ${stateDirectory}/oidc-environment
   '';
   vpnRouteCheck = pkgs.writeShellScript "check-openhands-vpn-route" ''
@@ -96,8 +96,8 @@ in
   systemd.services.openhands-api-key = {
     description = "Create a persistent OpenHands Agent Canvas API key";
     before = [ "openhands.service" ];
-    requires = [ "authentik-secret.service" ];
-    after = [ "authentik-secret.service" ];
+    requires = [ "pocket-id-oidc-provision.service" ];
+    after = [ "pocket-id-oidc-provision.service" ];
     requiredBy = [ "openhands.service" ];
     serviceConfig = {
       Type = "oneshot";
@@ -123,14 +123,14 @@ in
     requires = [
       "openhands-codex-auth.service"
       "openhands-api-key.service"
-      "authentik-secret.service"
+      "pocket-id-oidc-provision.service"
       "user@980.service"
       "vpn.service"
     ];
     after = [
       "openhands-codex-auth.service"
       "openhands-api-key.service"
-      "authentik-secret.service"
+      "pocket-id-oidc-provision.service"
       "user@980.service"
       "vpn.service"
     ];
@@ -157,7 +157,7 @@ in
       OH_AGENT_SERVER_GIT_REF = "090eba8ef735502009e528d7d329bf762e489ba6";
       OH_CONVERSATION_RUNTIME = "docker";
       OH_CONVERSATION_IMAGE = conversationImage;
-      OH_OIDC_ISSUER_URL = "https://identity.outworld66.ru/application/o/openhands/";
+      OH_OIDC_ISSUER_URL = "https://id.outworld66.ru";
       OH_OIDC_CLIENT_ID = "openhands";
       OH_OIDC_ALLOWED_GROUPS_0 = "ai-admin";
       OH_OIDC_ALLOWED_GROUPS_1 = "ai-user";

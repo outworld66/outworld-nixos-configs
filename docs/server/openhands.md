@@ -12,7 +12,7 @@ is pulled at service startup when absent, and the fork's dedicated rootless
 Docker daemon; Rico's other services continue using
 the system Docker daemon. Codex and ACP traffic uses the AmneziaVPN route.
 
-The public URL is protected by OpenHands native OIDC with Authentik. Members
+The public URL is protected by OpenHands native OIDC with Pocket ID. Members
 of `ai-admin` and `ai-user` can sign in; `ai-admin` receives the administrator
 role. Agent Server limits accounts to their own conversations and workspaces.
 The backend listens on loopback and sends its outbound traffic through Rico's
@@ -27,7 +27,7 @@ workspace and login are not deleted automatically.
 
 ## First use
 
-1. Open `https://openhands.outworld66.ru` and sign in through Authentik with an
+1. Open `https://openhands.outworld66.ru` and sign in through Pocket ID with an
    account assigned to `ai-admin` or `ai-user`.
 2. Agent Canvas asks for its local backend API key because it runs in public
    mode. On Rico, read the value from `/var/lib/openhands/environment` with

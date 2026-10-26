@@ -26,16 +26,16 @@ logging:
   encoding: json
   development: false
 oauth2:
-  auth_url: https://identity.outworld66.ru/application/o/donetick/authorize/
-  token_url: https://identity.outworld66.ru/application/o/donetick/token/
-  user_info_url: https://identity.outworld66.ru/application/o/donetick/userinfo/
+  auth_url: https://id.outworld66.ru/authorize
+  token_url: https://id.outworld66.ru/api/oidc/token
+  user_info_url: https://id.outworld66.ru/api/oidc/userinfo
   redirect_url: https://donetick.outworld66.ru/auth/oauth2
   scopes:
     - openid
     - profile
     - email
     - groups
-  name: Authentik
+  name: Pocket ID
   admin_groups:
     - donetick-admin
 disable_password_auth: true

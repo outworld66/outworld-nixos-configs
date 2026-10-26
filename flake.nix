@@ -10,7 +10,7 @@
     streamline.url = "github:outworld66/streamline?ref=fix-jackett-tmdbid-fallback";
 
     stoat-backend = {
-      url = "github:outworld66/stoatchat/aa926053";
+      url = "github:outworld66/stoatchat/23f0b5679cc00bc1877f0d000c6ea29f4073f180";
       flake = false;
     };
 
@@ -60,14 +60,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    authentik-nix = {
-      url = "github:nix-community/authentik-nix/version/2026.8.3";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-      inputs.authentik-src.follows = "authentik-src";
-    };
-
-    authentik-src = {
-      url = "github:outworld66/authentik-agent-accounts/2334e0352c19fca59ae46d71f874e1e101b7bdd1";
+    pocket-id = {
+      url = "github:pocket-id/pocket-id/v2.17.0";
       flake = false;
     };
 

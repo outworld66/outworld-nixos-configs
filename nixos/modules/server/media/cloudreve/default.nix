@@ -48,23 +48,23 @@ in
     };
 
     systemd.services.cloudreve-oidc-env = {
-      description = "Prepare Cloudreve Authentik credentials";
+      description = "Prepare Cloudreve Pocket ID credentials";
       wantedBy = [ "multi-user.target" ];
-      after = [ "authentik-secret.service" ];
-      requires = [ "authentik-secret.service" ];
+      after = [ "pocket-id-oidc-provision.service" ];
+      requires = [ "pocket-id-oidc-provision.service" ];
       before = [ "cloudreve.service" ];
       serviceConfig.Type = "oneshot";
       script = ''
         install -d -m 0750 -o cloudreve -g cloudreve /var/lib/cloudreve
         umask 077
         printf '%s\n' \
-          CR_OIDC_ISSUER=https://identity.outworld66.ru/application/o/cloudreve/ \
+          CR_OIDC_ISSUER=https://id.outworld66.ru \
           CR_OIDC_CLIENT_ID=cloudreve \
           CR_OIDC_REDIRECT_URL=https://cloudreve.outworld66.ru/api/v4/session/oidc/callback \
           CR_SETTING_DEFAULT_siteURL=https://cloudreve.outworld66.ru \
           CR_USERPASS_ENABLED=false \
           CR_PASSKEY_ENABLED=false \
-          "CR_OIDC_CLIENT_SECRET=$(cat /var/lib/cloudreve/authentik-oidc-client-secret)" \
+          "CR_OIDC_CLIENT_SECRET=$(cat /var/lib/cloudreve/oidc-client-secret)" \
           > /var/lib/cloudreve/oidc.env
         chown cloudreve:cloudreve /var/lib/cloudreve/oidc.env
         chmod 0400 /var/lib/cloudreve/oidc.env

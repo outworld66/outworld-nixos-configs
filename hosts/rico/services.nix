@@ -78,7 +78,7 @@ let
   cloudreveDomain = "cloudreve.outworld66.ru";
   nocodbDomain = "nocodb.outworld66.ru";
   speedtestDomain = "speedtest.outworld66.ru";
-  identityRedirectDomain = "id.outworld66.ru";
+  pocketIdDomain = "id.outworld66.ru";
   immichDomain = "immich.outworld66.ru";
   jellyfinDomain = "jellyfin.outworld66.ru";
   torrentDomain = "torrent.outworld66.ru";
@@ -126,13 +126,13 @@ in
 lib.mkIf (config.server.secrets.enable or false) {
   services.pomerium = {
     enable = true;
-    secretsFile = "/var/lib/pomerium/authentik-environment";
+    secretsFile = "/var/lib/pomerium/environment";
     settings = {
       address = "127.0.0.1:8443";
       insecure_server = true;
       authenticate_service_url = "https://${authDomain}";
       idp_provider = "oidc";
-      idp_provider_url = "https://identity.outworld66.ru/application/o/pomerium/";
+      idp_provider_url = "https://id.outworld66.ru";
       idp_client_id = "pomerium";
       idp_scopes = [
         "openid"
@@ -309,8 +309,8 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   systemd.services.pomerium = {
-    requires = [ "authentik-secret.service" ];
-    after = [ "authentik-secret.service" ];
+    requires = [ "pocket-id-oidc-provision.service" ];
+    after = [ "pocket-id-oidc-provision.service" ];
   };
 
   services.caddy.globalConfig = ''
@@ -361,10 +361,10 @@ lib.mkIf (config.server.secrets.enable or false) {
       {
         Infrastructure = [
           {
-            Authentik = {
-              href = "https://identity.outworld66.ru";
-              icon = "authentik.png";
-              description = "Identity provider";
+            "Pocket ID" = {
+              href = "https://${pocketIdDomain}";
+              icon = "pocket-id.png";
+              description = "OIDC identity provider";
             };
           }
           {
@@ -660,7 +660,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         oidc = [
           {
             name = "pocket-id";
-            issuer = "https://identity.outworld66.ru/application/o/streamline/";
+            issuer = "https://id.outworld66.ru";
             client_id = "streamline";
             client_secret_file = "/run/credentials/streamline.service/pocket-id-client-secret";
             auto_provision = true;
@@ -687,8 +687,8 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
   };
   systemd.services.streamline = {
-    requires = [ "authentik-secret.service" ];
-    after = [ "authentik-secret.service" ];
+    requires = [ "pocket-id-oidc-provision.service" ];
+    after = [ "pocket-id-oidc-provision.service" ];
   };
   systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
 
@@ -1000,7 +1000,7 @@ lib.mkIf (config.server.secrets.enable or false) {
       '';
     };
 
-    ${identityRedirectDomain} = {
+    ${pocketIdDomain} = {
       extraConfig = ''
         log {
           output file /var/log/caddy/access.log
@@ -1021,8 +1021,14 @@ lib.mkIf (config.server.secrets.enable or false) {
         HTML 200
         }
         handle {
-          redir https://identity.outworld66.ru{uri} 302
+          reverse_proxy 127.0.0.1:1411
         }
+      '';
+    };
+
+    "identity.outworld66.ru" = {
+      extraConfig = ''
+        redir https://${pocketIdDomain}{uri} 302
       '';
     };
 

@@ -6,17 +6,17 @@
 }:
 let
   domain = "filebrowser.outworld66.ru";
-  authentikIssuer = "https://identity.outworld66.ru/application/o/filebrowser/";
-  authentikReady = pkgs.writeShellScript "filebrowser-authentik-ready" ''
+  pocketIdIssuer = "https://id.outworld66.ru";
+  pocketIdReady = pkgs.writeShellScript "filebrowser-pocket-id-ready" ''
     for _ in $(${pkgs.coreutils}/bin/seq 1 60); do
       if ${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 3 \
-        "${authentikIssuer}.well-known/openid-configuration" \
+        "${pocketIdIssuer}.well-known/openid-configuration" \
         | ${pkgs.jq}/bin/jq -e '.id_token_signing_alg_values_supported | index("RS256") != null' >/dev/null; then
         exit 0
       fi
       ${pkgs.coreutils}/bin/sleep 2
     done
-    echo "Authentik File Browser OIDC provider is not ready with RS256" >&2
+    echo "Pocket ID File Browser OIDC provider is not ready with RS256" >&2
     exit 1
   '';
   image = "ghcr.io/gtsteffaniak/filebrowser:stable@sha256:9d42f635e32913d7daf05259428b6c70061cfdca3affc9602b4c31717e0a4bae";
@@ -77,7 +77,7 @@ let
           userIdentifier = "preferred_username";
           createUser = true;
           clientId = "filebrowser";
-          issuerUrl = authentikIssuer;
+          issuerUrl = pocketIdIssuer;
           scopes = "openid email profile groups";
         };
       };
@@ -106,7 +106,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     inherit image;
     ports = [ "127.0.0.1:8193:80" ];
     environment.FILEBROWSER_CONFIG = "/home/filebrowser/config.yaml";
-    environmentFiles = [ "/var/lib/filebrowser/authentik-oidc.env" ];
+    environmentFiles = [ "/var/lib/filebrowser/oidc.env" ];
     volumes = [
       "${configFile}:/home/filebrowser/config.yaml:ro"
       "/var/lib/filebrowser:/home/filebrowser/data"
@@ -138,16 +138,16 @@ lib.mkIf (config.server.secrets.enable or false) {
 
   systemd.services.docker-filebrowser = {
     requires = [
-      "authentik-secret.service"
-      "authentik.service"
+      "pocket-id-oidc-provision.service"
+      "pocket-id.service"
       "filebrowser-access-bootstrap.service"
     ];
     after = [
-      "authentik-secret.service"
-      "authentik.service"
+      "pocket-id-oidc-provision.service"
+      "pocket-id.service"
       "filebrowser-access-bootstrap.service"
     ];
-    serviceConfig.ExecStartPre = authentikReady;
+    serviceConfig.ExecStartPre = pocketIdReady;
   };
 
   services.caddy.virtualHosts.${domain}.extraConfig = ''

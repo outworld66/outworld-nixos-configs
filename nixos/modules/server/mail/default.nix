@@ -112,40 +112,32 @@ let
 
     exec ${stalwart}/bin/stalwart --config=${configFile}
   '';
-  provisionScript = pkgs.writeShellScriptBin "stalwart-provision-authentik-users" ''
+  mailUserAddresses = lib.unique (
+    lib.concatMap (
+      mapping:
+      if
+        lib.any (group: builtins.elem group mapping.groups) [
+          "mail-admin"
+          "mail-user"
+        ]
+      then
+        [ mapping.email ]
+      else
+        [ ]
+    ) config.services.pocket-id.userGroupMappings
+  );
+  provisionScript = pkgs.writeShellScriptBin "stalwart-provision-pocket-id-users" ''
     set -euo pipefail
     domain="''${STALWART_DOMAIN:-${cfg.primaryDomain}}"
-    base_dn='dc=outworld66,dc=ru'
     domain_id=$(${cli}/bin/stalwart-cli query Domain --json --fields id,name \
       | ${pkgs.jq}/bin/jq -er --arg domain "$domain" 'select(.name==$domain)|.id')
     tmp=$(${pkgs.coreutils}/bin/mktemp -d)
     trap '${pkgs.coreutils}/bin/rm -rf "$tmp"' EXIT
-    : > "$tmp/desired"
-    ${pkgs.coreutils}/bin/tr -d '\r\n' < /var/lib/authentik/ldap-search-password > "$tmp/ldap-password"
-    ldap_ready=0
-    for attempt in $(${pkgs.coreutils}/bin/seq 1 60); do
-      if ${pkgs.openldap}/bin/ldapsearch -LLL -o ldif-wrap=no -x \
-        -H ldap://127.0.0.1:3389 \
-        -D "cn=stalwart-ldap,ou=users,$base_dn" \
-        -y "$tmp/ldap-password" \
-        -b "ou=users,$base_dn" \
-        '(&(objectClass=user)(ak-active=true)(|(memberOf=cn=mail-admin,ou=groups,dc=outworld66,dc=ru)(memberOf=cn=mail-user,ou=groups,dc=outworld66,dc=ru)))' mail \
-        > "$tmp/ldap" 2> "$tmp/ldap-error"; then
-        ldap_ready=1
-        break
-      fi
-      ${pkgs.coreutils}/bin/sleep 2
-    done
-    if [ "$ldap_ready" -ne 1 ]; then
-      echo "Authentik LDAP did not accept the Stalwart bind" >&2
-      exit 1
-    fi
-    ${pkgs.gnused}/bin/sed -n 's/^mail: //p' "$tmp/ldap" \
-      | while IFS= read -r email; do
-        [ -n "$email" ] && printf '%s\n' "''${email%%@*}@$domain"
-      done | ${pkgs.coreutils}/bin/sort -u > "$tmp/desired"
+    printf '%s' '${builtins.toJSON mailUserAddresses}' | ${pkgs.jq}/bin/jq -r '.[]' \
+      | while IFS= read -r email; do printf '%s@%s\n' "''${email%%@*}" "$domain"; done \
+      | ${pkgs.coreutils}/bin/sort -u > "$tmp/desired"
     if [ ! -s "$tmp/desired" ]; then
-      echo "Authentik LDAP returned no mail-enabled users; refusing to disable accounts" >&2
+      echo "Pocket ID has no mail-enabled users; refusing to disable accounts" >&2
       exit 1
     fi
 
@@ -180,14 +172,16 @@ let
       fi
     done < "$tmp/desired"
 
+    keep='${builtins.toJSON (builtins.attrNames cfg.accounts)}'
     printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -r '.emailAddress // empty' | while IFS= read -r email; do
-      [ "$email" = "admin@${cfg.primaryDomain}" ] && continue
-      [ "$email" = "id@${cfg.primaryDomain}" ] && continue
-      if ! ${pkgs.gnugrep}/bin/grep -Fqx "$email" "$tmp/desired"; then
-        id=$(printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -er --arg email "$email" 'select(.emailAddress==$email)|.id')
-        ${cli}/bin/stalwart-cli update Account "$id" --json \
-          '{"permissions":{"@type":"Merge","disabledPermissions":{"authenticate":true}}}' >/dev/null
+      [ "$email" = "admin@''${cfg.primaryDomain}" ] && continue
+      if ${pkgs.jq}/bin/jq -e --arg email "$email" 'index($email) != null' <<<"$keep" >/dev/null \
+        || ${pkgs.gnugrep}/bin/grep -Fqx "$email" "$tmp/desired"; then
+        continue
       fi
+      id=$(printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -er --arg email "$email" 'select(.emailAddress==$email)|.id')
+      ${cli}/bin/stalwart-cli update Account "$id" --json \
+        '{"permissions":{"@type":"Merge","disabledPermissions":{"authenticate":true}}}' >/dev/null
     done
   '';
   dkimDnsScript = pkgs.writeShellScriptBin "stalwart-dkim-dns" ''
@@ -315,18 +309,17 @@ in
       cli
       provisionScript
       dkimDnsScript
-      pkgs.openldap
     ];
 
-    systemd.services.stalwart-provision-authentik-users = {
-      description = "Provision mail-enabled Authentik users in Stalwart";
+    systemd.services.stalwart-provision-pocket-id-users = {
+      description = "Provision mail-enabled Pocket ID users in Stalwart";
       after = [
         "stalwart.service"
-        "authentik-ldap.service"
+        "pocket-id-oidc-provision.service"
       ];
       requires = [
         "stalwart.service"
-        "authentik-ldap.service"
+        "pocket-id-oidc-provision.service"
       ];
       serviceConfig = {
         Type = "oneshot";
@@ -336,15 +329,15 @@ in
           "STALWART_USER=admin@${cfg.primaryDomain}"
           "STALWART_PASSWORD_FILE=${cfg.adminPasswordFile}"
         ];
-        ExecStart = pkgs.writeShellScript "stalwart-provision-authentik-users" ''
+        ExecStart = pkgs.writeShellScript "stalwart-provision-pocket-id-users" ''
           set -eu
           export STALWART_PASSWORD=$(${pkgs.coreutils}/bin/cat "$STALWART_PASSWORD_FILE")
-          exec ${provisionScript}/bin/stalwart-provision-authentik-users
+          exec ${provisionScript}/bin/stalwart-provision-pocket-id-users
         '';
       };
     };
 
-    systemd.timers.stalwart-provision-authentik-users = {
+    systemd.timers.stalwart-provision-pocket-id-users = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";

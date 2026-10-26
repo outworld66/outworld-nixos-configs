@@ -83,12 +83,12 @@ in
       after = [
         "network-online.target"
         "donetick-secret.service"
-        "authentik-secret.service"
+        "pocket-id-oidc-provision.service"
       ];
       wants = [ "network-online.target" ];
       requires = [
         "donetick-secret.service"
-        "authentik-secret.service"
+        "pocket-id-oidc-provision.service"
       ];
       serviceConfig = {
         ExecStartPre = "${pkgs.coreutils}/bin/install -Dm640 -o donetick -g donetick /etc/donetick/selfhosted.yaml /var/lib/donetick/config/selfhosted.yaml";
@@ -102,7 +102,7 @@ in
         ];
         EnvironmentFile = [
           "/var/lib/donetick/environment"
-          "/var/lib/donetick/authentik-oidc.env"
+          "/var/lib/donetick/oidc.env"
         ];
         User = "donetick";
         Group = "donetick";
