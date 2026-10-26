@@ -185,16 +185,14 @@ lib.mkIf (config.server.secrets.enable or false) {
 
   services.caddy.extraConfig = lib.mkAfter ''
     http://127.0.0.1:15000 {
-      route {
-        @accountCredentialChanges path /api/auth/account/change/email /api/auth/account/change/password
-        respond @accountCredentialChanges "Account credentials are managed by Pocket ID." 403
-      }
       route /.well-known/stoat {
         header Content-Type application/json
         header Access-Control-Allow-Origin *
         respond `{"api":"https://${domain}/api"}` 200
       }
       route /api* {
+        @accountCredentialChanges path /api/auth/account/change/email /api/auth/account/change/password
+        respond @accountCredentialChanges "Account credentials are managed by Pocket ID." 403
         uri strip_prefix /api
         reverse_proxy 127.0.0.1:14702 {
           header_down Location "^/" "/api/"
