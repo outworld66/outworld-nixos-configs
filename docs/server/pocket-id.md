@@ -15,6 +15,12 @@ and agent identities are not imported. Open registration is enabled. New users
 receive no groups automatically, so registration alone does not grant access to
 OIDC clients restricted to specific groups.
 
+Nix owns mapped users' usernames, email addresses, and access groups. On
+reconciliation, it preserves each existing user's first name, last name,
+display name, and locale so users can edit their profile without Nix resetting
+those fields. Newly provisioned users start with an empty first and last name
+and a display name matching their username.
+
 Pocket ID cannot import passwords or WebAuthn credentials from another
 identity provider. Users created during this migration need a one-time access
 link from a Pocket ID administrator, then must enroll a passkey. Existing

@@ -205,17 +205,19 @@ in
                   ensure_group "$group_name"
                   printf '\n'
                 done | jq -Rsc 'split("\n") | map(select(length > 0))')
-            user_id=$(curl_api \
+            existing_user=$(curl_api \
               -H "X-API-KEY: $api_key" \
               "$api/users?pagination%5Blimit%5D=100" \
-              | jq -r --arg email "$email" \
-                '.data[] | select((.email // "" | ascii_downcase) == ($email | ascii_downcase)) | .id' \
+              | jq -c --arg email "$email" \
+                '.data[] | select((.email // "" | ascii_downcase) == ($email | ascii_downcase))' \
               | head -n1)
+            user_id=$(printf '%s' "$existing_user" | jq -r '.id // empty')
             user_payload=$(jq -cn \
               --arg username "$(printf '%s' "$mapping" | jq -er .username)" \
               --arg email "$email" \
               --argjson isAdmin "$is_admin" \
-              '{username: $username, displayName: $username, email: $email, emailVerified: true, disabled: false, isAdmin: $isAdmin}')
+              --argjson existingUser "''${existing_user:-null}" \
+              '{username: $username, firstName: ($existingUser.firstName // ""), lastName: ($existingUser.lastName // ""), displayName: ($existingUser.displayName // $username), locale: ($existingUser.locale // null), email: $email, emailVerified: true, disabled: false, isAdmin: $isAdmin}')
             if [ -n "$user_id" ]; then
               curl_api \
                 -H "X-API-KEY: $api_key" \
