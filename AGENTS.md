@@ -24,6 +24,13 @@ repository commands, confirm the checkout with `git rev-parse --show-toplevel`
 and change to that directory; the flake root is the directory containing
 `flake.nix`.
 
+### Sync before changes
+
+- Before editing files, inspect the worktree and fetch the latest upstream refs.
+- On `main`, fast-forward from `origin/main` with `git pull --ff-only origin main` before making changes.
+- On a task branch, update its base from the latest `origin/main` before editing.
+- Preserve existing local changes while syncing. Resolve conflicts explicitly; never discard work with a reset or forced checkout just to make the sync succeed.
+
 All repository documentation, including `README.md`, files under `docs/`, and
 documentation comments intended for users, must be written in English.
 
