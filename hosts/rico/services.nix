@@ -624,7 +624,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         trusted_proxies = [ "127.0.0.1/32" ];
       };
       auth = {
-        registration_mode = "disabled";
+        registration_mode = "invite";
         seed_admin = {
           email = "admin@streamline.local";
           password_file = "/run/credentials/streamline.service/seed-password";
@@ -1051,6 +1051,11 @@ lib.mkIf (config.server.secrets.enable or false) {
 
     ${streamlineDomain} = {
       extraConfig = ''
+        @streamlinePasswordLogin {
+          method POST
+          path /auth/login
+        }
+        respond @streamlinePasswordLogin "Use Pocket ID to sign in." 403
         reverse_proxy 127.0.0.1:8097
       '';
     };
