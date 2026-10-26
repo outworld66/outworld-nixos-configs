@@ -88,6 +88,10 @@ let
   openhandsDomain = "openhands.outworld66.ru";
   llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
   immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
+  streamlineRoleMapping = {
+    streamline-admin = "admin";
+    streamline-user = "member";
+  };
   litellmPortalPolicy = [
     {
       allow = {
@@ -660,10 +664,7 @@ lib.mkIf (config.server.secrets.enable or false) {
             email_linking = "all";
             allow_admin = true;
             role_claim = "groups";
-            role_mapping = {
-              streamline-admin = "admin";
-              streamline-user = "member";
-            };
+            role_mapping = streamlineRoleMapping;
           }
         ];
       };
@@ -682,6 +683,9 @@ lib.mkIf (config.server.secrets.enable or false) {
   systemd.services.streamline = {
     requires = [ "pocket-id-oidc-provision.service" ];
     after = [ "pocket-id-oidc-provision.service" ];
+    preStart = lib.mkAfter ''
+      ${pkgs.yq-go}/bin/yq -i '(.auth.oidc[] | select(.name == "pocket-id") | .role_mapping) = ${builtins.toJSON streamlineRoleMapping}' /var/lib/streamline/config.yaml
+    '';
   };
   systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
 
