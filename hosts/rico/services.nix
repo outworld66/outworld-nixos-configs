@@ -227,6 +227,9 @@ lib.mkIf (config.server.secrets.enable or false) {
         {
           from = "https://${streamlineDomain}";
           to = "http://127.0.0.1:8097";
+          set_request_headers = {
+            "X-Forwarded-Proto" = "https";
+          };
           policy = mediaAdminPolicy;
         }
         {
