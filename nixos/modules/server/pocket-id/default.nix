@@ -198,7 +198,7 @@ in
               -H "X-API-KEY: $api_key" \
               "$api/users?pagination%5Blimit%5D=100" \
               | jq -r --arg email "$email" \
-                '.data[] | select((.email | ascii_downcase) == ($email | ascii_downcase)) | .id' \
+                '.data[] | select((.email // "" | ascii_downcase) == ($email | ascii_downcase)) | .id' \
               | head -n1)
             user_payload=$(jq -cn \
               --arg username "$(printf '%s' "$mapping" | jq -er .username)" \
