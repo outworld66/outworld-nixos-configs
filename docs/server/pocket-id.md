@@ -2,8 +2,8 @@
 
 Rico uses Pocket ID at `https://id.outworld66.ru` as its identity provider. The
 old Pocket ID database and encryption key remain in `/var/lib/pocket-id`; the
-service is being re-enabled against that existing database. Authentik is being
-removed, and its PostgreSQL data is not imported.
+service is being re-enabled against that existing database. Accounts and data
+from the previous identity provider were not imported.
 
 ## User and account migration
 
@@ -15,13 +15,14 @@ and agent identities are not imported. Open registration is enabled. New users
 receive no groups automatically, so registration alone does not grant access to
 OIDC clients restricted to specific groups.
 
-Pocket ID cannot import Authentik passwords or WebAuthn credentials. Users
-created during this migration need a one-time access link from a Pocket ID
-administrator, then must enroll a passkey. Existing Pocket ID users retain
-their old user IDs and passkeys because the service reuses its existing
-`/var/lib/pocket-id` database. Deleting and recreating a user changes its OIDC
-subject and can orphan application accounts. Application accounts may also
-need linking on first login if their former identity-provider subject differs.
+Pocket ID cannot import passwords or WebAuthn credentials from another
+identity provider. Users created during this migration need a one-time access
+link from a Pocket ID administrator, then must enroll a passkey. Existing
+Pocket ID users retain their old user IDs and passkeys because the service
+reuses its existing `/var/lib/pocket-id` database. Deleting and recreating a
+user changes its OIDC subject and can orphan application accounts. Application
+accounts may also need linking on first login if their former identity-provider
+subject differs.
 
 ## OIDC clients
 
@@ -46,5 +47,5 @@ host redirects to `id.outworld66.ru` for old bookmarks.
 
 If Pocket ID does not start, follow the recovery workflow in
 [`deployment.md`](deployment.md). Keep `/var/lib/pocket-id` and its encryption
-key together; do not remove the retained Authentik database until the new
-provider and application account links have been verified.
+key together. Before removing legacy identity-provider data, verify the new
+provider and application account links.
