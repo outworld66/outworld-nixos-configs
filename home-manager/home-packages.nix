@@ -191,6 +191,7 @@
     ++ lib.optionals (hostname == "majesty") [
       discord # Discord client
       legcord # Lightweight Discord client
+      freecad # Parametric 3D CAD modeler
       vencord # Discord client modification and plugin platform
       vesktop # Desktop Discord client with Vencord integration
     ];
