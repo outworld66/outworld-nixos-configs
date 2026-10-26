@@ -54,10 +54,12 @@ let
             config = {
               denyByDefault = true;
               defaultEnabled = true;
-              readOnly = true;
               defaultPermissions = {
                 view = true;
                 download = true;
+                modify = true;
+                create = true;
+                delete = true;
                 configured = true;
               };
             };
@@ -111,7 +113,7 @@ lib.mkIf (config.server.secrets.enable or false) {
       "${configFile}:/home/filebrowser/config.yaml:ro"
       "/var/lib/filebrowser:/home/filebrowser/data"
       "${personalFilesPath}:${personalFilesPath}"
-      "${sharedPath}:${mediaSourcePath}:ro"
+      "${sharedPath}:${mediaSourcePath}"
     ];
     extraOptions = [ "--user=2002:2000" ];
   };

@@ -106,7 +106,10 @@ def main() -> None:
         expected_rule = json.dumps(
             {
                 "Deny": {"Users": {}, "Groups": {}},
-                "Allow": {"Users": {}, "Groups": {"media-admin": {}}},
+                "Allow": {
+                    "Users": {},
+                    "Groups": {"media-admin": {}, "media-user": {}},
+                },
             },
             separators=(",", ":"),
         ).encode()
