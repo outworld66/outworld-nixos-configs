@@ -11,14 +11,17 @@ The private Nix configuration is the source of truth for three human users and
 their service groups. The provisioning job reconciles existing Pocket ID users
 by case-insensitive email, creates missing mapped users as email-verified, and
 sets their usernames and groups. Synthetic test accounts, service identities,
-and agent identities are not imported. Open registration is disabled.
+and agent identities are not imported. Open registration is enabled. New users
+receive no groups automatically, so registration alone does not grant access to
+OIDC clients restricted to specific groups.
 
 Pocket ID cannot import Authentik passwords or WebAuthn credentials. Users
 created during this migration need a one-time access link from a Pocket ID
 administrator, then must enroll a passkey. Existing Pocket ID users retain
 their old user IDs and passkeys because the service reuses its existing
-`/var/lib/pocket-id` database. Application accounts may still need to be linked
-on first login if their former identity-provider subject differs.
+`/var/lib/pocket-id` database. Deleting and recreating a user changes its OIDC
+subject and can orphan application accounts. Application accounts may also
+need linking on first login if their former identity-provider subject differs.
 
 ## OIDC clients
 

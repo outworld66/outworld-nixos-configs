@@ -108,16 +108,16 @@ in
           if [ ! -s /var/lib/pocket-id/environment ]; then
             cat > /var/lib/pocket-id/environment <<EOF
           UI_CONFIG_DISABLED=true
-          ALLOW_USER_SIGNUPS=disabled
+          ALLOW_USER_SIGNUPS=open
           SIGNUP_DEFAULT_USER_GROUP_IDS=[]
           EOF
             chmod 0400 /var/lib/pocket-id/environment
             chown pocket-id:pocket-id /var/lib/pocket-id/environment
           fi
           if grep -q '^ALLOW_USER_SIGNUPS=' /var/lib/pocket-id/environment; then
-            sed -i 's/^ALLOW_USER_SIGNUPS=.*/ALLOW_USER_SIGNUPS=disabled/' /var/lib/pocket-id/environment
+            sed -i 's/^ALLOW_USER_SIGNUPS=.*/ALLOW_USER_SIGNUPS=open/' /var/lib/pocket-id/environment
           else
-            printf '\nALLOW_USER_SIGNUPS=disabled\n' >> /var/lib/pocket-id/environment
+            printf '\nALLOW_USER_SIGNUPS=open\n' >> /var/lib/pocket-id/environment
           fi
           chown pocket-id:pocket-id /var/lib/pocket-id/environment
           chmod 0400 /var/lib/pocket-id/environment
