@@ -1,5 +1,6 @@
 {
   config,
+  hostname,
   lib,
   pkgs,
   ...
@@ -57,6 +58,13 @@ let
     # version and points PLAYWRIGHT_BROWSERS_PATH at the nixpkgs
     # browser build instead.
     mcp-mermaid.command = lib.getExe pkgs.mcp-mermaid;
+  };
+
+  freecadMcpAddon = pkgs.fetchFromGitHub {
+    owner = "neka-nat";
+    repo = "freecad-mcp";
+    rev = "8babe9927ce8e6e8fe7dd6ae2ffa2c93776e845a";
+    hash = "sha256-dryocwUb26S1+msUTZDUYGoyizxKuAeqMiTqyD8/ybo=";
   };
 
   # pi / pi-mcp-adapter (~/.config/mcp/mcp.json) format.
@@ -142,5 +150,18 @@ in
       readOnly = true;
       description = "Registry mapped to the opencode MCP config format.";
     };
+  };
+
+  config = lib.mkIf (hostname == "majesty") {
+    mcp.extraServers.freecad = {
+      command = "uvx";
+      args = [
+        "--from"
+        "git+https://github.com/neka-nat/freecad-mcp@8babe9927ce8e6e8fe7dd6ae2ffa2c93776e845a"
+        "freecad-mcp"
+      ];
+    };
+
+    home.file.".local/share/FreeCAD/Mod/FreeCADMCP".source = "${freecadMcpAddon}/addon/FreeCADMCP";
   };
 }
