@@ -1051,6 +1051,11 @@ lib.mkIf (config.server.secrets.enable or false) {
 
     ${streamlineDomain} = {
       extraConfig = ''
+        @streamlineLoginPage {
+          path /login
+          not query error=*
+        }
+        redir @streamlineLoginPage /auth/oidc/pocket-id/start 302
         @streamlinePasswordLogin {
           method POST
           path /auth/login

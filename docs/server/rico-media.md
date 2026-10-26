@@ -14,7 +14,8 @@ Streamline (`https://streamline.outworld66.ru`) uses its native Pocket ID OIDC
 login directly through Caddy, without Pomerium. Pocket ID's `media-admin` and
 `media-user` groups map to Streamline's administrator and member roles. First
 OIDC login provisions an account automatically. Local password login is blocked
-at Caddy, and local account registration requires an invite.
+at Caddy, and `/login` sends users to Pocket ID. Local account registration
+requires an invite.
 Jellyfin uses its own accounts and is served directly by Caddy so TV and mobile
 clients can use its API and media streams.
 
