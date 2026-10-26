@@ -215,8 +215,7 @@ in
               --arg username "$(printf '%s' "$mapping" | jq -er .username)" \
               --arg email "$email" \
               --argjson isAdmin "$is_admin" \
-              --argjson userGroupIds "$target_group_ids" \
-              '{username: $username, displayName: $username, email: $email, emailVerified: true, disabled: false, isAdmin: $isAdmin, userGroupIds: $userGroupIds}')
+              '{username: $username, displayName: $username, email: $email, emailVerified: true, disabled: false, isAdmin: $isAdmin}')
             if [ -n "$user_id" ]; then
               curl_api \
                 -H "X-API-KEY: $api_key" \
@@ -225,12 +224,19 @@ in
                 -d "$user_payload" \
                 "$api/users/$user_id" >/dev/null
             else
-              curl_api \
+              user_id=$(curl_api \
                 -H "X-API-KEY: $api_key" \
                 -H 'Content-Type: application/json' \
                 -d "$user_payload" \
-                "$api/users" >/dev/null
+                "$api/users" | jq -er .id)
             fi
+            user_groups_payload=$(jq -cn --argjson userGroupIds "$target_group_ids" '{userGroupIds: $userGroupIds}')
+            curl_api \
+              -H "X-API-KEY: $api_key" \
+              -H 'Content-Type: application/json' \
+              -X PUT \
+              -d "$user_groups_payload" \
+              "$api/users/$user_id/user-groups" >/dev/null
           }
 
           remove_group pocket-admin
