@@ -174,7 +174,7 @@ let
 
     keep='${builtins.toJSON (builtins.attrNames cfg.accounts)}'
     printf '%s\n' "$current" | ${pkgs.jq}/bin/jq -r '.emailAddress // empty' | while IFS= read -r email; do
-      [ "$email" = "admin@''${cfg.primaryDomain}" ] && continue
+      [ "$email" = "admin@${cfg.primaryDomain}" ] && continue
       if ${pkgs.jq}/bin/jq -e --arg email "$email" 'index($email) != null' <<<"$keep" >/dev/null \
         || ${pkgs.gnugrep}/bin/grep -Fqx "$email" "$tmp/desired"; then
         continue
