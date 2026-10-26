@@ -138,13 +138,30 @@ lib.mkIf (config.server.secrets.enable or false) {
     };
   };
 
+  systemd.services.filebrowser-media-acl = {
+    description = "Allow File Browser to remove media hardlinks";
+    before = [ "docker-filebrowser.service" ];
+    requiredBy = [ "docker-filebrowser.service" ];
+    unitConfig.RequiresMountsFor = [ "${mediaSourcePath}/library" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = pkgs.writeShellScript "filebrowser-media-acl" ''
+        ${pkgs.findutils}/bin/find ${mediaSourcePath}/library -type d \
+          -exec ${pkgs.acl}/bin/setfacl -m g:media:rwx,d:g:media:rwx {} +
+      '';
+    };
+  };
+
   systemd.services.docker-filebrowser = {
     requires = [
+      "filebrowser-media-acl.service"
       "pocket-id-oidc-provision.service"
       "pocket-id.service"
       "filebrowser-access-bootstrap.service"
     ];
     after = [
+      "filebrowser-media-acl.service"
       "pocket-id-oidc-provision.service"
       "pocket-id.service"
       "filebrowser-access-bootstrap.service"

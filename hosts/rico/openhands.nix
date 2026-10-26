@@ -154,7 +154,7 @@ in
       NPM_CONFIG_UPDATE_NOTIFIER = "false";
       DOCKER_HOST = "unix:///run/user/980/docker.sock";
       OH_AGENT_SERVER_GIT_REPO = "https://github.com/outworld66/software-agent-sdk";
-      OH_AGENT_SERVER_GIT_REF = "090eba8ef735502009e528d7d329bf762e489ba6";
+      OH_AGENT_SERVER_GIT_REF = "b8c5102a0ee273ceade4919fe0759545a096be7e";
       OH_CONVERSATION_RUNTIME = "docker";
       OH_CONVERSATION_IMAGE = conversationImage;
       OH_OIDC_ISSUER_URL = "https://id.outworld66.ru";
