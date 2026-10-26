@@ -81,9 +81,10 @@ services:
         condition: service_started
     env_file: /var/lib/stoat/secrets.env
     entrypoint: [/bin/sh, -c]
-    command: >-
-      until mc alias set minio http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 1; done;
-      mc mb --ignore-existing minio/revolt-uploads
+    command:
+      - >-
+        until mc alias set minio http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 1; done;
+        mc mb --ignore-existing minio/revolt-uploads
 
   api:
     image: ghcr.io/outworld66/stoat-api:oidc-23f0b5679cc00bc1877f0d000c6ea29f4073f180@sha256:cc3fe60ad3d11388ed71503a62023b7a1ce7981ac05e33cdf9191469f7d08f8f
