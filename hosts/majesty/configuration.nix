@@ -39,4 +39,9 @@ in
     enable = true;
     enable32Bit = true;
   };
+
+  systemd.tmpfiles.rules = [
+    "d /opt/google/chrome 0755 root root -"
+    "L+ /opt/google/chrome/chrome - - - - ${pkgs.google-chrome}/bin/google-chrome-stable"
+  ];
 }
