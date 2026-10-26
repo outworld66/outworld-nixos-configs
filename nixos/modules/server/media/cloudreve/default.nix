@@ -17,6 +17,11 @@ let
       fetchSubmodules = true;
     };
     vendorHash = "sha256-TGsXy6VZ2pB/bsEGTYy1uIH8zg9mwT1O4zvQpoqc7jU=";
+    postPatch = ''
+      substituteInPlace service/oidc/login.go \
+        --replace-fail '"media-admin" || value == "media-user"' \
+          '"cloudreve-admin" || value == "cloudreve-user"'
+    '';
     doCheck = false;
     buildPhase = ''
       runHook preBuild
