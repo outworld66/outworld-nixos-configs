@@ -10,7 +10,7 @@ let
   pocketIdOidcReady = pkgs.writeShellScript "gotify-pocket-id-oidc-ready" ''
     for _ in $(${pkgs.coreutils}/bin/seq 1 60); do
       if ${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 3 \
-        "${pocketIdIssuer}.well-known/openid-configuration" \
+        "${pocketIdIssuer}/.well-known/openid-configuration" \
         | ${pkgs.jq}/bin/jq -e '.id_token_signing_alg_values_supported | index("RS256") != null' >/dev/null; then
         exit 0
       fi

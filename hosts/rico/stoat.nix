@@ -12,7 +12,7 @@ let
   oidcIssuer = "https://id.outworld66.ru";
   oidcReady = pkgs.writeShellScript "stoat-pocket-id-ready" ''
     for attempt in $(${pkgs.coreutils}/bin/seq 1 120); do
-      if ${pkgs.curl}/bin/curl --fail --silent ${lib.escapeShellArg "${oidcIssuer}.well-known/openid-configuration"} \
+      if ${pkgs.curl}/bin/curl --fail --silent ${lib.escapeShellArg "${oidcIssuer}/.well-known/openid-configuration"} \
         | ${pkgs.jq}/bin/jq -e --arg issuer ${lib.escapeShellArg oidcIssuer} \
           '.issuer == $issuer and (.id_token_signing_alg_values_supported | index("RS256") != null)' >/dev/null; then
         exit 0
