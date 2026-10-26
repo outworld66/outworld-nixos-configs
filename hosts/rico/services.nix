@@ -684,7 +684,10 @@ lib.mkIf (config.server.secrets.enable or false) {
     requires = [ "pocket-id-oidc-provision.service" ];
     after = [ "pocket-id-oidc-provision.service" ];
     preStart = lib.mkAfter ''
-      ${pkgs.yq-go}/bin/yq -i '(.auth.oidc[] | select(.name == "pocket-id") | .role_mapping) = ${builtins.toJSON streamlineRoleMapping}' /var/lib/streamline/config.yaml
+      config=/var/lib/streamline/config.yaml
+      umask 0077
+      ${pkgs.yq-go}/bin/yq '(.auth.oidc[] | select(.name == "pocket-id") | .role_mapping) = ${builtins.toJSON streamlineRoleMapping}' "$config" > "$config.next"
+      ${pkgs.coreutils}/bin/mv "$config.next" "$config"
     '';
   };
   systemd.services.jellyfin.serviceConfig.ReadOnlyPaths = [ "${mediaRoot}/library" ];
