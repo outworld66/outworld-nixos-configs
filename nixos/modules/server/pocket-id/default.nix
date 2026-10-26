@@ -325,13 +325,13 @@ in
             /var/lib/immich/oidc-client-secret \
             "" \
             https://immich.outworld66.ru/api/oauth/backchannel-logout \
-            true '["media-admin","media-user"]'
+            true '["immich-admin","immich-user"]'
           provision_client cloudreve Cloudreve \
             '["https://cloudreve.outworld66.ru/api/v4/session/oidc/callback"]' \
             /var/lib/cloudreve/oidc-client-secret \
             "" \
             https://cloudreve.outworld66.ru/api/v4/session/oidc/backchannel-logout \
-            true '["media-admin","media-user"]'
+            true '["cloudreve-admin","cloudreve-user"]'
           provision_client pomerium Pomerium \
             '["https://auth.outworld66.ru/oauth2/callback"]' \
             /var/lib/pomerium/client-secret \
@@ -347,7 +347,7 @@ in
           provision_client filebrowser "File Browser" \
             '["https://filebrowser.outworld66.ru/api/auth/oidc/callback"]' \
             /var/lib/filebrowser/oidc-client-secret \
-            "" "" false '["media-admin","media-user"]'
+            "" "" false '["filebrowser-admin","filebrowser-user"]'
           provision_client stoat Stoat \
             '["https://stoat.outworld66.ru/api/auth/session/oidc/callback"]' \
             /var/lib/stoat/oidc-client-secret \
@@ -355,7 +355,7 @@ in
           provision_client openhands OpenHands \
             '["https://openhands.outworld66.ru/api/auth/oidc/callback"]' \
             /var/lib/openhands/oidc-client-secret \
-            "" "" false '["ai-admin","ai-user"]'
+            "" "" false '["openhands-admin","openhands-user"]'
           ${lib.optionalString (config.server.immich.enable or false) ''
             chown immich:immich /var/lib/immich/oidc-client-secret
           ''}
@@ -363,8 +363,13 @@ in
             provision_client streamline Streamline \
               '["https://streamline.outworld66.ru/auth/oidc/pocket-id/callback"]' \
               /var/lib/streamline/oidc-client-secret \
-              "" "" true '["media-admin","media-user"]'
+              "" "" true '["streamline-admin","streamline-user"]'
           ''}
+
+          remove_group media-admin
+          remove_group media-user
+          remove_group ai-admin
+          remove_group ai-user
 
           install -d -m 0750 /var/lib/pomerium
           if [ ! -s /var/lib/pomerium/cookie-secret ] || [ "$(wc -c < /var/lib/pomerium/cookie-secret)" -ne 44 ]; then

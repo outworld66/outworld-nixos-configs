@@ -23,15 +23,16 @@ The same generated key is passed to `immich-analyze` as its model API key.
 
 The public `/v1` API remains available to clients with a valid Bearer key.
 The LiteLLM admin UI and Swagger (`/docs`) pass through Pomerium and require
-membership in the Pocket ID `ai-admin` group. The Model Hub page
-(`/ui/model_hub_table`) and its public metadata are available to `ai-admin` and
-`ai-user`. LiteLLM may also ask for its own admin UI password after Pocket ID
-login; this is the gateway master key in the root-owned credentials file. Do
-not expose or share that key.
+membership in the Pocket ID `litellm-admin` group. The Model Hub page
+(`/ui/model_hub_table`) and its public metadata are available to `litellm-admin`
+and `litellm-user`. LiteLLM may also ask for its own admin UI password after
+Pocket ID login; this is the gateway master key in the root-owned credentials
+file. Do not expose or share that key.
 
 The Model Hub only lists model groups explicitly configured for publication.
-`qwen3-vl` is listed there for authorized `ai-admin` and `ai-user` visitors;
-this does not remove the Bearer key requirement for model API requests.
+`qwen3-vl` is listed there for authorized `litellm-admin` and `litellm-user`
+visitors; this does not remove the Bearer key requirement for model API
+requests.
 
 The NixOS LiteLLM package serves dashboard pages as static `.html` files but
 does not provide the path fallback used by LiteLLM's container image. Caddy

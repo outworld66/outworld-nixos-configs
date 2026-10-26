@@ -29,7 +29,9 @@ subject differs.
 Pocket ID provisions clients for Pomerium, File Browser, Immich, Donetick,
 Gotify, Cloudreve, Stoat, OpenHands, and Streamline. Their client secrets are
 stored in service state directories outside the Nix store. The `groups` claim
-carries service roles such as `media-user`, `stoat-admin`, and `ai-user`.
+carries service-specific roles such as `immich-user`, `streamline-admin`,
+`litellm-user`, `openhands-admin`, and `stoat-admin`. Existing `media-*` and
+`ai-*` groups are removed after the clients switch to their app-specific groups.
 
 New account creation in Stalwart is reconciled from the same private mapping:
 only users assigned `mail-admin` or `mail-user` receive mail accounts. IMAP and

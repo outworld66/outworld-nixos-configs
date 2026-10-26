@@ -19,8 +19,8 @@ in
       ]
     );
     default = {
-      media-admin = "admin";
-      media-user = "user";
+      immich-admin = "admin";
+      immich-user = "user";
     };
     description = "Map Pocket ID groups from the groups claim to Immich roles.";
   };

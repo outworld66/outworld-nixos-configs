@@ -10,9 +10,9 @@ The shared OAuth file remains in the OpenHands service persistence directory and
 
 ## Verify and recover
 
-1. Sign in as an `ai-user`, open **Settings → LLM Profiles**, and connect a personal ChatGPT account.
+1. Sign in as an `openhands-user`, open **Settings → LLM Profiles**, and connect a personal ChatGPT account.
 2. Start a conversation with the native OpenHands agent profile configured for subscription authentication.
-3. As an `ai-admin`, copy the user's OIDC account ID into **Shared subscription access** and grant access.
+3. As an `openhands-admin`, copy the user's OIDC account ID into **Shared subscription access** and grant access.
 4. As that user, choose a subscription source and start a new conversation.
 5. Revoke the grant as an administrator and verify that shared access is no longer available.
 

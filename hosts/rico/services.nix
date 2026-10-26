@@ -88,29 +88,50 @@ let
   openhandsDomain = "openhands.outworld66.ru";
   llmCredentialsFile = "/var/lib/llm-gateway/credentials.env";
   immichAnalyzeApiKeyFile = "/var/lib/immich-analyze/immich-api.env";
-  aiPortalPolicy = [
+  litellmPortalPolicy = [
     {
       allow = {
         or = [
-          { "claim/groups" = "ai-admin"; }
-          { "claim/groups" = "ai-user"; }
+          { "claim/groups" = "litellm-admin"; }
+          { "claim/groups" = "litellm-user"; }
         ];
       };
     }
   ];
-  aiAdminPolicy = [
+  litellmAdminPolicy = [
     {
       allow = {
         and = [
-          { "claim/groups" = "ai-admin"; }
+          { "claim/groups" = "litellm-admin"; }
         ];
       };
     }
   ];
-  mediaAdminPolicy = [
+  torrentAdminPolicy = [
     {
       allow = {
-        and = [ { "claim/groups" = "media-admin"; } ];
+        and = [ { "claim/groups" = "torrent-admin"; } ];
+      };
+    }
+  ];
+  jackettAdminPolicy = [
+    {
+      allow = {
+        and = [ { "claim/groups" = "jackett-admin"; } ];
+      };
+    }
+  ];
+  prowlarrAdminPolicy = [
+    {
+      allow = {
+        and = [ { "claim/groups" = "prowlarr-admin"; } ];
+      };
+    }
+  ];
+  binderyAdminPolicy = [
+    {
+      allow = {
+        and = [ { "claim/groups" = "bindery-admin"; } ];
       };
     }
   ];
@@ -179,8 +200,8 @@ lib.mkIf (config.server.secrets.enable or false) {
             {
               allow = {
                 or = [
-                  { "claim/groups" = "media-admin"; }
-                  { "claim/groups" = "media-user"; }
+                  { "claim/groups" = "bitmagnet-admin"; }
+                  { "claim/groups" = "bitmagnet-user"; }
                 ];
               };
             }
@@ -193,8 +214,8 @@ lib.mkIf (config.server.secrets.enable or false) {
             {
               allow = {
                 or = [
-                  { "claim/groups" = "media-admin"; }
-                  { "claim/groups" = "media-user"; }
+                  { "claim/groups" = "homepage-admin"; }
+                  { "claim/groups" = "homepage-user"; }
                 ];
               };
             }
@@ -204,66 +225,66 @@ lib.mkIf (config.server.secrets.enable or false) {
           from = "https://${torrentDomain}";
           to = "http://127.0.0.1:8181";
           preserve_host_header = true;
-          policy = mediaAdminPolicy;
+          policy = torrentAdminPolicy;
         }
         {
           from = "https://${jackettDomain}";
           to = "http://127.0.0.1:9117";
           timeout = "150s";
-          policy = mediaAdminPolicy;
+          policy = jackettAdminPolicy;
         }
         {
           from = "https://${prowlarrDomain}";
           to = "http://127.0.0.1:9696";
           pass_identity_headers = true;
-          policy = mediaAdminPolicy;
+          policy = prowlarrAdminPolicy;
         }
         {
           from = "https://${binderyDomain}";
           to = "http://127.0.0.1:8787";
-          policy = mediaAdminPolicy;
+          policy = binderyAdminPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           prefix = "/ui/model_hub_table.html";
-          policy = aiPortalPolicy;
+          policy = litellmPortalPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           prefix = "/litellm-asset-prefix";
-          policy = aiPortalPolicy;
+          policy = litellmPortalPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           prefix = "/public";
-          policy = aiPortalPolicy;
+          policy = litellmPortalPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           path = "/openapi.json";
-          policy = aiPortalPolicy;
+          policy = litellmPortalPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           path = "/favicon.ico";
-          policy = aiPortalPolicy;
+          policy = litellmPortalPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           prefix = "/ui/favicon.ico";
-          policy = aiPortalPolicy;
+          policy = litellmPortalPolicy;
         }
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           allow_websockets = true;
-          policy = aiAdminPolicy;
+          policy = litellmAdminPolicy;
         }
         {
           from = "https://${elengrabDomain}";
@@ -276,8 +297,8 @@ lib.mkIf (config.server.secrets.enable or false) {
             {
               allow = {
                 or = [
-                  { "claim/groups" = "media-admin"; }
-                  { "claim/groups" = "media-user"; }
+                  { "claim/groups" = "elengrab-admin"; }
+                  { "claim/groups" = "elengrab-user"; }
                 ];
               };
             }
@@ -640,8 +661,8 @@ lib.mkIf (config.server.secrets.enable or false) {
             allow_admin = true;
             role_claim = "groups";
             role_mapping = {
-              media-admin = "admin";
-              media-user = "member";
+              streamline-admin = "admin";
+              streamline-user = "member";
             };
           }
         ];

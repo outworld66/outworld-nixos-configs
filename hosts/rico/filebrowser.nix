@@ -70,10 +70,10 @@ let
         password.enabled = false;
         oidc = {
           enabled = true;
-          adminGroup = "media-admin";
+          adminGroup = "filebrowser-admin";
           userGroups = [
-            "media-admin"
-            "media-user"
+            "filebrowser-admin"
+            "filebrowser-user"
           ];
           groupsClaim = "groups";
           userIdentifier = "preferred_username";

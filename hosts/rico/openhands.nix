@@ -159,9 +159,9 @@ in
       OH_CONVERSATION_IMAGE = conversationImage;
       OH_OIDC_ISSUER_URL = "https://id.outworld66.ru";
       OH_OIDC_CLIENT_ID = "openhands";
-      OH_OIDC_ALLOWED_GROUPS_0 = "ai-admin";
-      OH_OIDC_ALLOWED_GROUPS_1 = "ai-user";
-      OH_OIDC_ADMIN_GROUPS_0 = "ai-admin";
+      OH_OIDC_ALLOWED_GROUPS_0 = "openhands-admin";
+      OH_OIDC_ALLOWED_GROUPS_1 = "openhands-user";
+      OH_OIDC_ADMIN_GROUPS_0 = "openhands-admin";
       OH_TRUST_FORWARDED_HEADERS = "true";
       UV_PYTHON_DOWNLOADS = "never";
     };

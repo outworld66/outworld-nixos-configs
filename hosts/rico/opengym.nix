@@ -86,7 +86,7 @@ lib.mkIf (config.server.secrets.enable or false) {
       to = "http://127.0.0.1:8098";
       policy = [
         {
-          allow.and = [ { "claim/groups" = "media-admin"; } ];
+          allow.and = [ { "claim/groups" = "opengym-admin"; } ];
         }
       ];
     }

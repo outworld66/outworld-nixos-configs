@@ -226,7 +226,7 @@ and `/var/lib/filebrowser/filebrowser.sqlite`. Inspect the File Browser
 `users`, `groups`, and `access_rules` tables, plus only the relevant account
 fields in `user_data.backendScopes` and
 `user_data.backendSourcePermissions`. Check that non-admin scopes point to
-`/srv/filebrowser/users/<preferred_username>`, that only `media-admin` can
+`/srv/filebrowser/users/<preferred_username>`, that only `filebrowser-admin` can
 access read-only `Media files`, and that first OIDC login applies those same
 defaults. Do not dump all of `user_data` or copy the database into the
 repository.

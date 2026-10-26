@@ -108,7 +108,7 @@ def main() -> None:
                 "Deny": {"Users": {}, "Groups": {}},
                 "Allow": {
                     "Users": {},
-                    "Groups": {"media-admin": {}, "media-user": {}},
+                    "Groups": {"filebrowser-admin": {}, "filebrowser-user": {}},
                 },
             },
             separators=(",", ":"),
