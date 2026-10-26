@@ -86,7 +86,7 @@ services:
       mc mb --ignore-existing minio/revolt-uploads
 
   api:
-    image: ghcr.io/outworld66/stoat-api:oidc-8c80e71b202d16f2f31ecac267658d95831527fd@sha256:4606d6796cf3d857b8459eb8397781866718321f7707ce566707a9d1f2077447
+    image: ghcr.io/outworld66/stoat-api:oidc-23f0b5679cc00bc1877f0d000c6ea29f4073f180@sha256:cc3fe60ad3d11388ed71503a62023b7a1ce7981ac05e33cdf9191469f7d08f8f
     restart: always
     user: "65532:65532"
     env_file:
@@ -179,7 +179,7 @@ services:
       - /var/lib/stoat/Revolt.toml:/Revolt.toml:ro
 
   web:
-    image: ghcr.io/outworld66/for-web:oidc-85936ddb6e07dec4bc9e302b9b789eb4807fc415@sha256:7d42fd9709a0e6914acbf8f9ddb7f298f935070e2d5b4269f34a9181b98a9b34
+    image: ghcr.io/outworld66/for-web:oidc-db150cbaa16ade985a9d7569eae3769ba52aa14b@sha256:ef535cc5ed855f02afd0018e235c8c1b63fdb26ee00a5a515706abacd70aef09
     restart: always
     environment:
       HOST: 0.0.0.0
