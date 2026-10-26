@@ -94,7 +94,10 @@ in
         capsule_radius = 6;
         capsule_opacity = 0.92;
         capsule_border = "outline";
-        start = [ "media" ];
+        start = [
+          "media"
+        ]
+        ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan:widget";
         center = [
           "calendar"
           "time"
@@ -108,7 +111,6 @@ in
           "system_cpu"
           "gpu_nvtop"
         ]
-        ++ lib.optional (hostname == "tpx13") "piero-93/thinkpad-fan:widget"
         ++ [
           "keyboard_layout"
           "volume"
