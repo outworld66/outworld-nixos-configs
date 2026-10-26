@@ -24,6 +24,10 @@ home-manager/dotfiles/gtk-4.0/gtk-dark.css
 # Noctalia regenerates these theme files at runtime; keep them out of git.
 home-manager/dotfiles/gtk-3.0/noctalia.css
 home-manager/dotfiles/gtk-4.0/noctalia.css
+home-manager/dotfiles/gtk-3.0/noctalia-extensions.css
+home-manager/dotfiles/gtk-4.0/gtk.css
+home-manager/dotfiles/gtk-4.0/noctalia-extensions.css
+home-manager/dotfiles/gtk-3.0/gtk.css
 home-manager/dotfiles/qt5ct/colors/noctalia.conf
 home-manager/dotfiles/qt6ct/colors/noctalia.conf
 home-manager/dotfiles/vesktop/state.json
