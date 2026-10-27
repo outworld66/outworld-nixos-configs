@@ -7,15 +7,6 @@
   ...
 }:
 
-let
-  batterySuspend = pkgs.writeShellScript "noctalia-battery-suspend" ''
-    for online in /sys/class/power_supply/*/online; do
-      [ -r "$online" ] && [ "$(<"$online")" = 1 ] && exit 0
-    done
-    ${pkgs.systemd}/bin/systemctl suspend
-  '';
-in
-
 {
   imports = [ inputs.noctalia.homeModules.default ];
 
@@ -150,11 +141,6 @@ in
         timeout = 300;
         action = "lock";
         enabled = true;
-      };
-      idle.behavior."battery-suspend" = {
-        timeout = 1800;
-        action = "command";
-        command = "${batterySuspend}";
       };
     };
   };
