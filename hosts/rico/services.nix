@@ -288,6 +288,7 @@ lib.mkIf (config.server.secrets.enable or false) {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
           allow_websockets = true;
+          host_rewrite = llmDomain;
           policy = litellmAdminPolicy;
         }
         {
