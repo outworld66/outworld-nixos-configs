@@ -832,7 +832,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     image = "ghcr.io/tashfeenahmed/freellmapi:v0.16.8@sha256:dc899cc70143dd2f2775503543526bf19601082007b4b957311e0c9bf7512704";
     ports = [ "127.0.0.1:3001:3001" ];
     environment.PORT = "3001";
-    environmentFiles = [ "/run/secrets/freellmapi/environment" ];
+    environmentFiles = [ "/run/secrets/rendered/freellmapi/environment" ];
     volumes = [ "/var/lib/freellmapi:/app/server/data" ];
   };
 
@@ -888,11 +888,6 @@ lib.mkIf (config.server.secrets.enable or false) {
       "llm-gateway-credentials.service"
       "ollama-model-loader.service"
     ];
-  };
-
-  systemd.services.docker-freellmapi = {
-    requires = [ "sops-nix.service" ];
-    after = [ "sops-nix.service" ];
   };
 
   virtualisation.oci-containers.containers.immich-analyze = {
