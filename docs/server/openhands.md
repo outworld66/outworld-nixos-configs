@@ -94,6 +94,13 @@ field paths and messages without request values.
 For personal ChatGPT subscriptions and administrator-managed shared access,
 see [openhands-chatgpt-access.md](openhands-chatgpt-access.md).
 
+To use the shared LiteLLM gateway instead of Codex ACP, add an LLM profile in
+**Settings → LLM → Advanced** with model
+`litellm_proxy/freellmapi-auto`, base URL `https://llm.outworld66.ru`, and a
+LiteLLM virtual key limited to `freellmapi-auto`. Assign that LLM profile to
+an OpenHands Agent Profile. Codex ACP continues to use its separate Codex
+login.
+
 The route lookup must show `dev vpn0`. Restart with
 `systemctl restart openhands.service`. Recover the previous NixOS generation
 using the [server deployment guide](deployment.md).

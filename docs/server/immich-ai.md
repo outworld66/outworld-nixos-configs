@@ -34,10 +34,11 @@ The Model Hub only lists model groups explicitly configured for publication.
 visitors; this does not remove the Bearer key requirement for model API
 requests.
 
-The NixOS LiteLLM package serves dashboard pages as static `.html` files but
-does not provide the path fallback used by LiteLLM's container image. Caddy
-adds `.html` to extensionless `/ui/...` page requests before forwarding them,
-so documented URLs such as `/ui/login` and `/ui/model_hub_table` work.
+LiteLLM serves the dashboard from its static UI directory. Caddy forwards
+dashboard paths unchanged so LiteLLM can redirect routes such as `/ui/login`
+to `/ui/login/`. The Model Hub is available at
+`https://llm.outworld66.ru/ui/model_hub_table` to `litellm-admin` and
+`litellm-user` members.
 
 The local Ollama API is bound to localhost and is not exposed publicly.
 `immich-analyze` uses host networking to reach both Immich at

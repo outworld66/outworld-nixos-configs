@@ -251,7 +251,7 @@ lib.mkIf (config.server.secrets.enable or false) {
         {
           from = "https://${llmDomain}";
           to = "http://127.0.0.1:4000";
-          prefix = "/ui/model_hub_table.html";
+          prefix = "/ui/model_hub_table";
           policy = litellmPortalPolicy;
         }
         {
@@ -804,14 +804,36 @@ lib.mkIf (config.server.secrets.enable or false) {
             api_base = "http://127.0.0.1:11434";
           };
         }
+        {
+          model_name = "freellmapi-auto";
+          litellm_params = {
+            model = "openai/auto";
+            api_base = "http://127.0.0.1:3001/v1";
+            api_key = builtins.concatStringsSep "" [
+              "os.environ"
+              "/FREELLMAPI_API_KEY"
+            ];
+          };
+        }
       ];
-      litellm_settings.public_model_groups = [ "qwen3-vl" ];
+      litellm_settings.public_model_groups = [
+        "qwen3-vl"
+        "freellmapi-auto"
+      ];
       general_settings.enable_public_model_hub = true;
       general_settings.master_key = builtins.concatStringsSep "" [
         "os.environ/"
         "LITELLM_MASTER_KEY"
       ];
     };
+  };
+
+  virtualisation.oci-containers.containers.freellmapi = {
+    image = "ghcr.io/tashfeenahmed/freellmapi:v0.16.8@sha256:dc899cc70143dd2f2775503543526bf19601082007b4b957311e0c9bf7512704";
+    ports = [ "127.0.0.1:3001:3001" ];
+    environment.PORT = "3001";
+    environmentFiles = [ "/run/secrets/freellmapi/environment" ];
+    volumes = [ "/var/lib/freellmapi:/app/server/data" ];
   };
 
   systemd.tmpfiles.rules = [
@@ -829,6 +851,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     "d ${mediaRoot}/library/audiobooks 2770 root media -"
     "d /var/lib/bindery 0750 bindery media -"
     "d /var/lib/llm-gateway 0700 root root -"
+    "d /var/lib/freellmapi 0700 root root -"
     "d /var/lib/immich-analyze 0700 root root -"
   ];
 
@@ -853,6 +876,10 @@ lib.mkIf (config.server.secrets.enable or false) {
 
   systemd.services.litellm = {
     environment.PROXY_BASE_URL = "https://${llmDomain}";
+    environment.FREELLMAPI_API_KEY = builtins.concatStringsSep "" [
+      "setup"
+      "-required"
+    ];
     requires = [
       "llm-gateway-credentials.service"
       "ollama-model-loader.service"
@@ -861,6 +888,11 @@ lib.mkIf (config.server.secrets.enable or false) {
       "llm-gateway-credentials.service"
       "ollama-model-loader.service"
     ];
+  };
+
+  systemd.services.docker-freellmapi = {
+    requires = [ "sops-nix.service" ];
+    after = [ "sops-nix.service" ];
   };
 
   virtualisation.oci-containers.containers.immich-analyze = {
@@ -1151,8 +1183,6 @@ lib.mkIf (config.server.secrets.enable or false) {
           output file /var/log/caddy/access.log
         }
         redir /ui /ui/ 308
-        @uiPage path_regexp uiPage ^/ui/(([^./]+/)*[^./]+)/*$
-        rewrite @uiPage /ui/{re.uiPage.1}.html
         @api path /v1 /v1/*
         handle @api {
           reverse_proxy 127.0.0.1:4000
