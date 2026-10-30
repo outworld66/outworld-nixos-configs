@@ -895,6 +895,7 @@ lib.mkIf (config.server.secrets.enable or false) {
   };
 
   systemd.services.litellm = {
+    path = [ pkgs.openssl ];
     environment = {
       PROXY_BASE_URL = "https://${llmDomain}";
       FREELLMAPI_API_KEY = builtins.concatStringsSep "" [
