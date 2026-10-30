@@ -910,6 +910,10 @@ lib.mkIf (config.server.secrets.enable or false) {
       GENERIC_ROLE_MAPPINGS_ROLES = "{'proxy_admin': ['litellm-admin']}";
       GENERIC_ROLE_MAPPINGS_GROUP_CLAIM = "groups";
       GENERIC_ROLE_MAPPINGS_DEFAULT_ROLE = "internal_user_viewer";
+      PRISMA_QUERY_ENGINE_BINARY = "${pkgs.prisma-engines_6}/bin/query-engine";
+      PRISMA_QUERY_ENGINE_LIBRARY = "${lib.getLib pkgs.prisma-engines_6}/lib/libquery_engine.node";
+      PRISMA_SCHEMA_ENGINE_BINARY = "${pkgs.prisma-engines_6}/bin/schema-engine";
+      PRISMA_EXPECTED_ENGINE_VERSION = "c2990dca591cba766e3b7ef5d9e8a84796e47ab7";
     };
     requires = [
       "llm-gateway-credentials.service"
