@@ -790,6 +790,17 @@ lib.mkIf (config.server.secrets.enable or false) {
     loadModels = [ "qwen3-vl:4b-instruct-q4_K_M" ];
   };
 
+  services.postgresql = {
+    enable = true;
+    ensureDatabases = [ "litellm" ];
+    ensureUsers = [
+      {
+        name = "litellm";
+        ensureDBOwnership = true;
+      }
+    ];
+  };
+
   services.litellm = {
     enable = true;
     host = "0.0.0.0";
@@ -860,6 +871,8 @@ lib.mkIf (config.server.secrets.enable or false) {
     description = "Create a persistent API key for the local LLM gateway";
     before = [ "litellm.service" ];
     requiredBy = [ "litellm.service" ];
+    requires = [ "pocket-id-oidc-provision.service" ];
+    after = [ "pocket-id-oidc-provision.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -870,24 +883,43 @@ lib.mkIf (config.server.secrets.enable or false) {
           key="$(${pkgs.openssl}/bin/openssl rand -hex 32)"
           printf 'LITELLM_MASTER_KEY=sk-%s\nIMMICH_ANALYZE_API_KEY=sk-%s\n' "$key" "$key" > ${llmCredentialsFile}
         fi
+        ${pkgs.gawk}/bin/awk '!/^(DATABASE_URL|GENERIC_CLIENT_SECRET)=/' ${llmCredentialsFile} > ${llmCredentialsFile}.new
+        printf '%s\n' \
+          'DATABASE_URL=postgresql://litellm@localhost/litellm?host=/run/postgresql&schema=public' \
+          "GENERIC_CLIENT_SECRET=$(cat /var/lib/llm-gateway/oidc-client-secret)" \
+          >> ${llmCredentialsFile}.new
+        mv ${llmCredentialsFile}.new ${llmCredentialsFile}
         chmod 0600 ${llmCredentialsFile}
       '';
     };
   };
 
   systemd.services.litellm = {
-    environment.PROXY_BASE_URL = "https://${llmDomain}";
-    environment.FREELLMAPI_API_KEY = builtins.concatStringsSep "" [
-      "setup"
-      "-required"
-    ];
+    environment = {
+      PROXY_BASE_URL = "https://${llmDomain}";
+      FREELLMAPI_API_KEY = builtins.concatStringsSep "" [
+        "setup"
+        "-required"
+      ];
+      GENERIC_CLIENT_ID = "litellm";
+      GENERIC_AUTHORIZATION_ENDPOINT = "https://${pocketIdDomain}/authorize";
+      GENERIC_TOKEN_ENDPOINT = "https://${pocketIdDomain}/api/oidc/token";
+      GENERIC_USERINFO_ENDPOINT = "https://${pocketIdDomain}/api/oidc/userinfo";
+      GENERIC_USER_ID_ATTRIBUTE = "sub";
+      GENERIC_SCOPE = "openid profile email groups";
+      GENERIC_ROLE_MAPPINGS_ROLES = "{'proxy_admin': ['litellm-admin']}";
+      GENERIC_ROLE_MAPPINGS_GROUP_CLAIM = "groups";
+      GENERIC_ROLE_MAPPINGS_DEFAULT_ROLE = "internal_user_viewer";
+    };
     requires = [
       "llm-gateway-credentials.service"
       "ollama-model-loader.service"
+      "postgresql.service"
     ];
     after = [
       "llm-gateway-credentials.service"
       "ollama-model-loader.service"
+      "postgresql.service"
     ];
   };
 

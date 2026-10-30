@@ -39,6 +39,9 @@ LiteLLM clients using this model. Prompts and responses are sent to whichever
 upstream provider FreeLLMAPI selects; use only providers whose terms allow
 this shared proxy use.
 
-The LiteLLM dashboard is at `https://llm.outworld66.ru/ui`. Sign in through
-Pomerium, then use the LiteLLM UI credentials. Its normal login route is
-`/ui/login/`.
+The LiteLLM dashboard is at `https://llm.outworld66.ru/ui`. Pomerium restricts
+the dashboard to the `litellm-admin` Pocket ID group, and LiteLLM uses Pocket ID
+for its native OIDC sign-in. Members of that group receive the `proxy_admin`
+role. LiteLLM stores SSO users and settings in its dedicated local PostgreSQL
+database. The LiteLLM release in use supports SSO for up to five users without
+an Enterprise license.

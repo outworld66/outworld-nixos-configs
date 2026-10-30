@@ -362,6 +362,10 @@ in
             chown immich:immich /var/lib/immich/oidc-client-secret
           ''}
           ${lib.optionalString (config.networking.hostName == "rico") ''
+            provision_client litellm LiteLLM \
+              '["https://llm.outworld66.ru/sso/callback"]' \
+              /var/lib/llm-gateway/oidc-client-secret \
+              "" "" true '["litellm-admin"]'
             provision_client streamline Streamline \
               '["https://streamline.outworld66.ru/auth/oidc/pocket-id/callback"]' \
               /var/lib/streamline/oidc-client-secret \
