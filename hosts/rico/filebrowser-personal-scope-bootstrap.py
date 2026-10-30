@@ -41,8 +41,7 @@ def main() -> None:
                 raise ValueError(f"Duplicate personal scopes for {username!r}")
             if personal_scopes:
                 personal_scopes[0]["path"] = str(source_path)
-                if not is_admin:
-                    personal_scopes[0]["scope"] = f"/{username}"
+                personal_scopes[0]["scope"] = "/" if is_admin else f"/{username}"
             elif not is_admin:
                 scopes.append(
                     {
@@ -108,7 +107,7 @@ def main() -> None:
                 "Deny": {"Users": {}, "Groups": {}},
                 "Allow": {
                     "Users": {},
-                    "Groups": {"filebrowser-admin": {}, "filebrowser-user": {}},
+                    "Groups": {"filebrowser-admin": {}},
                 },
             },
             separators=(",", ":"),
