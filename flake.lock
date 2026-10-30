@@ -555,11 +555,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793394452,
-        "narHash": "sha256-8idineHAahSw9AajXeWwqfy0Tb+D/pZjlGilGCqWu1k=",
+        "lastModified": 1793394868,
+        "narHash": "sha256-ZKhOyiIXAN3vS+9GNuFMgAbLrDhsHlu6KfQdSqIRqhI=",
         "owner": "outworld66",
         "repo": "outworld-nixos-packages",
-        "rev": "ff4d4f2f5f2420ac9d1293b0ec483feca662f44d",
+        "rev": "0fb24289c27a03da121f658fb5dacb3e344a49ec",
         "type": "github"
       },
       "original": {
