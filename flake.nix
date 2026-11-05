@@ -55,6 +55,11 @@
       url = "github:numtide/llm-agents.nix";
     };
 
+    happ = {
+      url = "github:NonExistPlayer/happ.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     outworld-packages = {
       url = "github:outworld66/outworld-nixos-packages";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -106,6 +111,7 @@
       homeStateVersion = "26.05";
       allowedUnfreePackages = [
         "google-chrome"
+        "happ"
         "kaspersky-ksc-agent"
         "obsidian"
         "steam"

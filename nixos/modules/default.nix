@@ -10,6 +10,7 @@
     ./bluetooth.nix
     ./boot.nix
     ./env.nix
+    ./happ.nix
     ./home-manager.nix
     ./ai-packages.nix
     ./helium.nix

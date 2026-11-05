@@ -206,6 +206,26 @@
         "type": "github"
       }
     },
+    "happ": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790409447,
+        "narHash": "sha256-7MEqSennDnUxp9fhP+SuwURk19ZwXmVqlWXWXQM2tQU=",
+        "owner": "NonExistPlayer",
+        "repo": "happ.nix",
+        "rev": "88dd973240abf6773358769ef810fd72f9599c87",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NonExistPlayer",
+        "repo": "happ.nix",
+        "type": "github"
+      }
+    },
     "helium-browser": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -600,6 +620,7 @@
       "inputs": {
         "disko": "disko",
         "drawio-skill": "drawio-skill",
+        "happ": "happ",
         "helium-browser": "helium-browser",
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",
