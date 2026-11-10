@@ -39,6 +39,13 @@ let
             transform "normal"
             position x=0 y=-1440
         }
+
+        output "Symicron Computer Communications Ltd. IMVW34UIDL 34UIDL114001" {
+            mode "3440x1440@144.000"
+            scale 1
+            transform "normal"
+            position x=0 y=-1440
+        }
       ''
     else
       # Majesty is a desktop profile and has no guaranteed eDP-1 output.
