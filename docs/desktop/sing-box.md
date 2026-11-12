@@ -21,6 +21,11 @@ The generated files currently reside on `majesty` under
 before running the install command there. Never add these files or exported
 3x-ui links to Git.
 
+If another VPN is already routing traffic through a virtual interface, set
+`bind_interface` in that host's private outbound JSON to its physical network
+interface. On `majesty` this is `enp10s0`; check `ip route get 45.128.60.15`
+on other hosts to identify their physical route.
+
 After activating the committed NixOS configuration, connect and disconnect
 with:
 
