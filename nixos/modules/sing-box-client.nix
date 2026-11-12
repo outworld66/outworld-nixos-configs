@@ -4,6 +4,21 @@
   services.sing-box = {
     enable = true;
     settings = {
+      dns = {
+        servers = [
+          {
+            type = "tls";
+            tag = "cloudflare";
+            server = "1.1.1.1";
+            tls = {
+              enabled = true;
+              server_name = "cloudflare-dns.com";
+            };
+            detour = "vpn";
+          }
+        ];
+        final = "cloudflare";
+      };
       inbounds = [
         {
           type = "tun";
@@ -32,6 +47,12 @@
       ];
       route = {
         auto_detect_interface = true;
+        rules = [
+          {
+            protocol = "dns";
+            action = "hijack-dns";
+          }
+        ];
         final = "vpn";
       };
     };

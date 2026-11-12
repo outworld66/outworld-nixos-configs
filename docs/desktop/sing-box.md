@@ -26,6 +26,10 @@ If another VPN is already routing traffic through a virtual interface, set
 interface. On `majesty` this is `enp10s0`; check `ip route get 45.128.60.15`
 on other hosts to identify their physical route.
 
+DNS requests are intercepted by sing-box and sent to Cloudflare over TLS
+through the VLESS tunnel. This avoids depending on DNS settings inherited from
+another VPN or the local network.
+
 After activating the committed NixOS configuration, connect and disconnect
 with:
 
