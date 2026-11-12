@@ -38,6 +38,15 @@ task build PRIVATE_FLAKE=/path/to/outworld-nixos-private
 task switch PRIVATE_FLAKE=/path/to/outworld-nixos-private
 ```
 
+When a binary cache is unavailable, disable it for one switch with
+`DISABLE_NUMTIDE_CACHE=true` or `DISABLE_NIX_CACHE=true`. Set both to `true`
+to build without either cache:
+
+```bash
+task switch DISABLE_NUMTIDE_CACHE=true
+task switch DISABLE_NIX_CACHE=true DISABLE_NUMTIDE_CACHE=true
+```
+
 ## Activation
 
 The public checkout is the activation entry point:

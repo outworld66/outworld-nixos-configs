@@ -6,6 +6,8 @@ vars:
   SERVER_HOST: '{{.SERVER_HOST | default ""}}'
   SERVER_TARGET: '{{.SERVER_TARGET | default ""}}'
   SERVER_AGE_KEY: '{{.SERVER_AGE_KEY | default "/var/lib/sops-nix/key.txt"}}'
+  DISABLE_NIX_CACHE: '{{.DISABLE_NIX_CACHE | default "false"}}'
+  DISABLE_NUMTIDE_CACHE: '{{.DISABLE_NUMTIDE_CACHE | default "false"}}'
 
 tasks:
   update-lock:
@@ -131,6 +133,13 @@ tasks:
         if test -f "{{.PRIVATE_FLAKE_DIR}}/flake.nix"; then
           set -- "$@" --override-input private "path:{{.PRIVATE_FLAKE_DIR}}"
         fi
+        case "{{.DISABLE_NIX_CACHE}}{{.DISABLE_NUMTIDE_CACHE}}" in
+          falsefalse) ;;
+          falsetrue) set -- "$@" --option substituters https://cache.nixos.org/ ;;
+          truefalse) set -- "$@" --option substituters https://cache.numtide.com ;;
+          truetrue) set -- "$@" --option substituters "" ;;
+          *) echo "DISABLE_NIX_CACHE and DISABLE_NUMTIDE_CACHE must be true or false" >&2; exit 2 ;;
+        esac
         nh os switch . "$@"
 
   server-bootstrap-key:
