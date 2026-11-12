@@ -6,6 +6,17 @@
 }:
 
 {
+  home.file.".local/share/applications/Happ.desktop".text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=Happ
+    Exec=${pkgs.coreutils}/bin/env -u QT_PLUGIN_PATH /opt/happ/bin/Happ %f
+    Icon=happ
+    MimeType=application/x-happ;application/json;
+    Categories=Utility;
+    Terminal=false
+  '';
+
   home.file.".local/share/vicinae/scripts/open-nixos-config.sh" = {
     executable = true;
     text = ''

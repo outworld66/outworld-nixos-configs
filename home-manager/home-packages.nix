@@ -111,6 +111,7 @@
       bemoji # Emoji picker for the desktop
       cliphist # Clipboard history manager
       glib # Provides gsettings for the Qt/GTK theme sync
+      gtk3 # Provides gtk-launch for launching desktop entries
       grim # Wayland screenshots
       imagemagick # Crops region-selector screenshots (magick)
       kdePackages.plasma-integration # Qt platform theme plugin (QT_QPA_PLATFORMTHEME=kde)
