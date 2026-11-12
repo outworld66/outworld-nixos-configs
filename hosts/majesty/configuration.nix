@@ -19,6 +19,7 @@ in
     ./disko.nix
     ./qwen38.nix
     ../../nixos/modules/zapret.nix
+    ../../nixos/modules/sing-box-client.nix
   ];
 
   networking.hostName = hostname;

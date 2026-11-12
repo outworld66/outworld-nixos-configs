@@ -7,6 +7,8 @@
 }:
 
 {
+  imports = [ ../../nixos/modules/sing-box-client.nix ];
+
   # The shell's apply-chrome-theme.sh writes a BrowserThemeColor policy file into
   # /etc/opt/chrome/policies/managed as the logged-in user. Without a
   # user-writable directory it falls back to a desktop notification demanding
