@@ -1,5 +1,5 @@
-model_reasoning_effort = "high"
-model = "gpt-6-luna"
+model_reasoning_effort = "medium"
+model = "gpt-6-sol"
 
 [mcp_servers.playwright]
 command = "npx"
