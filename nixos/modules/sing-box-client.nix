@@ -49,7 +49,7 @@
         auto_detect_interface = true;
         rules = [
           {
-            protocol = "dns";
+            port = 53;
             action = "hijack-dns";
           }
         ];
