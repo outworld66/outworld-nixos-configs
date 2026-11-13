@@ -84,6 +84,8 @@ let
     "ytimg.com"
     "ytimg.l.google.com"
     "play.google.com"
+    "fonts.googleapis.com"
+    "www.gstatic.com"
     "google.ru"
   ];
   hostlist = pkgs.writeText "zapret-whitelist" (
@@ -118,8 +120,7 @@ let
       "--dpi-desync-hostfakesplit-mod=host=ozon.ru"
       "--new"
       "--filter-tcp=443"
-      "--hostlist=${hostlist}"
-      "--ip-id=zero"
+      "--hostlist=${googleHostlist}"
       "--dpi-desync=hostfakesplit"
       "--dpi-desync-repeats=4"
       "--dpi-desync-fooling=ts"
