@@ -33,11 +33,12 @@ subject differs.
 ## OIDC clients
 
 Pocket ID provisions clients for Pomerium, File Browser, Immich, Donetick,
-Gotify, Cloudreve, Stoat, OpenHands, and Streamline. Their client secrets are
+Gotify, Cloudreve, Stoat, OpenHands, Karakeep, and Streamline. Their client secrets are
 stored in service state directories outside the Nix store. The `groups` claim
 carries service-specific roles such as `immich-user`, `streamline-admin`,
 `litellm-user`, `openhands-admin`, and `stoat-admin`. Existing `media-*` and
 `ai-*` groups are removed after the clients switch to their app-specific groups.
+Karakeep's OIDC client is restricted to the `karakeep-admin` group.
 
 New account creation in Stalwart is reconciled from the same private mapping:
 only users assigned `mail-admin` or `mail-user` receive mail accounts. IMAP and

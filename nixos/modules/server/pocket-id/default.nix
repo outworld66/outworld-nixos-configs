@@ -362,6 +362,10 @@ in
             chown immich:immich /var/lib/immich/oidc-client-secret
           ''}
           ${lib.optionalString (config.networking.hostName == "rico") ''
+            provision_client karakeep Karakeep \
+              '["https://karakeep.outworld66.ru/api/auth/callback/custom"]' \
+              /var/lib/karakeep-secrets/oidc-client-secret \
+              "" "" true '["karakeep-admin"]'
             provision_client litellm LiteLLM \
               '["https://llm.outworld66.ru/sso/callback"]' \
               /var/lib/llm-gateway/oidc-client-secret \

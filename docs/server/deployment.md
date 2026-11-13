@@ -157,8 +157,8 @@ For the Rico torrent, book, and media-request services, see
 For File Browser, Stoat, and openGym, see
 [`rico-new-services.md`](rico-new-services.md) for access, setup, and recovery.
 
-For ArchiveBox web archiving and its agent MCP connection, see
-[`rico-archivebox.md`](rico-archivebox.md).
+For Karakeep bookmarks, OIDC access, and its agent MCP connection, see
+[`rico-karakeep.md`](rico-karakeep.md).
 
 For OpenHands Agent Canvas, Codex access, MCP servers, and skills, see
 [`openhands.md`](openhands.md).
