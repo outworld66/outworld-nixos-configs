@@ -35,6 +35,7 @@ lib.mkIf (config.server.secrets.enable or false) {
     {
       from = "https://${domain}";
       to = "http://127.0.0.1:5797";
+      preserve_host_header = true;
       policy = [
         {
           allow = {
