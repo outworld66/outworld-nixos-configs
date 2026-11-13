@@ -14,6 +14,7 @@
     ./disko.nix
     ../../nixos/modules/server/services.nix
     ./services.nix
+    ./archivebox.nix
     ./filebrowser.nix
     ./opengym.nix
     ./stoat.nix
