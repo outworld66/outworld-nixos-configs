@@ -366,6 +366,14 @@ in
               '["https://karakeep.outworld66.ru/api/auth/callback/custom"]' \
               /var/lib/karakeep-secrets/oidc-client-secret \
               "" "" true '["karakeep-admin"]'
+            provision_client linkwarden Linkwarden \
+              '["https://linkwarden.outworld66.ru/api/v1/auth/callback/oidc"]' \
+              /var/lib/linkwarden-secrets/oidc-client-secret \
+              "" "" true '["linkwarden-admin"]'
+            provision_client miniflux Miniflux \
+              '["https://miniflux.outworld66.ru/oauth2/oidc/callback"]' \
+              /var/lib/miniflux-secrets/oidc-client-secret \
+              "" "" true '["miniflux-admin"]'
             provision_client litellm LiteLLM \
               '["https://llm.outworld66.ru/sso/callback"]' \
               /var/lib/llm-gateway/oidc-client-secret \

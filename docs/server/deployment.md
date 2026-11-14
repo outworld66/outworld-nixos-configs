@@ -160,6 +160,9 @@ For File Browser, Stoat, and openGym, see
 For Karakeep bookmarks, OIDC access, and its agent MCP connection, see
 [`rico-karakeep.md`](rico-karakeep.md).
 
+For RSS collection with Miniflux and saving entries into Linkwarden, see
+[`rico-miniflux-linkwarden.md`](rico-miniflux-linkwarden.md).
+
 For OpenHands Agent Canvas, Codex access, MCP servers, and skills, see
 [`openhands.md`](openhands.md).
 

@@ -15,6 +15,7 @@
     ../../nixos/modules/server/services.nix
     ./services.nix
     ./karakeep.nix
+    ./miniflux-linkwarden.nix
     ./filebrowser.nix
     ./opengym.nix
     ./stoat.nix
