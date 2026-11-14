@@ -13,6 +13,7 @@ let
   postgresData = "/var/lib/linkwarden/postgres";
   meiliData = "/var/lib/linkwarden/meilisearch";
   minifluxEnvironmentFile = "${minifluxSecrets}/environment";
+  cmp = "${pkgs.coreutils}/bin/cmp";
   linkwardenEnvironmentFile = "${linkwardenSecrets}/environment";
   postgresEnvironmentFile = "${linkwardenSecrets}/postgres-environment";
   meiliEnvironmentFile = "${linkwardenSecrets}/meilisearch-environment";
@@ -39,7 +40,7 @@ let
       printf 'OIDC_CLIENT_SECRET=%s\n' "$(cat ${linkwardenSecrets}/oidc-client-secret)"
     } > ${linkwardenEnvironmentFile}.new
     chmod 0400 ${linkwardenEnvironmentFile}.new
-    if ! cmp -s ${linkwardenEnvironmentFile}.new ${linkwardenEnvironmentFile}; then
+    if ! ${cmp} -s ${linkwardenEnvironmentFile}.new ${linkwardenEnvironmentFile}; then
       mv ${linkwardenEnvironmentFile}.new ${linkwardenEnvironmentFile}
     else
       rm ${linkwardenEnvironmentFile}.new
@@ -47,7 +48,7 @@ let
 
     printf 'POSTGRES_PASSWORD=%s\n' "$(cat ${linkwardenSecrets}/postgres-password)" > ${postgresEnvironmentFile}.new
     chmod 0400 ${postgresEnvironmentFile}.new
-    if ! cmp -s ${postgresEnvironmentFile}.new ${postgresEnvironmentFile}; then
+    if ! ${cmp} -s ${postgresEnvironmentFile}.new ${postgresEnvironmentFile}; then
       mv ${postgresEnvironmentFile}.new ${postgresEnvironmentFile}
     else
       rm ${postgresEnvironmentFile}.new
@@ -55,7 +56,7 @@ let
 
     printf 'MEILI_MASTER_KEY=%s\n' "$(cat ${linkwardenSecrets}/meili-master-key)" > ${meiliEnvironmentFile}.new
     chmod 0400 ${meiliEnvironmentFile}.new
-    if ! cmp -s ${meiliEnvironmentFile}.new ${meiliEnvironmentFile}; then
+    if ! ${cmp} -s ${meiliEnvironmentFile}.new ${meiliEnvironmentFile}; then
       mv ${meiliEnvironmentFile}.new ${meiliEnvironmentFile}
     else
       rm ${meiliEnvironmentFile}.new
@@ -70,7 +71,7 @@ let
       printf 'ADMIN_PASSWORD=%s\n' "$(cat ${minifluxSecrets}/admin-password)"
     } > ${minifluxEnvironmentFile}.new
     chmod 0400 ${minifluxEnvironmentFile}.new
-    if ! cmp -s ${minifluxEnvironmentFile}.new ${minifluxEnvironmentFile}; then
+    if ! ${cmp} -s ${minifluxEnvironmentFile}.new ${minifluxEnvironmentFile}; then
       mv ${minifluxEnvironmentFile}.new ${minifluxEnvironmentFile}
     else
       rm ${minifluxEnvironmentFile}.new
