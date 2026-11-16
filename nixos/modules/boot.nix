@@ -1,8 +1,12 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   boot = {
     loader = {
-      systemd-boot.enable = true;
+      systemd-boot = {
+        enable = true;
+        # mkDefault so a host can keep fewer entries (tpx13 sets 3).
+        configurationLimit = lib.mkDefault 10;
+      };
       efi.canTouchEfiVariables = true;
     };
 

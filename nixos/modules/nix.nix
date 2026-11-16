@@ -15,5 +15,15 @@
     extra-trusted-public-keys = [
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
+    auto-optimise-store = true;
+  };
+
+  # Weekly garbage collection keeps /nix/store bounded; anything reachable
+  # only through a profile or generation older than 30 days is removed,
+  # including old system generations.
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
   };
 }

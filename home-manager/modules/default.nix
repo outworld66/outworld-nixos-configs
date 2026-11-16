@@ -10,6 +10,7 @@
     ./alacritty.nix
     ./chromium.nix
     ./lazygit.nix
+    ./maintenance.nix
     ./zathura.nix
     ./vicinae.nix
     ./mcp.nix
