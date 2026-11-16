@@ -78,6 +78,7 @@
       dnslookup # Simple DNS lookup utility
       jq # JSON query and transformation tool
       mtr # Combined traceroute and network latency monitor
+      sshuttle # VPN over SSH
       ncdu # Interactive disk usage analyzer
       nmap # Network scanner and service discovery tool
       openssl # TLS, certificates, and cryptographic utilities
