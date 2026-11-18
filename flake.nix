@@ -114,6 +114,7 @@
         "happ"
         "kaspersky-ksc-agent"
         "obsidian"
+        "sota-connect"
         "steam"
         "steam-unwrapped"
       ];
