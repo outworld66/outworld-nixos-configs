@@ -171,6 +171,7 @@
 
       # Communication
       thunderbird # Email, calendar, and contacts client
+      mailcraft # Local-first email client (Outlook alternative)
       telegram-desktop # Telegram desktop client
 
       # Remote access
