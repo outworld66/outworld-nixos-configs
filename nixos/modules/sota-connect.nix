@@ -19,5 +19,6 @@ in
 
     systemd.packages = [ pkgs.sota-connect ];
     systemd.services.sota-connect.enable = true;
+    systemd.services.sota-connect.wantedBy = [ "multi-user.target" ];
   };
 }
