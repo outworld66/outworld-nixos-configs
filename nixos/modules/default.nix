@@ -3,6 +3,7 @@
     ./amneziavpn.nix
     ./local-packages.nix
     ./security.nix
+    ./sota-connect.nix
     ./v2ray.nix
     ./virtualization.nix
     ./localsend.nix

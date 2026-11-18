@@ -197,6 +197,15 @@
       freecad # Parametric 3D CAD modeler
       vencord # Discord client modification and plugin platform
       vesktop # Desktop Discord client with Vencord integration
-    ];
+    ]
+    ++
+      lib.optionals
+        (builtins.elem hostname [
+          "majesty"
+          "tpx13"
+        ])
+        [
+          sota-connect # Sota VPN desktop client
+        ];
 
 }
