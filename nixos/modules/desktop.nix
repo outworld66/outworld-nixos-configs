@@ -14,6 +14,7 @@
 
   programs.niri.enable = true;
   programs.umbriel.enable = true;
+  services.gvfs.enable = true;
 
   boot.extraModprobeConfig = lib.mkIf (hostname == "tpx13") ''
     options thinkpad_acpi fan_control=1
